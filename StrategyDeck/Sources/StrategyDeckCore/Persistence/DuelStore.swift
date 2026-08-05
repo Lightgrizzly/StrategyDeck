@@ -176,6 +176,34 @@ public final class DuelStore: ObservableObject {
         }
     }
 
+    /// Recalculates strategic zones for non-manually-overridden snapshots in a panel.
+    /// Call after any snapshot mutation to keep availability current.
+    public func recalculatePanel(id panelID: UUID, allCards: [KnowledgeCard]) {
+        updateCurrentDuel { duel in
+            guard let idx = duel.panels.firstIndex(where: { $0.id == panelID }) else { return }
+            duel.panels[idx] = PlayabilityEvaluator.recalculateStrategicZones(
+                panel: duel.panels[idx],
+                duel: duel,
+                allCards: allCards
+            )
+        }
+    }
+
+    public func completeDuel(outcome: DuelOutcome, reflection: DuelReflection) {
+        updateCurrentDuel { duel in
+            duel.duelOutcome = outcome
+            duel.reflection = reflection
+            duel.completedAt = Date()
+        }
+    }
+
+    public func reopenDuel() {
+        updateCurrentDuel { duel in
+            duel.duelOutcome = nil
+            duel.completedAt = nil
+        }
+    }
+
     private func persist() {
         do {
             try persistence.save(duels, to: Self.filename)

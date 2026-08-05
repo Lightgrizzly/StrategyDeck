@@ -19,6 +19,14 @@ struct KnowledgeCardEditorView: View {
     @State private var advantagesText: String = ""
     @State private var costsText: String = ""
     @State private var failureModesText: String = ""
+    // Playability rule texts (one item per line)
+    @State private var prereqText: String = ""
+    @State private var requiredActiveText: String = ""
+    @State private var requiredKnownText: String = ""
+    @State private var unlockedByText: String = ""
+    @State private var blockedByText: String = ""
+    @State private var unlocksText: String = ""
+    @State private var disablesText: String = ""
 
     /// `nil` when `card.metadata` isn't `.softwareStrategy` — used to hide
     /// the software-strategy-only sections rather than fabricate blank
@@ -173,6 +181,46 @@ struct KnowledgeCardEditorView: View {
                                 .frame(minHeight: 60)
                         }
                     }
+
+                    section("Playability Rules") {
+                        Text("Define when this card is available in a Duel. Leave blank to make it always available.")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                        LabeledField("Prerequisites (one per line)") {
+                            TextEditor(text: $prereqText)
+                                .frame(minHeight: 40)
+                        }
+                        LabeledField("Required active cards (one per line)") {
+                            TextEditor(text: $requiredActiveText)
+                                .frame(minHeight: 40)
+                        }
+                        LabeledField("Required known info (one per line)") {
+                            TextEditor(text: $requiredKnownText)
+                                .frame(minHeight: 40)
+                        }
+                        LabeledField("Unlocked by (one per line)") {
+                            TextEditor(text: $unlockedByText)
+                                .frame(minHeight: 40)
+                        }
+                        LabeledField("Blocked by (one per line)") {
+                            TextEditor(text: $blockedByText)
+                                .frame(minHeight: 40)
+                        }
+                        LabeledField("Unlocks (one per line)") {
+                            TextEditor(text: $unlocksText)
+                                .frame(minHeight: 40)
+                        }
+                        LabeledField("Disables (one per line)") {
+                            TextEditor(text: $disablesText)
+                                .frame(minHeight: 40)
+                        }
+                        HStack(spacing: 16) {
+                            Toggle("Can be reused", isOn: $card.playabilityRules.canBeReused)
+                                .font(.system(size: 11))
+                            Toggle("Exhausts after use", isOn: $card.playabilityRules.exhaustsAfterUse)
+                                .font(.system(size: 11))
+                        }
+                    }
                 }
                 .padding(14)
             }
@@ -199,6 +247,14 @@ struct KnowledgeCardEditorView: View {
         advantagesText = softwareFields.wrappedValue.advantages.joined(separator: "\n")
         costsText = softwareFields.wrappedValue.costs.joined(separator: "\n")
         failureModesText = softwareFields.wrappedValue.failureModes.joined(separator: "\n")
+        let rules = card.playabilityRules
+        prereqText = rules.prerequisites.joined(separator: "\n")
+        requiredActiveText = rules.requiredActiveCardTitles.joined(separator: "\n")
+        requiredKnownText = rules.requiredKnownInfo.joined(separator: "\n")
+        unlockedByText = rules.unlockedByCardTitles.joined(separator: "\n")
+        blockedByText = rules.blockedByCardTitles.joined(separator: "\n")
+        unlocksText = rules.unlocksCardTitles.joined(separator: "\n")
+        disablesText = rules.disablesCardTitles.joined(separator: "\n")
     }
 
     private func commitAndSave() {
@@ -211,6 +267,17 @@ struct KnowledgeCardEditorView: View {
             fields.failureModes = lines(failureModesText)
             card.metadata = .softwareStrategy(fields)
         }
+        card.playabilityRules = CardPlayabilityRules(
+            prerequisites: lines(prereqText),
+            requiredActiveCardTitles: lines(requiredActiveText),
+            requiredKnownInfo: lines(requiredKnownText),
+            unlockedByCardTitles: lines(unlockedByText),
+            blockedByCardTitles: lines(blockedByText),
+            unlocksCardTitles: lines(unlocksText),
+            disablesCardTitles: lines(disablesText),
+            canBeReused: card.playabilityRules.canBeReused,
+            exhaustsAfterUse: card.playabilityRules.exhaustsAfterUse
+        )
         onSave(card)
     }
 

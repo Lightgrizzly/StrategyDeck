@@ -17,6 +17,7 @@ public struct KnowledgeCard: Codable, Identifiable, Hashable, Sendable {
     public var backText: String
     public var tags: [String]
     public var isFavorite: Bool
+    public var playabilityRules: CardPlayabilityRules
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -32,6 +33,7 @@ public struct KnowledgeCard: Codable, Identifiable, Hashable, Sendable {
         backText: String = "",
         tags: [String] = [],
         isFavorite: Bool = false,
+        playabilityRules: CardPlayabilityRules = CardPlayabilityRules(),
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -46,6 +48,7 @@ public struct KnowledgeCard: Codable, Identifiable, Hashable, Sendable {
         self.backText = backText
         self.tags = tags
         self.isFavorite = isFavorite
+        self.playabilityRules = playabilityRules
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -63,6 +66,7 @@ public struct KnowledgeCard: Codable, Identifiable, Hashable, Sendable {
         backText = try c.decodeIfPresent(String.self, forKey: .backText) ?? ""
         tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
         isFavorite = try c.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+        playabilityRules = try c.decodeIfPresent(CardPlayabilityRules.self, forKey: .playabilityRules) ?? CardPlayabilityRules()
         createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
     }
