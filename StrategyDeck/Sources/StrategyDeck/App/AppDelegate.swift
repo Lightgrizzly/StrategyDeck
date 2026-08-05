@@ -39,6 +39,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hasVisibleWindows flag: Bool
     ) -> Bool {
         panelController?.show()
-        return false
+        return true
     }
 }

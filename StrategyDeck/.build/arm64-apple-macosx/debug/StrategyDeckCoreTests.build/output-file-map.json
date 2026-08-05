@@ -1,0 +1,95 @@
+{
+  "": {
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/master.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardFilterTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardFilterTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardFilterTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardFilterTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardFilterTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardKindTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardKindTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardKindTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardKindTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardKindTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardMetadataTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardMetadataTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardMetadataTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardMetadataTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardMetadataTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardRelationshipTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardRelationshipTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardRelationshipTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardRelationshipTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardRelationshipTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardSuitTreeTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardSuitTreeTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardSuitTreeTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardSuitTreeTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardSuitTreeTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/KnowledgeCardTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeCardTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeCardTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeCardTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeCardTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/KnowledgeLibraryTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeLibraryTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeLibraryTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeLibraryTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeLibraryTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/MalformedJSONTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/MalformedJSONTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/MalformedJSONTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/MalformedJSONTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/MalformedJSONTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/PersistenceTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/PersistenceTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/PersistenceTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/PersistenceTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/PersistenceTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/ResetTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/ResetTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/ResetTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/ResetTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/ResetTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/SeedDecodingTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SeedDecodingTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SeedDecodingTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SeedDecodingTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SeedDecodingTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/SequenceStoreTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SequenceStoreTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SequenceStoreTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SequenceStoreTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SequenceStoreTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/StrategySequenceTests.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/StrategySequenceTests.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/StrategySequenceTests.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/StrategySequenceTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/StrategySequenceTests.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/TestSupport/DateTestSupport.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/DateTestSupport.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/DateTestSupport.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/DateTestSupport~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/DateTestSupport.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/TestSupport/InMemoryPersistence.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/InMemoryPersistence.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/InMemoryPersistence.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/InMemoryPersistence~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/InMemoryPersistence.swiftdeps"
+  }
+}

@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:StrategyDeck}/StrategyDeck",
+            "name": "Debug StrategyDeck (StrategyDeck)",
+            "target": "StrategyDeck",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug StrategyDeck (StrategyDeck)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:StrategyDeck}/StrategyDeck",
+            "name": "Release StrategyDeck (StrategyDeck)",
+            "target": "StrategyDeck",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release StrategyDeck (StrategyDeck)"
+        }
+    ]
+}

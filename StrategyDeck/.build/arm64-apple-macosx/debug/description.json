@@ -1,0 +1,1692 @@
+{
+  "builtTestProducts" : [
+    {
+      "binaryPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.xctest/Contents/MacOS/StrategyDeckPackageTests",
+      "packagePath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck",
+      "productName" : "StrategyDeckPackageTests"
+    }
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.StrategyDeck-arm64-apple-macosx16.0-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/sources",
+      "importPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/App/AppDelegate.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/App/AppEnvironment.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/App/StrategyDeckApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Components/AlertState.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Components/SuiteBadge.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Components/TagChip.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Services/GlobalShortcutManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Services/LaunchAtLoginManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardDetailView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardEditorView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/MenuBar/MenuBarContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Panel/HeaderView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Panel/PanelRootView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Sequences/SequenceManagerView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Sequences/SequenceTrayView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Settings/SettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Suites/DeckSuitTreeView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/WindowManagement/FloatingPanel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/WindowManagement/FloatingPanelController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/WindowManagement/PanelFrameStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules/StrategyDeckCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "StrategyDeck",
+      "moduleOutputPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules/StrategyDeck.swiftmodule",
+      "objects" : [
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/AppDelegate.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/AppEnvironment.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/StrategyDeckApp.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/AlertState.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/SuiteBadge.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/TagChip.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/GlobalShortcutManager.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/LaunchAtLoginManager.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardDetailView.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardEditorView.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardView.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/MenuBarContentView.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/HeaderView.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/PanelRootView.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/SequenceManagerView.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/SequenceTrayView.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/SettingsView.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DeckSuitTreeView.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/FloatingPanel.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/FloatingPanelController.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/PanelFrameStore.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-enable-batch-mode",
+        "-index-store-path",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-module-cache-path",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "StrategyDeck_main",
+        "-color-diagnostics",
+        "-swift-version",
+        "5",
+        "-F",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "strategydeck"
+      ],
+      "outputFileMapPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/AppDelegate.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/AppEnvironment.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/StrategyDeckApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/AlertState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/SuiteBadge.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/TagChip.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/GlobalShortcutManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/LaunchAtLoginManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardDetailView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardEditorView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/MenuBarContentView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/HeaderView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/PanelRootView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/SequenceManagerView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/SequenceTrayView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/SettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DeckSuitTreeView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/FloatingPanel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/FloatingPanelController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/PanelFrameStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules/StrategyDeck.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/App/AppDelegate.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/App/AppEnvironment.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/App/StrategyDeckApp.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Components/AlertState.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Components/SuiteBadge.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Components/TagChip.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Services/GlobalShortcutManager.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Services/LaunchAtLoginManager.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardDetailView.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardEditorView.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardView.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/MenuBar/MenuBarContentView.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Panel/HeaderView.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Panel/PanelRootView.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Sequences/SequenceManagerView.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Sequences/SequenceTrayView.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Settings/SettingsView.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Suites/DeckSuitTreeView.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/WindowManagement/FloatingPanel.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/WindowManagement/FloatingPanelController.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/WindowManagement/PanelFrameStore.swift"
+      ],
+      "tempsPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.StrategyDeckCore-arm64-apple-macosx16.0-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/sources",
+      "importPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardKind.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardMetadata.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardRelationship.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardSuit.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeCard.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeDeck.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeLibrary.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/SoftwareStrategyFields.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequence.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequenceItem.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/CardStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/JSONPersistenceService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SeedCardProvider.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SequenceStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/CardFilter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/ImportExportService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "StrategyDeckCore",
+      "moduleOutputPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules/StrategyDeckCore.swiftmodule",
+      "objects" : [
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardKind.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardMetadata.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardRelationship.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardSuit.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeCard.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeDeck.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeLibrary.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SoftwareStrategyFields.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategySequence.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategySequenceItem.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardStore.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/JSONPersistenceService.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SeedCardProvider.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SequenceStore.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardFilter.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/ImportExportService.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-enable-batch-mode",
+        "-index-store-path",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-module-cache-path",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategyDeckCore-Swift.h",
+        "-color-diagnostics",
+        "-swift-version",
+        "5",
+        "-F",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "strategydeck"
+      ],
+      "outputFileMapPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardKind.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardMetadata.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardRelationship.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardSuit.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeCard.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeDeck.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeLibrary.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SoftwareStrategyFields.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategySequence.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategySequenceItem.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/JSONPersistenceService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SeedCardProvider.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SequenceStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardFilter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/ImportExportService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules/StrategyDeckCore.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardKind.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardMetadata.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardRelationship.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardSuit.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeCard.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeDeck.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeLibrary.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/SoftwareStrategyFields.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequence.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequenceItem.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/CardStore.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/JSONPersistenceService.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SeedCardProvider.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SequenceStore.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/CardFilter.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/ImportExportService.swift"
+      ],
+      "tempsPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.StrategyDeckCoreTests-arm64-apple-macosx16.0-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/sources",
+      "importPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardFilterTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardKindTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardMetadataTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardRelationshipTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardSuitTreeTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/KnowledgeCardTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/KnowledgeLibraryTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/MalformedJSONTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/PersistenceTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/ResetTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/SeedDecodingTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/SequenceStoreTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/StrategySequenceTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/TestSupport/DateTestSupport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/TestSupport/InMemoryPersistence.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules/StrategyDeckCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "StrategyDeckCoreTests",
+      "moduleOutputPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules/StrategyDeckCoreTests.swiftmodule",
+      "objects" : [
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardFilterTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardKindTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardMetadataTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardRelationshipTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardSuitTreeTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeCardTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeLibraryTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/MalformedJSONTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/PersistenceTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/ResetTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SeedDecodingTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SequenceStoreTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/StrategySequenceTests.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/DateTestSupport.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/InMemoryPersistence.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-enable-batch-mode",
+        "-index-store-path",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-module-cache-path",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-color-diagnostics",
+        "-swift-version",
+        "5",
+        "-F",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "strategydeck"
+      ],
+      "outputFileMapPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardFilterTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardKindTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardMetadataTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardRelationshipTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardSuitTreeTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeCardTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeLibraryTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/MalformedJSONTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/PersistenceTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/ResetTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SeedDecodingTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SequenceStoreTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/StrategySequenceTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/DateTestSupport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/InMemoryPersistence.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules/StrategyDeckCoreTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardFilterTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardKindTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardMetadataTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardRelationshipTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardSuitTreeTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/KnowledgeCardTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/KnowledgeLibraryTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/MalformedJSONTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/PersistenceTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/ResetTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/SeedDecodingTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/SequenceStoreTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/StrategySequenceTests.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/TestSupport/DateTestSupport.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/TestSupport/InMemoryPersistence.swift"
+      ],
+      "tempsPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.StrategyDeckPackageTests-arm64-apple-macosx16.0-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/sources",
+      "importPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules/StrategyDeckCoreTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "StrategyDeckPackageTests",
+      "moduleOutputPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules/StrategyDeckPackageTests.swiftmodule",
+      "objects" : [
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-enable-batch-mode",
+        "-index-store-path",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-module-cache-path",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/StrategyDeckPackageTests-Swift.h",
+        "-color-diagnostics",
+        "-F",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "strategydeck"
+      ],
+      "outputFileMapPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules/StrategyDeckPackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "StrategyDeck" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "StrategyDeck",
+      "-package-name",
+      "strategydeck",
+      "-incremental",
+      "-c",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/App/AppDelegate.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/App/AppEnvironment.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/App/StrategyDeckApp.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Components/AlertState.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Components/SuiteBadge.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Components/TagChip.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Services/GlobalShortcutManager.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Services/LaunchAtLoginManager.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardDetailView.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardEditorView.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardView.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/MenuBar/MenuBarContentView.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Panel/HeaderView.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Panel/PanelRootView.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Sequences/SequenceManagerView.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Sequences/SequenceTrayView.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Settings/SettingsView.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Suites/DeckSuitTreeView.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/WindowManagement/FloatingPanel.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/WindowManagement/FloatingPanelController.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/WindowManagement/PanelFrameStore.swift",
+      "-I",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-enable-batch-mode",
+      "-index-store-path",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-module-cache-path",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "StrategyDeck_main",
+      "-color-diagnostics",
+      "-swift-version",
+      "5",
+      "-F",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "strategydeck",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "StrategyDeckCore" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "StrategyDeckCore",
+      "-package-name",
+      "strategydeck",
+      "-incremental",
+      "-c",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardKind.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardMetadata.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardRelationship.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardSuit.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeCard.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeDeck.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeLibrary.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/SoftwareStrategyFields.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequence.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequenceItem.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/CardStore.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/JSONPersistenceService.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SeedCardProvider.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SequenceStore.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/CardFilter.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/ImportExportService.swift",
+      "-I",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-enable-batch-mode",
+      "-index-store-path",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-module-cache-path",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategyDeckCore-Swift.h",
+      "-color-diagnostics",
+      "-swift-version",
+      "5",
+      "-F",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "strategydeck",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "StrategyDeckCoreTests" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "StrategyDeckCoreTests",
+      "-package-name",
+      "strategydeck",
+      "-incremental",
+      "-c",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardFilterTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardKindTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardMetadataTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardRelationshipTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardSuitTreeTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/KnowledgeCardTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/KnowledgeLibraryTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/MalformedJSONTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/PersistenceTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/ResetTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/SeedDecodingTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/SequenceStoreTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/StrategySequenceTests.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/TestSupport/DateTestSupport.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/TestSupport/InMemoryPersistence.swift",
+      "-I",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-enable-batch-mode",
+      "-index-store-path",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-module-cache-path",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-color-diagnostics",
+      "-swift-version",
+      "5",
+      "-F",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "strategydeck",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "StrategyDeckPackageTests" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "StrategyDeckPackageTests",
+      "-package-name",
+      "strategydeck",
+      "-incremental",
+      "-c",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.derived/runner.swift",
+      "-I",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-enable-batch-mode",
+      "-index-store-path",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-module-cache-path",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/StrategyDeckPackageTests-Swift.h",
+      "-color-diagnostics",
+      "-F",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "strategydeck",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "StrategyDeck" : [
+      "StrategyDeckCore"
+    ],
+    "StrategyDeckCore" : [
+
+    ],
+    "StrategyDeckCoreTests" : [
+      "StrategyDeckCore"
+    ],
+    "StrategyDeckPackageTests" : [
+      "StrategyDeckCoreTests",
+      "StrategyDeckCore"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+    "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.derived/runner.swift" : {
+      "inputs" : [
+
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.derived/runner.swift"
+        }
+      ]
+    }
+  },
+  "writeCommands" : {
+    "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck-entitlement.plist"
+    },
+    "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/App/AppDelegate.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/App/AppEnvironment.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/App/StrategyDeckApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Components/AlertState.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Components/SuiteBadge.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Components/TagChip.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Services/GlobalShortcutManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Services/LaunchAtLoginManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardDetailView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardEditorView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/MenuBar/MenuBarContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Panel/HeaderView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Panel/PanelRootView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Sequences/SequenceManagerView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Sequences/SequenceTrayView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Settings/SettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Suites/DeckSuitTreeView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/WindowManagement/FloatingPanel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/WindowManagement/FloatingPanelController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/WindowManagement/PanelFrameStore.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/sources"
+    },
+    "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/AlertState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/AppDelegate.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/AppEnvironment.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DeckSuitTreeView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/FloatingPanel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/FloatingPanelController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/GlobalShortcutManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/HeaderView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardDetailView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardEditorView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/LaunchAtLoginManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/MenuBarContentView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/PanelFrameStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/PanelRootView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/SequenceManagerView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/SequenceTrayView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/SettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/StrategyDeckApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/SuiteBadge.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/TagChip.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardFilter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardKind.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardMetadata.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardRelationship.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardSuit.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/ImportExportService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/JSONPersistenceService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeCard.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeDeck.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeLibrary.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SeedCardProvider.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SequenceStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SoftwareStrategyFields.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategySequence.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategySequenceItem.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.product/Objects.LinkFileList"
+    },
+    "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardKind.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardMetadata.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardRelationship.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardSuit.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeCard.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeDeck.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeLibrary.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/SoftwareStrategyFields.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequence.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequenceItem.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/CardStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/JSONPersistenceService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SeedCardProvider.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SequenceStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/CardFilter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/ImportExportService.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/sources"
+    },
+    "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardFilterTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardKindTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardMetadataTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardRelationshipTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardSuitTreeTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/KnowledgeCardTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/KnowledgeLibraryTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/MalformedJSONTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/PersistenceTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/ResetTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/SeedDecodingTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/SequenceStoreTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/StrategySequenceTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/TestSupport/DateTestSupport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/TestSupport/InMemoryPersistence.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/sources"
+    },
+    "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/sources"
+    },
+    "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardFilter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardKind.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardMetadata.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardRelationship.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardSuit.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/ImportExportService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/JSONPersistenceService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeCard.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeDeck.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeLibrary.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SeedCardProvider.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SequenceStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SoftwareStrategyFields.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategySequence.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategySequenceItem.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardFilterTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardKindTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardMetadataTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardRelationshipTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/CardSuitTreeTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/DateTestSupport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/InMemoryPersistence.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeCardTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/KnowledgeLibraryTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/MalformedJSONTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/PersistenceTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/ResetTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SeedDecodingTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/SequenceStoreTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCoreTests.build/StrategySequenceTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/runner.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+    }
+  }
+}

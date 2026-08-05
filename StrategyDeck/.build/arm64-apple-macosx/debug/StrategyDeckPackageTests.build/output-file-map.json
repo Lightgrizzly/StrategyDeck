@@ -1,0 +1,11 @@
+{
+  "": {
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/master.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.derived/runner.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/runner.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/runner.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckPackageTests.build/runner.swiftdeps"
+  }
+}
