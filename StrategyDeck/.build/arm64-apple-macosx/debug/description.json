@@ -329,6 +329,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardPlayabilityRules.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardRelationship.swift"
         },
         {
@@ -393,6 +397,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/PlayabilityEvaluator.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
         },
         {
@@ -406,6 +414,7 @@
       "objects" : [
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardKind.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardMetadata.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardPlayabilityRules.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardRelationship.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardSuit.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelModels.swift.o",
@@ -421,7 +430,8 @@
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SeedCardProvider.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SequenceStore.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardFilter.swift.o",
-        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/ImportExportService.swift.o"
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/ImportExportService.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/PlayabilityEvaluator.swift.o"
       ],
       "otherArguments" : [
         "-target",
@@ -469,6 +479,10 @@
         {
           "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardMetadata.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardPlayabilityRules.swift.o"
         },
         {
           "kind" : "file",
@@ -536,6 +550,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/PlayabilityEvaluator.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules/StrategyDeckCore.swiftmodule"
         }
       ],
@@ -543,6 +561,7 @@
       "sources" : [
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardKind.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardMetadata.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardPlayabilityRules.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardRelationship.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardSuit.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/DuelModels.swift",
@@ -558,7 +577,8 @@
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SeedCardProvider.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SequenceStore.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/CardFilter.swift",
-        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/ImportExportService.swift"
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/ImportExportService.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/PlayabilityEvaluator.swift"
       ],
       "tempsPath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build",
       "wholeModuleOptimization" : false
@@ -949,6 +969,7 @@
       "-c",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardKind.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardMetadata.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardPlayabilityRules.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardRelationship.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardSuit.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/DuelModels.swift",
@@ -965,6 +986,7 @@
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SequenceStore.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/CardFilter.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/ImportExportService.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/PlayabilityEvaluator.swift",
       "-I",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/Modules",
       "-target",
@@ -1366,6 +1388,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardPlayabilityRules.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardRelationship.swift.o"
         },
         {
@@ -1406,6 +1432,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/PlayabilityEvaluator.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SeedCardProvider.swift.o"
         },
         {
@@ -1441,6 +1471,10 @@
         {
           "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardMetadata.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardPlayabilityRules.swift"
         },
         {
           "kind" : "file",
@@ -1505,6 +1539,10 @@
         {
           "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/ImportExportService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/PlayabilityEvaluator.swift"
         }
       ],
       "outputFilePath" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/sources"
@@ -1614,6 +1652,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardPlayabilityRules.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardRelationship.swift.o"
         },
         {
@@ -1651,6 +1693,10 @@
         {
           "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeLibrary.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/PlayabilityEvaluator.swift.o"
         },
         {
           "kind" : "file",

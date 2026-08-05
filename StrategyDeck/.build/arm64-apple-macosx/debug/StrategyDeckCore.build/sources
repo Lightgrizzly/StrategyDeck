@@ -1,5 +1,6 @@
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardKind.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardMetadata.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardPlayabilityRules.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardRelationship.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardSuit.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/DuelModels.swift
@@ -16,3 +17,4 @@
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SequenceStore.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/CardFilter.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/ImportExportService.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/PlayabilityEvaluator.swift

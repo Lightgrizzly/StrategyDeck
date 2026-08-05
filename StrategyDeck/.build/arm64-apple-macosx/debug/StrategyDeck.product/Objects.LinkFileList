@@ -23,6 +23,7 @@
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardFilter.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardKind.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardMetadata.swift.o
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardPlayabilityRules.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardRelationship.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardStore.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardSuit.swift.o
@@ -33,6 +34,7 @@
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeCard.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeDeck.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeLibrary.swift.o
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/PlayabilityEvaluator.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SeedCardProvider.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SequenceStore.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SoftwareStrategyFields.swift.o

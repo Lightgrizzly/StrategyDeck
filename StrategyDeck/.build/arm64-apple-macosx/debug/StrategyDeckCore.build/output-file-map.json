@@ -14,6 +14,12 @@
     "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardMetadata~partial.swiftmodule",
     "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardMetadata.swiftdeps"
   },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardPlayabilityRules.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardPlayabilityRules.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardPlayabilityRules.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardPlayabilityRules~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardPlayabilityRules.swiftdeps"
+  },
   "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardRelationship.swift": {
     "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardRelationship.d",
     "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardRelationship.swift.o",
@@ -109,5 +115,11 @@
     "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/ImportExportService.swift.o",
     "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/ImportExportService~partial.swiftmodule",
     "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/ImportExportService.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Services/PlayabilityEvaluator.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/PlayabilityEvaluator.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/PlayabilityEvaluator.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/PlayabilityEvaluator~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/PlayabilityEvaluator.swiftdeps"
   }
 }

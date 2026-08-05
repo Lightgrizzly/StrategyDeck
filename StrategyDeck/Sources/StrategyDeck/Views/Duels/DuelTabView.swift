@@ -231,6 +231,7 @@ private struct DuelEditorView: View {
     @EnvironmentObject var duelStore: DuelStore
     @EnvironmentObject var cardStore: CardStore
 
+    @State private var boardViewMode: DuelBoardViewMode = .board
     @State private var showingCardPicker = false
     @State private var pickerZone: DuelZone = .player
     @State private var selectedCardForPreview: KnowledgeCard?
@@ -266,56 +267,99 @@ private struct DuelEditorView: View {
 
                 Divider()
 
-                HStack(spacing: 0) {
-                    DuelPanelBrowser(
-                        duel: duel,
-                        selectedPanelID: panel.id,
-                        onSelect: duelStore.setCurrentPanel,
-                        onDuplicate: duelStore.duplicatePanel,
-                        onDelete: { id in
-                            alertState = .destructive(
-                                title: "Delete this panel?",
-                                message: "The panel will be removed from the duel.",
-                                confirmLabel: "Delete"
-                            ) {
-                                duelStore.deletePanel(id: id)
-                            }
-                        },
-                        onInsertAfter: duelStore.addStep,
-                        onMoveUp: { id in
-                            guard let current = duel.sortedPanels.firstIndex(where: { $0.id == id }) else { return }
-                            duelStore.movePanel(from: current, to: current - 1)
-                        },
-                        onMoveDown: { id in
-                            guard let current = duel.sortedPanels.firstIndex(where: { $0.id == id }) else { return }
-                            duelStore.movePanel(from: current, to: current + 1)
+                // Board / Comic mode toggle strip
+                HStack {
+                    Picker("View", selection: $boardViewMode) {
+                        ForEach(DuelBoardViewMode.allCases, id: \.self) { mode in
+                            Label(mode.rawValue, systemImage: mode.systemImage).tag(mode)
                         }
-                    )
-                    .frame(width: 240)
-                    Divider()
-                    DuelPanelEditorView(
-                        panel: panel,
-                        previousPanel: previousPanel,
-                        allCards: cardStore.cards,
-                        allSuits: cardStore.suits,
-                        onUpdate: { duelStore.updatePanel($0) },
-                        onAddSnapshot: { cardID, zone in
-                            duelStore.addSnapshot(to: panel.id, cardID: cardID, zone: zone)
-                            duelStore.recalculatePanel(id: panel.id, allCards: cardStore.cards)
-                        },
-                        onDeleteSnapshot: { duelStore.deleteSnapshot(id: $0, in: panel.id) },
-                        onUpdateSnapshot: { snapshot in
-                            duelStore.updateSnapshot(snapshot, in: panel.id)
-                            // Only recalculate when the snapshot itself wasn't manually overriding a zone
-                            if !snapshot.isManuallyOverridden {
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 180)
+                    .padding(.leading, 14)
+                    Spacer()
+                }
+                .frame(height: 36)
+                .background(Color(.controlBackgroundColor))
+
+                Divider()
+
+                Group {
+                    if boardViewMode == .board {
+                        StrategyDuelBoardView(
+                            duel: duel,
+                            panel: panel,
+                            previousPanel: previousPanel,
+                            onUpdate: { duelStore.updatePanel($0) },
+                            onAddSnapshot: { cardID, zone in
+                                duelStore.addSnapshot(to: panel.id, cardID: cardID, zone: zone)
                                 duelStore.recalculatePanel(id: panel.id, allCards: cardStore.cards)
-                            }
-                        },
-                        onShowPicker: { zone in
-                            pickerZone = zone
-                            showingCardPicker = true
+                            },
+                            onDeleteSnapshot: { duelStore.deleteSnapshot(id: $0, in: panel.id) },
+                            onUpdateSnapshot: { snapshot in
+                                duelStore.updateSnapshot(snapshot, in: panel.id)
+                                if !snapshot.isManuallyOverridden {
+                                    duelStore.recalculatePanel(id: panel.id, allCards: cardStore.cards)
+                                }
+                            },
+                            onShowPicker: { zone in
+                                pickerZone = zone
+                                showingCardPicker = true
+                            },
+                            onAddStep: { duelStore.addStep(after: panel.id) }
+                        )
+                    } else {
+                        HStack(spacing: 0) {
+                            DuelPanelBrowser(
+                                duel: duel,
+                                selectedPanelID: panel.id,
+                                onSelect: duelStore.setCurrentPanel,
+                                onDuplicate: duelStore.duplicatePanel,
+                                onDelete: { id in
+                                    alertState = .destructive(
+                                        title: "Delete this panel?",
+                                        message: "The panel will be removed from the duel.",
+                                        confirmLabel: "Delete"
+                                    ) {
+                                        duelStore.deletePanel(id: id)
+                                    }
+                                },
+                                onInsertAfter: duelStore.addStep,
+                                onMoveUp: { id in
+                                    guard let current = duel.sortedPanels.firstIndex(where: { $0.id == id }) else { return }
+                                    duelStore.movePanel(from: current, to: current - 1)
+                                },
+                                onMoveDown: { id in
+                                    guard let current = duel.sortedPanels.firstIndex(where: { $0.id == id }) else { return }
+                                    duelStore.movePanel(from: current, to: current + 1)
+                                }
+                            )
+                            .frame(width: 240)
+                            Divider()
+                            DuelPanelEditorView(
+                                panel: panel,
+                                previousPanel: previousPanel,
+                                allCards: cardStore.cards,
+                                allSuits: cardStore.suits,
+                                onUpdate: { duelStore.updatePanel($0) },
+                                onAddSnapshot: { cardID, zone in
+                                    duelStore.addSnapshot(to: panel.id, cardID: cardID, zone: zone)
+                                    duelStore.recalculatePanel(id: panel.id, allCards: cardStore.cards)
+                                },
+                                onDeleteSnapshot: { duelStore.deleteSnapshot(id: $0, in: panel.id) },
+                                onUpdateSnapshot: { snapshot in
+                                    duelStore.updateSnapshot(snapshot, in: panel.id)
+                                    if !snapshot.isManuallyOverridden {
+                                        duelStore.recalculatePanel(id: panel.id, allCards: cardStore.cards)
+                                    }
+                                },
+                                onShowPicker: { zone in
+                                    pickerZone = zone
+                                    showingCardPicker = true
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
             .sheet(isPresented: $showingCardPicker) {
