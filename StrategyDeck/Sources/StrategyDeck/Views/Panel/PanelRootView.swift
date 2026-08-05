@@ -58,7 +58,7 @@ struct PanelRootView: View {
                 }
 
                 VStack(spacing: 0) {
-                    KnowledgeCardGridContainer(filter: filter, suits: cardStore.suits, proxy: cardGridRef)
+                    KnowledgeCardGridContainer(filter: filter, suits: cardStore.suits, selectedDeckID: selectedDeckID, proxy: cardGridRef)
                     SequenceTrayView()
                         .environmentObject(sequenceStore)
                         .environmentObject(cardStore)
@@ -91,19 +91,21 @@ final class CardGridViewProxy: ObservableObject {
 struct KnowledgeCardGridContainer: View {
     let filter: CardFilter
     let suits: [CardSuit]
+    let selectedDeckID: String?
     let proxy: CardGridViewProxy
 
     @EnvironmentObject var cardStore: CardStore
     @EnvironmentObject var sequenceStore: SequenceStore
 
     var body: some View {
-        InternalGrid(filter: filter, suits: suits, proxy: proxy)
+        InternalGrid(filter: filter, suits: suits, selectedDeckID: selectedDeckID, proxy: proxy)
     }
 }
 
 private struct InternalGrid: View {
     let filter: CardFilter
     let suits: [CardSuit]
+    let selectedDeckID: String?
     let proxy: CardGridViewProxy
 
     @EnvironmentObject var cardStore: CardStore
@@ -113,7 +115,7 @@ private struct InternalGrid: View {
     @State private var detailCard: KnowledgeCard?
     @State private var editingCard: KnowledgeCard?
     @State private var isCreating = false
-    @State private var newCard = InternalGrid.blankCard(suits: [])
+    @State private var newCard = InternalGrid.blankCard(suits: [], deckID: nil)
     @State private var alertState: AlertState?
     @State private var pendingDeleteID: UUID?
 
@@ -179,7 +181,7 @@ private struct InternalGrid: View {
             KnowledgeCardEditorView(
                 mode: .edit,
                 card: Binding(get: { editingCard ?? card }, set: { editingCard = $0 }),
-                suits: suits,
+                suits: allowedSuits(for: card),
                 onSave: { updated in cardStore.update(updated); editingCard = nil },
                 onCancel: { editingCard = nil }
             )
@@ -190,15 +192,15 @@ private struct InternalGrid: View {
             KnowledgeCardEditorView(
                 mode: .create,
                 card: $newCard,
-                suits: suits,
+                suits: allowedSuits(for: newCard),
                 onSave: { created in
                     cardStore.add(created)
                     isCreating = false
-                    newCard = Self.blankCard(suits: suits)
+                    newCard = Self.blankCard(suits: suits, deckID: selectedDeckID)
                 },
                 onCancel: {
                     isCreating = false
-                    newCard = Self.blankCard(suits: suits)
+                    newCard = Self.blankCard(suits: suits, deckID: selectedDeckID)
                 }
             )
             .frame(minWidth: 380, minHeight: 500)
@@ -236,14 +238,27 @@ private struct InternalGrid: View {
 
     /// Called by the header's add-card button.
     private func presentCreate() {
-        newCard = Self.blankCard(suits: suits)
+        newCard = Self.blankCard(suits: suits, deckID: selectedDeckID)
         isCreating = true
     }
 
-    private static func blankCard(suits: [CardSuit]) -> KnowledgeCard {
-        KnowledgeCard(
-            deckIDs: suits.first.map { [$0.deckID] } ?? [],
-            suitIDs: suits.first.map { [$0.id] } ?? [],
+    private func allowedSuits(for card: KnowledgeCard) -> [CardSuit] {
+        if let deckID = card.deckIDs.first {
+            let filteredSuits = suits.filter { $0.deckID == deckID }
+            if !filteredSuits.isEmpty { return filteredSuits }
+        }
+        if let selectedDeck = selectedDeckID {
+            let filteredSuits = suits.filter { $0.deckID == selectedDeck }
+            if !filteredSuits.isEmpty { return filteredSuits }
+        }
+        return suits
+    }
+
+    private static func blankCard(suits: [CardSuit], deckID: String?) -> KnowledgeCard {
+        let filteredSuits = deckID.flatMap { deckID in suits.filter { $0.deckID == deckID } }
+        return KnowledgeCard(
+            deckIDs: filteredSuits?.first.map { [$0.deckID] } ?? [],
+            suitIDs: filteredSuits?.first.map { [$0.id] } ?? [],
             kind: .action,
             metadata: .softwareStrategy(SoftwareStrategyFields()),
             title: ""

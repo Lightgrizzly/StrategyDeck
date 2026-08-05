@@ -42,7 +42,13 @@ struct KnowledgeCardEditorView: View {
 
     private var selectedSuitID: Binding<String> {
         Binding(
-            get: { card.suitIDs.first ?? suits.first?.id ?? "" },
+            get: {
+                if let currentID = card.suitIDs.first,
+                   suits.contains(where: { $0.id == currentID }) {
+                    return currentID
+                }
+                return suits.first?.id ?? card.suitIDs.first ?? ""
+            },
             set: { newID in
                 card.suitIDs = [newID]
                 if let deckID = suits.first(where: { $0.id == newID })?.deckID {
