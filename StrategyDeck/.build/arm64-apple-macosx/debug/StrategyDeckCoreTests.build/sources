@@ -1,0 +1,15 @@
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardFilterTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardKindTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardMetadataTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardRelationshipTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/CardSuitTreeTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/KnowledgeCardTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/KnowledgeLibraryTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/MalformedJSONTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/PersistenceTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/ResetTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/SeedDecodingTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/SequenceStoreTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/StrategySequenceTests.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/TestSupport/DateTestSupport.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Tests/StrategyDeckCoreTests/TestSupport/InMemoryPersistence.swift

@@ -9,10 +9,34 @@ struct DeckSuitTreeView: View {
     let suits: [CardSuit]
     @Binding var selectedDeckID: String?
     @Binding var selectedSuiteID: String?
+    
+    @EnvironmentObject var cardStore: CardStore
+    @State private var showingNewDeckDialog = false
+    @State private var newDeckName = ""
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 2) {
+                // Add Deck Button
+                Button(action: { showingNewDeckDialog = true }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus.circle")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text("New Deck")
+                            .font(.system(size: 10.5, weight: .semibold))
+                        Spacer()
+                    }
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 4)
+                    .background(RoundedRectangle(cornerRadius: 5).fill(Color.accentColor.opacity(0.08)))
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, 4)
+                
+                Divider()
+                    .padding(.vertical, 2)
+                
                 ForEach(decks.sorted { $0.displayOrder < $1.displayOrder }) { deck in
                     DeckRow(
                         deck: deck,
@@ -25,6 +49,20 @@ struct DeckSuitTreeView: View {
             .padding(6)
         }
         .background(.bar)
+        .sheet(isPresented: $showingNewDeckDialog) {
+            NewDeckDialog(
+                name: $newDeckName,
+                isPresented: $showingNewDeckDialog,
+                onCreate: {
+                    if !newDeckName.trimmingCharacters(in: .whitespaces).isEmpty {
+                        let newDeck = cardStore.createDeck(name: newDeckName)
+                        selectedDeckID = newDeck.id
+                        selectedSuiteID = nil
+                        newDeckName = ""
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -33,8 +71,11 @@ private struct DeckRow: View {
     let suits: [CardSuit]
     @Binding var selectedDeckID: String?
     @Binding var selectedSuiteID: String?
-
+    
+    @EnvironmentObject var cardStore: CardStore
     @State private var isExpanded = true
+    @State private var showingNewSuitDialog = false
+    @State private var newSuitName = ""
 
     private var rootSuits: [CardSuit] { suits.rootSuits(deckID: deck.id) }
     private var isSelected: Bool { selectedDeckID == deck.id && selectedSuiteID == nil }
@@ -59,6 +100,15 @@ private struct DeckRow: View {
                     Text(deck.name)
                         .font(.system(size: 11, weight: .semibold))
                     Spacer(minLength: 0)
+                    
+                    // Add category button for this deck
+                    Button(action: { showingNewSuitDialog = true }) {
+                        Image(systemName: "plus.circle")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Add category to this deck")
                 }
                 .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
                 .padding(.vertical, 3)
@@ -79,6 +129,20 @@ private struct DeckRow: View {
                     )
                 }
             }
+        }
+        .sheet(isPresented: $showingNewSuitDialog) {
+            NewSuitDialog(
+                name: $newSuitName,
+                isPresented: $showingNewSuitDialog,
+                onCreate: {
+                    if !newSuitName.trimmingCharacters(in: .whitespaces).isEmpty {
+                        let newSuit = cardStore.createSuit(deckID: deck.id, name: newSuitName)
+                        selectedDeckID = deck.id
+                        selectedSuiteID = newSuit.id
+                        newSuitName = ""
+                    }
+                }
+            )
         }
     }
 }
@@ -148,3 +212,98 @@ private struct SuitRow: View {
         }
     }
 }
+
+private struct NewDeckDialog: View {
+    @Binding var name: String
+    @Binding var isPresented: Bool
+    let onCreate: () -> Void
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Create New Deck")
+                .font(.system(size: 14, weight: .semibold))
+            
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Deck Name")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                TextField("e.g., Engineering", text: $name)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($isFocused)
+            }
+            
+            HStack(spacing: 12) {
+                Button("Cancel") {
+                    isPresented = false
+                    name = ""
+                }
+                .keyboardShortcut(.cancelAction)
+                
+                Spacer()
+                
+                Button("Create", action: {
+                    onCreate()
+                    isPresented = false
+                })
+                .keyboardShortcut(.defaultAction)
+                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            
+            Spacer()
+        }
+        .padding(20)
+        .frame(minWidth: 300, minHeight: 140)
+        .onAppear {
+            isFocused = true
+        }
+    }
+}
+
+private struct NewSuitDialog: View {
+    @Binding var name: String
+    @Binding var isPresented: Bool
+    let onCreate: () -> Void
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Create New Category")
+                .font(.system(size: 14, weight: .semibold))
+            
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Category Name")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                TextField("e.g., Best Practices", text: $name)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($isFocused)
+            }
+            
+            HStack(spacing: 12) {
+                Button("Cancel") {
+                    isPresented = false
+                    name = ""
+                }
+                .keyboardShortcut(.cancelAction)
+                
+                Spacer()
+                
+                Button("Create", action: {
+                    onCreate()
+                    isPresented = false
+                })
+                .keyboardShortcut(.defaultAction)
+                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            
+            Spacer()
+        }
+        .padding(20)
+        .frame(minWidth: 300, minHeight: 140)
+        .onAppear {
+            isFocused = true
+        }
+    }
+}
+

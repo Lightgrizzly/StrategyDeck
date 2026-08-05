@@ -109,6 +109,124 @@ public final class CardStore: ObservableObject {
         suits.children(of: suitID)
     }
 
+    // MARK: - Deck Management
+
+    /// Creates a new deck and adds it to the library.
+    /// - Parameters:
+    ///   - name: The name of the new deck
+    ///   - description: Optional description for the deck
+    ///   - iconName: SF Symbol name for the deck icon (default: "square.stack.3d.up")
+    /// - Returns: The newly created deck
+    @discardableResult
+    public func createDeck(
+        name: String,
+        description: String = "",
+        iconName: String = "square.stack.3d.up"
+    ) -> KnowledgeDeck {
+        let id = UUID().uuidString
+        let displayOrder = (decks.max(by: { $0.displayOrder < $1.displayOrder })?.displayOrder ?? -1) + 1
+        let newDeck = KnowledgeDeck(
+            id: id,
+            name: name,
+            description: description,
+            iconName: iconName,
+            displayOrder: displayOrder
+        )
+        decks.append(newDeck)
+        save()
+        return newDeck
+    }
+
+    /// Deletes a deck and all its associated suits and cards.
+    /// - Parameter deckID: The ID of the deck to delete
+    public func deleteDeck(id deckID: String) {
+        decks.removeAll { $0.id == deckID }
+        let suitIDsInDeck = suits.filter { $0.deckID == deckID }.map { $0.id }
+        suits.removeAll { $0.deckID == deckID }
+        
+        // Remove cards that only exist in this deck's suits
+        let cardsInDeckSuits = cards.filter { card in
+            card.suitIDs.contains { suitID in suitIDsInDeck.contains(suitID) }
+        }
+        for card in cardsInDeckSuits {
+            let remainingSuitIDs = card.suitIDs.filter { !suitIDsInDeck.contains($0) }
+            if remainingSuitIDs.isEmpty {
+                cards.removeAll { $0.id == card.id }
+            } else {
+                if let idx = cards.firstIndex(where: { $0.id == card.id }) {
+                    cards[idx].suitIDs = remainingSuitIDs
+                }
+            }
+        }
+        save()
+    }
+
+    // MARK: - Suit (Category) Management
+
+    /// Creates a new suit (category) within a deck or as a subcategory.
+    /// - Parameters:
+    ///   - deckID: The ID of the deck this suit belongs to
+    ///   - name: The name of the new suit
+    ///   - parentSuitID: Optional ID of the parent suit for nested categories
+    ///   - description: Optional description for the suit
+    ///   - iconName: SF Symbol name for the suit icon (default: "square.stack.3d.up")
+    /// - Returns: The newly created suit
+    @discardableResult
+    public func createSuit(
+        deckID: String,
+        name: String,
+        parentSuitID: String? = nil,
+        description: String = "",
+        iconName: String = "square.stack.3d.up"
+    ) -> CardSuit {
+        let id = UUID().uuidString
+        let displayOrder = (suits.filter { parentSuitID == nil ? $0.deckID == deckID && $0.parentSuitID == nil : $0.parentSuitID == parentSuitID }
+            .max(by: { $0.displayOrder < $1.displayOrder })?.displayOrder ?? -1) + 1
+        let newSuit = CardSuit(
+            id: id,
+            deckID: deckID,
+            parentSuitID: parentSuitID,
+            name: name,
+            description: description,
+            iconName: iconName,
+            displayOrder: displayOrder
+        )
+        suits.append(newSuit)
+        save()
+        return newSuit
+    }
+
+    /// Deletes a suit and optionally its child suits.
+    /// - Parameters:
+    ///   - suitID: The ID of the suit to delete
+    ///   - deleteChildren: Whether to also delete all child suits (default: true)
+    public func deleteSuit(id suitID: String, deleteChildren: Bool = true) {
+        guard let suit = suits.first(where: { $0.id == suitID }) else { return }
+        
+        var suitIDsToDelete = Set([suitID])
+        
+        if deleteChildren {
+            // Recursively find all child suits
+            func collectChildren(of parentID: String) {
+                for childSuit in suits.filter({ $0.parentSuitID == parentID }) {
+                    suitIDsToDelete.insert(childSuit.id)
+                    collectChildren(of: childSuit.id)
+                }
+            }
+            collectChildren(of: suitID)
+        }
+        
+        // Remove the suits
+        suits.removeAll { suitIDsToDelete.contains($0.id) }
+        
+        // Update cards: remove the deleted suit IDs from their suitIDs array
+        for i in 0..<cards.count {
+            cards[i].suitIDs.removeAll { suitIDsToDelete.contains($0) }
+        }
+        
+        save()
+    }
+
     // MARK: - Reset
 
     /// Replaces all cards with the bundled seed, discarding user edits to cards.
