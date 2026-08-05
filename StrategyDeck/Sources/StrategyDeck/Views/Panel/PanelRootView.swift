@@ -10,6 +10,9 @@ struct PanelRootView: View {
     // Reference back to the controller so the header can toggle pin.
     let panelController: FloatingPanelController
 
+    private enum ActiveTab { case library, duel }
+
+    @State private var activeTab: ActiveTab = .library
     @State private var searchText = ""
     @State private var selectedDeckID: String?
     @State private var selectedSuiteID: String?
@@ -25,44 +28,64 @@ struct PanelRootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HeaderView(
-                searchText: $searchText,
-                favoritesOnly: $favoritesOnly,
-                isPinned: panelController.isPinned,
-                isSidebarVisible: $isSidebarVisible,
-                onTogglePin: { panelController.setPin(!panelController.isPinned) },
-                onAddCard: { cardGridRef.presentCreate?() },
-                onShowSettings: { showingSettings = true },
-                onResetSeed: {
-                    alertState = .destructive(
-                        title: "Reset to Default Cards?",
-                        message: "Your custom cards will be permanently replaced with the built-in defaults. Saved sequences are not affected.",
-                        confirmLabel: "Reset"
-                    ) { cardStore.resetToSeed() }
-                }
-            )
+            HStack(spacing: 2) {
+                tabButton(title: "Library", icon: "square.stack.3d.up", tab: .library)
+                tabButton(title: "Duel", icon: "flame", tab: .duel)
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.top, 10)
+            .padding(.bottom, 6)
+            .background(.bar)
 
             Divider()
 
-            HStack(spacing: 0) {
-                if isSidebarVisible {
-                    DeckSuitTreeView(
-                        decks: cardStore.decks,
-                        suits: cardStore.suits,
-                        selectedDeckID: $selectedDeckID,
-                        selectedSuiteID: $selectedSuiteID
-                    )
-                    .frame(width: 150)
-                    Divider()
-                }
-
+            if activeTab == .library {
                 VStack(spacing: 0) {
-                    KnowledgeCardGridContainer(filter: filter, suits: cardStore.suits, selectedDeckID: selectedDeckID, proxy: cardGridRef)
-                    SequenceTrayView()
-                        .environmentObject(sequenceStore)
-                        .environmentObject(cardStore)
+                    HeaderView(
+                        searchText: $searchText,
+                        favoritesOnly: $favoritesOnly,
+                        isPinned: panelController.isPinned,
+                        isSidebarVisible: $isSidebarVisible,
+                        onTogglePin: { panelController.setPin(!panelController.isPinned) },
+                        onAddCard: { cardGridRef.presentCreate?() },
+                        onShowSettings: { showingSettings = true },
+                        onResetSeed: {
+                            alertState = .destructive(
+                                title: "Reset to Default Cards?",
+                                message: "Your custom cards will be permanently replaced with the built-in defaults. Saved sequences are not affected.",
+                                confirmLabel: "Reset"
+                            ) { cardStore.resetToSeed() }
+                        }
+                    )
+
+                    Divider()
+
+                    HStack(spacing: 0) {
+                        if isSidebarVisible {
+                            DeckSuitTreeView(
+                                decks: cardStore.decks,
+                                suits: cardStore.suits,
+                                selectedDeckID: $selectedDeckID,
+                                selectedSuiteID: $selectedSuiteID
+                            )
+                            .frame(width: 150)
+                            Divider()
+                        }
+
+                        VStack(spacing: 0) {
+                            KnowledgeCardGridContainer(filter: filter, suits: cardStore.suits, selectedDeckID: selectedDeckID, proxy: cardGridRef)
+                            SequenceTrayView()
+                                .environmentObject(sequenceStore)
+                                .environmentObject(cardStore)
+                        }
+                    }
                 }
+            } else {
+                DuelTabView()
+                    .environmentObject(environment)
+                    .environmentObject(cardStore)
+                    .environmentObject(sequenceStore)
             }
         }
         .background(Color(.windowBackgroundColor))
@@ -78,6 +101,25 @@ struct PanelRootView: View {
                 .environmentObject(environment)
                 .frame(minWidth: 360, minHeight: 420)
         }
+    }
+
+    @ViewBuilder
+    private func tabButton(title: String, icon: String, tab: ActiveTab) -> some View {
+        Button(action: { activeTab = tab }) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                Text(title)
+            }
+            .font(.system(size: 11, weight: .semibold))
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(activeTab == tab ? Color.accentColor.opacity(0.18) : Color.clear)
+            )
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(activeTab == tab ? Color.accentColor : Color.primary)
     }
 }
 

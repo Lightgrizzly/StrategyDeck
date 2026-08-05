@@ -2,6 +2,7 @@
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardMetadata.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardRelationship.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardSuit.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/DuelModels.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeCard.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeDeck.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeLibrary.swift
@@ -9,6 +10,7 @@
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequence.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequenceItem.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/CardStore.swift
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/DuelStore.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/JSONPersistenceService.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SeedCardProvider.swift
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SequenceStore.swift

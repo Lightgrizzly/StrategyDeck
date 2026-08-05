@@ -68,6 +68,12 @@
     "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardView~partial.swiftmodule",
     "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardView.swiftdeps"
   },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Duels/DuelTabView.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DuelTabView.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DuelTabView.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DuelTabView~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DuelTabView.swiftdeps"
+  },
   "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/MenuBar/MenuBarContentView.swift": {
     "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/MenuBarContentView.d",
     "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/MenuBarContentView.swift.o",

@@ -72,6 +72,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Duels/DuelTabView.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/MenuBar/MenuBarContentView.swift"
         },
         {
@@ -138,6 +142,7 @@
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardDetailView.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardEditorView.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/KnowledgeCardView.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DuelTabView.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/MenuBarContentView.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/HeaderView.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/PanelRootView.swift.o",
@@ -234,6 +239,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DuelTabView.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/MenuBarContentView.swift.o"
         },
         {
@@ -290,6 +299,7 @@
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardDetailView.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardEditorView.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardView.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Duels/DuelTabView.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/MenuBar/MenuBarContentView.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Panel/HeaderView.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Panel/PanelRootView.swift",
@@ -327,6 +337,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/DuelModels.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeCard.swift"
         },
         {
@@ -352,6 +366,10 @@
         {
           "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/CardStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/DuelStore.swift"
         },
         {
           "kind" : "file",
@@ -390,6 +408,7 @@
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardMetadata.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardRelationship.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardSuit.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelModels.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeCard.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeDeck.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeLibrary.swift.o",
@@ -397,6 +416,7 @@
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategySequence.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategySequenceItem.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardStore.swift.o",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelStore.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/JSONPersistenceService.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SeedCardProvider.swift.o",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/SequenceStore.swift.o",
@@ -460,6 +480,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelModels.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeCard.swift.o"
         },
         {
@@ -485,6 +509,10 @@
         {
           "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelStore.swift.o"
         },
         {
           "kind" : "file",
@@ -517,6 +545,7 @@
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardMetadata.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardRelationship.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardSuit.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/DuelModels.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeCard.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeDeck.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeLibrary.swift",
@@ -524,6 +553,7 @@
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequence.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequenceItem.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/CardStore.swift",
+        "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/DuelStore.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/JSONPersistenceService.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SeedCardProvider.swift",
         "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SequenceStore.swift",
@@ -858,6 +888,7 @@
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardDetailView.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardEditorView.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Cards/KnowledgeCardView.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Duels/DuelTabView.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/MenuBar/MenuBarContentView.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Panel/HeaderView.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Panel/PanelRootView.swift",
@@ -920,6 +951,7 @@
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardMetadata.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardRelationship.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/CardSuit.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/DuelModels.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeCard.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeDeck.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeLibrary.swift",
@@ -927,6 +959,7 @@
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequence.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/StrategySequenceItem.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/CardStore.swift",
+      "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/DuelStore.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/JSONPersistenceService.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SeedCardProvider.swift",
       "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/SequenceStore.swift",
@@ -1179,6 +1212,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/Duels/DuelTabView.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeck/Views/MenuBar/MenuBarContentView.swift"
         },
         {
@@ -1242,6 +1279,10 @@
         {
           "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DeckSuitTreeView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DuelTabView.swift.o"
         },
         {
           "kind" : "file",
@@ -1337,6 +1378,14 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelModels.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelStore.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/ImportExportService.swift.o"
         },
         {
@@ -1403,6 +1452,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/DuelModels.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeCard.swift"
         },
         {
@@ -1428,6 +1481,10 @@
         {
           "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/CardStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/DuelStore.swift"
         },
         {
           "kind" : "file",
@@ -1566,6 +1623,14 @@
         {
           "kind" : "file",
           "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardSuit.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelModels.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelStore.swift.o"
         },
         {
           "kind" : "file",

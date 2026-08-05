@@ -26,6 +26,12 @@
     "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardSuit~partial.swiftmodule",
     "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardSuit.swiftdeps"
   },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/DuelModels.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelModels.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelModels.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelModels~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelModels.swiftdeps"
+  },
   "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Models/KnowledgeCard.swift": {
     "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeCard.d",
     "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeCard.swift.o",
@@ -67,6 +73,12 @@
     "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardStore.swift.o",
     "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardStore~partial.swiftmodule",
     "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardStore.swiftdeps"
+  },
+  "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/DuelStore.swift": {
+    "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelStore.d",
+    "object": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelStore.swift.o",
+    "swiftmodule": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelStore~partial.swiftmodule",
+    "swift-dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelStore.swiftdeps"
   },
   "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/Sources/StrategyDeckCore/Persistence/JSONPersistenceService.swift": {
     "dependencies": "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/JSONPersistenceService.d",

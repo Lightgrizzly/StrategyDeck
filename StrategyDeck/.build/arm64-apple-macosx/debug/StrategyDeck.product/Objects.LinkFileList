@@ -2,6 +2,7 @@
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/AppDelegate.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/AppEnvironment.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DeckSuitTreeView.swift.o
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/DuelTabView.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/FloatingPanel.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/FloatingPanelController.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeck.build/GlobalShortcutManager.swift.o
@@ -25,6 +26,8 @@
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardRelationship.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardStore.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/CardSuit.swift.o
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelModels.swift.o
+/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/DuelStore.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/ImportExportService.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/JSONPersistenceService.swift.o
 /Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/KnowledgeCard.swift.o
