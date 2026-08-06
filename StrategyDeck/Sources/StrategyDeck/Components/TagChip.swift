@@ -5,14 +5,17 @@ struct TagChip: View {
     let text: String
 
     var body: some View {
-        Text(text)
-            .font(.system(size: 10, weight: .medium))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+        Text(text.uppercased())
+            .font(.system(size: 9, weight: .bold, design: .monospaced))
+            .kerning(0.5)
+            .foregroundStyle(AC.cyan.opacity(0.85))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
             .background(
-                Capsule()
-                    .fill(.secondary.opacity(0.15))
+                AngularCardShape(cornerRadius: 3, cornerCut: 5)
+                    .fill(AC.cyanSoft)
+                    .overlay(AngularCardShape(cornerRadius: 3, cornerCut: 5)
+                        .stroke(AC.cyan.opacity(0.35), lineWidth: 0.5))
             )
     }
 }

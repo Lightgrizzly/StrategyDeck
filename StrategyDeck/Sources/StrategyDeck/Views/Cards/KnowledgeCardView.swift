@@ -16,8 +16,9 @@ struct KnowledgeCardView: View {
     @State private var isHovered = false
 
     private var accentColor: Color {
-        suite.map { SuiteColors.color(for: $0.id) } ?? .secondary
+        suite.map { SuiteColors.color(for: $0.id) } ?? card.kind.arenaColor
     }
+    private var kindColor: Color { card.kind.arenaColor }
 
     private var softwareFields: SoftwareStrategyFields? {
         if case .softwareStrategy(let f) = card.metadata { return f }
@@ -30,81 +31,92 @@ struct KnowledgeCardView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 5) {
-                if let suite { SuiteBadge(suite: suite, size: 16) }
-                Text(card.kind.symbol)
-                    .font(.system(size: 9))
-                    .foregroundStyle(.secondary)
-                Text(card.title)
-                    .font(.system(size: 11, weight: .semibold))
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                if card.isFavorite {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.yellow)
-                }
+        ZStack(alignment: .topLeading) {
+            AngularCardShape(cornerRadius: 8, cornerCut: 12)
+                .fill(isSelected ? kindColor.opacity(0.14) : (isHovered ? AC.surfaceHi : AC.surface))
+
+            // Kind-colored left edge
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(LinearGradient(colors: [kindColor, kindColor.opacity(0.4)],
+                                          startPoint: .top, endPoint: .bottom))
+                    .frame(width: 2.5)
+                Spacer()
             }
+            .clipShape(AngularCardShape(cornerRadius: 8, cornerCut: 12))
 
-            Divider().padding(.vertical, 4)
+            AngularCardShape(cornerRadius: 8, cornerCut: 12)
+                .stroke(isSelected ? kindColor : AC.borderDim, lineWidth: isSelected ? 1.5 : 0.75)
+                .shadow(color: isSelected ? kindColor.opacity(0.7) : .clear, radius: 6)
 
-            Text(triggerSummary)
-                .font(.system(size: 10))
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 4)
-
-            HStack(spacing: 4) {
-                if let adv = softwareFields?.advantages.first, !adv.isEmpty {
-                    HStack(spacing: 2) {
-                        Image(systemName: "arrow.up")
-                            .font(.system(size: 8, weight: .semibold))
-                            .foregroundStyle(.green)
-                        Text(adv)
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 5) {
+                    if let suite { SuiteBadge(suite: suite, size: 16) }
+                    Text(card.kind.symbol)
+                        .font(.system(size: 9))
+                        .foregroundStyle(kindColor.opacity(0.8))
+                    Text(card.title)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(AC.text)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    if card.isFavorite {
+                        Image(systemName: "star.fill")
                             .font(.system(size: 9))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AC.gold)
+                            .shadow(color: AC.gold.opacity(0.6), radius: 3)
+                    }
+                }
+
+                Rectangle().fill(AC.borderDim).frame(height: 1).padding(.vertical, 4)
+
+                Text(triggerSummary)
+                    .font(.system(size: 10))
+                    .foregroundStyle(AC.textSub)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Spacer(minLength: 4)
+
+                HStack(spacing: 4) {
+                    if let adv = softwareFields?.advantages.first, !adv.isEmpty {
+                        HStack(spacing: 2) {
+                            Image(systemName: "arrow.up")
+                                .font(.system(size: 8, weight: .semibold))
+                                .foregroundStyle(AC.available)
+                            Text(adv)
+                                .font(.system(size: 9))
+                                .foregroundStyle(AC.textSub)
+                                .lineLimit(1)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                    Button {
+                        withAnimation(.spring(duration: 0.2)) { onAddToTray() }
+                    } label: {
+                        Image(systemName: "plus.circle")
+                            .font(.system(size: 12))
+                            .foregroundStyle(accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Add to Sequence")
+                }
+
+                if let cost = softwareFields?.costs.first, !cost.isEmpty {
+                    HStack(spacing: 2) {
+                        Image(systemName: "arrow.down")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundStyle(AC.threat.opacity(0.85))
+                        Text(cost)
+                            .font(.system(size: 9))
+                            .foregroundStyle(AC.textSub)
                             .lineLimit(1)
                     }
                 }
-                Spacer(minLength: 0)
-                Button {
-                    withAnimation(.spring(duration: 0.2)) { onAddToTray() }
-                } label: {
-                    Image(systemName: "plus.circle")
-                        .font(.system(size: 12))
-                        .foregroundStyle(accentColor)
-                }
-                .buttonStyle(.plain)
-                .help("Add to Sequence")
             }
-
-            if let cost = softwareFields?.costs.first, !cost.isEmpty {
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.down")
-                        .font(.system(size: 8, weight: .semibold))
-                        .foregroundStyle(.red.opacity(0.7))
-                    Text(cost)
-                        .font(.system(size: 9))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            }
+            .padding(9)
         }
-        .padding(8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(isSelected
-                      ? accentColor.opacity(0.1)
-                      : (isHovered ? Color(.controlBackgroundColor) : Color(.windowBackgroundColor)))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isSelected ? accentColor.opacity(0.5) : Color(.separatorColor).opacity(0.6), lineWidth: isSelected ? 1 : 0.5)
-                )
-        )
         .onHover { isHovered = $0 }
         .onTapGesture { onTap() }
         .contextMenu { contextMenu }

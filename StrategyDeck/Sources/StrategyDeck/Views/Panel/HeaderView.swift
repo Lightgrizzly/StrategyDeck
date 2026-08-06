@@ -17,11 +17,12 @@ struct HeaderView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "square.stack.3d.up")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                    Text("Strategy Deck")
-                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(AC.cyan)
+                    Text("STRATEGY DECK")
+                        .font(.system(size: 11, weight: .black, design: .monospaced))
+                        .kerning(1.2)
                 }
-                .foregroundStyle(.primary)
+                .foregroundStyle(AC.text)
 
                 Spacer()
 
@@ -32,7 +33,7 @@ struct HeaderView: View {
                         .font(.system(size: 11))
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(isSidebarVisible ? Color.accentColor : Color.secondary)
+                .foregroundStyle(isSidebarVisible ? AC.cyan : AC.textDim)
                 .help(isSidebarVisible ? "Hide library sidebar" : "Show library sidebar")
 
                 Button(action: onAddCard) {
@@ -40,6 +41,7 @@ struct HeaderView: View {
                         .font(.system(size: 11, weight: .semibold))
                 }
                 .buttonStyle(.plain)
+                .foregroundStyle(AC.textSub)
                 .help("New card")
 
                 Toggle(isOn: Binding(get: { isPinned }, set: { _ in onTogglePin() })) {
@@ -48,7 +50,7 @@ struct HeaderView: View {
                 }
                 .toggleStyle(.button)
                 .buttonStyle(.plain)
-                .foregroundStyle(isPinned ? Color.accentColor : Color.secondary)
+                .foregroundStyle(isPinned ? AC.cyan : AC.textDim)
                 .help(isPinned ? "Unpin panel" : "Pin panel on top")
 
                 Menu {
@@ -63,7 +65,7 @@ struct HeaderView: View {
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AC.textDim)
             }
             .padding(.horizontal, 10)
             .padding(.top, 8)
@@ -72,15 +74,16 @@ struct HeaderView: View {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AC.textDim)
                 TextField("Search cards…", text: $searchText)
                     .font(.system(size: 12))
                     .textFieldStyle(.plain)
+                    .foregroundStyle(AC.text)
                 if !searchText.isEmpty {
                     Button { searchText = "" } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AC.textDim)
                     }
                     .buttonStyle(.plain)
                 }
@@ -88,13 +91,14 @@ struct HeaderView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
             .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color(.textBackgroundColor).opacity(0.5))
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(.separatorColor), lineWidth: 0.5))
+                AngularCardShape(cornerRadius: 6, cornerCut: 9)
+                    .fill(AC.surface)
+                    .overlay(AngularCardShape(cornerRadius: 6, cornerCut: 9).stroke(AC.borderDim, lineWidth: 0.75))
             )
             .padding(.horizontal, 10)
             .padding(.bottom, 6)
         }
-        .background(.bar)
+        .background(AC.surface)
+        .colorScheme(.dark)
     }
 }

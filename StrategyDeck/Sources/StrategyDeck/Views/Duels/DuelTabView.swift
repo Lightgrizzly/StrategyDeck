@@ -31,7 +31,8 @@ struct DuelTabView: View {
                 )
             }
         }
-        .background(Color(.windowBackgroundColor))
+        .background(AC.bg)
+        .colorScheme(.dark)
         .alertState($alertState)
         .sheet(isPresented: $showingNewDuel) {
             NewDuelSheet(
@@ -59,60 +60,61 @@ private struct DuelEmptyStateView: View {
     let onDelete: (UUID) -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Duel Comic")
-                        .font(.system(size: 18, weight: .bold))
-                    Text("Build a turn-based strategic sequence using your existing cards. Create opponent moves, player responses, and shared battlefield state as comic-style panels.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 18)
-                .padding(.top, 18)
-
-                Button(action: onCreate) {
-                    Label("Create Duel", systemImage: "sparkles")
-                        .font(.system(size: 12, weight: .semibold))
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 16)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.accentColor))
-                        .foregroundStyle(.white)
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 18)
-
-                Group {
-                    Text("Saved Duels")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                        .kerning(0.5)
-                        .padding(.horizontal, 18)
-
-                    if duels.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("No duels yet.")
-                                .font(.system(size: 12, weight: .semibold))
-                            Text("Create your first duel and map out your strategy in scenes and steps.")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(18)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.controlBackgroundColor)))
-                        .padding(.horizontal, 18)
-                    } else {
-                        VStack(spacing: 10) {
-                            ForEach(duels.sorted { $0.updatedAt > $1.updatedAt }) { duel in
-                                DuelSummaryRow(duel: duel, onOpen: onOpen, onDelete: onDelete)
-                            }
-                        }
-                        .padding(.horizontal, 18)
+        ZStack {
+            DigitalArenaBackground()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("DUEL COMIC")
+                            .font(.system(size: 18, weight: .black, design: .monospaced))
+                            .foregroundStyle(AC.cyan)
+                            .kerning(2)
+                        Text("Build a turn-based strategic sequence using your existing cards. Create opponent moves, player responses, and shared battlefield state as comic-style panels.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(AC.textSub)
                     }
+                    .padding(.horizontal, 18)
+                    .padding(.top, 18)
+
+                    Button(action: onCreate) {
+                        Label("CREATE DUEL", systemImage: "sparkles")
+                    }
+                    .buttonStyle(ArenaButtonStyle())
+                    .padding(.horizontal, 18)
+
+                    Group {
+                        ArenaSectionLabel(text: "Saved Duels")
+                            .padding(.horizontal, 18)
+
+                        if duels.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("No duels yet.")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(AC.text)
+                                Text("Create your first duel and map out your strategy in scenes and steps.")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(AC.textSub)
+                            }
+                            .padding(18)
+                            .background(
+                                AngularCardShape(cornerRadius: 10, cornerCut: 16)
+                                    .fill(AC.surface)
+                                    .overlay(AngularCardShape(cornerRadius: 10, cornerCut: 16).stroke(AC.borderDim, lineWidth: 0.75))
+                            )
+                            .padding(.horizontal, 18)
+                        } else {
+                            VStack(spacing: 10) {
+                                ForEach(duels.sorted { $0.updatedAt > $1.updatedAt }) { duel in
+                                    DuelSummaryRow(duel: duel, onOpen: onOpen, onDelete: onDelete)
+                                }
+                            }
+                            .padding(.horizontal, 18)
+                        }
+                    }
+                    Spacer()
                 }
-                Spacer()
+                .padding(.bottom, 24)
             }
-            .padding(.bottom, 24)
         }
     }
 }
@@ -128,6 +130,7 @@ private struct DuelSummaryRow: View {
                 HStack(spacing: 6) {
                     Text(duel.name)
                         .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AC.text)
                     if let outcome = duel.duelOutcome {
                         Image(systemName: outcome.systemImage)
                             .font(.system(size: 11))
@@ -137,50 +140,52 @@ private struct DuelSummaryRow: View {
                 if !duel.victoryCondition.isEmpty {
                     Text("Victory: \(duel.victoryCondition)")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AC.textSub)
                         .lineLimit(1)
                 } else if !duel.description.isEmpty {
                     Text(duel.description)
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AC.textSub)
                         .lineLimit(2)
                 }
                 HStack(spacing: 8) {
                     Text("Panels: \(duel.sortedPanels.count)")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(AC.textDim)
                     Text("Updated: \(duel.updatedAt, format: Date.FormatStyle(date: .numeric, time: .shortened))")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(AC.textDim)
                 }
             }
             Spacer()
             Button(action: { onOpen(duel.id) }) {
-                Text("Open")
-                    .font(.system(size: 11, weight: .semibold))
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 10)
-                    .background(RoundedRectangle(cornerRadius: 8).stroke(Color.accentColor))
+                Text("OPEN")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.6)))
             Button(role: .destructive, action: { onDelete(duel.id) }) {
                 Image(systemName: "trash")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AC.threat.opacity(0.75))
             }
             .buttonStyle(.plain)
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.windowBackgroundColor)))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.separatorColor)))
+        .background(
+            AngularCardShape(cornerRadius: 10, cornerCut: 16)
+                .fill(AC.surface)
+        )
+        .overlay(
+            AngularCardShape(cornerRadius: 10, cornerCut: 16)
+                .stroke(AC.borderDim, lineWidth: 0.75)
+        )
     }
 
     private func outcomeColor(_ outcome: DuelOutcome) -> Color {
         switch outcome {
-        case .victory: return .yellow
+        case .victory: return AC.gold
         case .partialVictory: return .orange
-        case .stalemate: return .gray
-        case .failure: return .red
-        case .abandoned: return .gray
+        case .stalemate: return AC.textDim
+        case .failure: return AC.threat
+        case .abandoned: return AC.textDim
         }
     }
 }
@@ -195,33 +200,41 @@ private struct NewDuelSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Create a New Duel")
-                .font(.system(size: 16, weight: .semibold))
+            Text("CREATE A NEW DUEL")
+                .font(.system(size: 16, weight: .black, design: .monospaced))
+                .foregroundStyle(AC.cyan)
+                .kerning(1.5)
 
             VStack(alignment: .leading, spacing: 10) {
-                Text("Duel Name")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                Text("DUEL NAME")
+                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .foregroundStyle(AC.textDim)
+                    .kerning(1)
                 TextField("e.g. Unexpected Requirements vs Clarify", text: $name)
-                    .textFieldStyle(.roundedBorder)
+                    .arenaFieldStyle()
 
-                Text("Goal or description")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                Text("GOAL OR DESCRIPTION")
+                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .foregroundStyle(AC.textDim)
+                    .kerning(1)
                 TextField("e.g. Solve the integration problem", text: $description)
-                    .textFieldStyle(.roundedBorder)
+                    .arenaFieldStyle()
             }
 
             HStack {
                 Button("Cancel") { isPresented = false }
+                    .buttonStyle(ArenaOutlineButtonStyle())
                     .keyboardShortcut(.cancelAction)
                 Spacer()
                 Button("Create") { onCreate(); isPresented = false }
+                    .buttonStyle(ArenaButtonStyle(isDisabled: name.trimmingCharacters(in: .whitespaces).isEmpty))
                     .keyboardShortcut(.defaultAction)
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
         .padding(24)
+        .background(AC.bg)
+        .colorScheme(.dark)
     }
 }
 
@@ -265,7 +278,7 @@ private struct DuelEditorView: View {
                     onReopen: { showingReopenAlert = true }
                 )
 
-                Divider()
+                Rectangle().fill(AC.cyan.opacity(0.2)).frame(height: 1)
 
                 // Board / Comic mode toggle strip
                 HStack {
@@ -275,14 +288,15 @@ private struct DuelEditorView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .tint(AC.cyan)
                     .frame(width: 180)
                     .padding(.leading, 14)
                     Spacer()
                 }
                 .frame(height: 36)
-                .background(Color(.controlBackgroundColor))
+                .background(AC.surface)
 
-                Divider()
+                Rectangle().fill(AC.borderDim).frame(height: 1)
 
                 Group {
                     if boardViewMode == .board {
@@ -310,55 +324,58 @@ private struct DuelEditorView: View {
                             onSelectPanel: { duelStore.setCurrentPanel(id: $0) }
                         )
                     } else {
-                        HStack(spacing: 0) {
-                            DuelPanelBrowser(
-                                duel: duel,
-                                selectedPanelID: panel.id,
-                                onSelect: duelStore.setCurrentPanel,
-                                onDuplicate: duelStore.duplicatePanel,
-                                onDelete: { id in
-                                    alertState = .destructive(
-                                        title: "Delete this panel?",
-                                        message: "The panel will be removed from the duel.",
-                                        confirmLabel: "Delete"
-                                    ) {
-                                        duelStore.deletePanel(id: id)
+                        ZStack {
+                            DigitalArenaBackground()
+                            HStack(spacing: 0) {
+                                DuelPanelBrowser(
+                                    duel: duel,
+                                    selectedPanelID: panel.id,
+                                    onSelect: duelStore.setCurrentPanel,
+                                    onDuplicate: duelStore.duplicatePanel,
+                                    onDelete: { id in
+                                        alertState = .destructive(
+                                            title: "Delete this panel?",
+                                            message: "The panel will be removed from the duel.",
+                                            confirmLabel: "Delete"
+                                        ) {
+                                            duelStore.deletePanel(id: id)
+                                        }
+                                    },
+                                    onInsertAfter: duelStore.addStep,
+                                    onMoveUp: { id in
+                                        guard let current = duel.sortedPanels.firstIndex(where: { $0.id == id }) else { return }
+                                        duelStore.movePanel(from: current, to: current - 1)
+                                    },
+                                    onMoveDown: { id in
+                                        guard let current = duel.sortedPanels.firstIndex(where: { $0.id == id }) else { return }
+                                        duelStore.movePanel(from: current, to: current + 1)
                                     }
-                                },
-                                onInsertAfter: duelStore.addStep,
-                                onMoveUp: { id in
-                                    guard let current = duel.sortedPanels.firstIndex(where: { $0.id == id }) else { return }
-                                    duelStore.movePanel(from: current, to: current - 1)
-                                },
-                                onMoveDown: { id in
-                                    guard let current = duel.sortedPanels.firstIndex(where: { $0.id == id }) else { return }
-                                    duelStore.movePanel(from: current, to: current + 1)
-                                }
-                            )
-                            .frame(width: 240)
-                            Divider()
-                            DuelPanelEditorView(
-                                panel: panel,
-                                previousPanel: previousPanel,
-                                allCards: cardStore.cards,
-                                allSuits: cardStore.suits,
-                                onUpdate: { duelStore.updatePanel($0) },
-                                onAddSnapshot: { cardID, zone in
-                                    duelStore.addSnapshot(to: panel.id, cardID: cardID, zone: zone)
-                                    duelStore.recalculatePanel(id: panel.id, allCards: cardStore.cards)
-                                },
-                                onDeleteSnapshot: { duelStore.deleteSnapshot(id: $0, in: panel.id) },
-                                onUpdateSnapshot: { snapshot in
-                                    duelStore.updateSnapshot(snapshot, in: panel.id)
-                                    if !snapshot.isManuallyOverridden {
+                                )
+                                .frame(width: 240)
+                                Rectangle().fill(AC.borderDim).frame(width: 1)
+                                DuelPanelEditorView(
+                                    panel: panel,
+                                    previousPanel: previousPanel,
+                                    allCards: cardStore.cards,
+                                    allSuits: cardStore.suits,
+                                    onUpdate: { duelStore.updatePanel($0) },
+                                    onAddSnapshot: { cardID, zone in
+                                        duelStore.addSnapshot(to: panel.id, cardID: cardID, zone: zone)
                                         duelStore.recalculatePanel(id: panel.id, allCards: cardStore.cards)
+                                    },
+                                    onDeleteSnapshot: { duelStore.deleteSnapshot(id: $0, in: panel.id) },
+                                    onUpdateSnapshot: { snapshot in
+                                        duelStore.updateSnapshot(snapshot, in: panel.id)
+                                        if !snapshot.isManuallyOverridden {
+                                            duelStore.recalculatePanel(id: panel.id, allCards: cardStore.cards)
+                                        }
+                                    },
+                                    onShowPicker: { zone in
+                                        pickerZone = zone
+                                        showingCardPicker = true
                                     }
-                                },
-                                onShowPicker: { zone in
-                                    pickerZone = zone
-                                    showingCardPicker = true
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
@@ -417,9 +434,12 @@ private struct DuelEditorView: View {
                 Text("This will clear the current outcome and allow further edits.")
             }
         } else {
-            Text("No duel selected.")
-                .foregroundStyle(.secondary)
-                .padding()
+            ZStack {
+                AC.bg
+                Text("No duel selected.")
+                    .foregroundStyle(AC.textSub)
+                    .padding()
+            }
         }
     }
 
@@ -476,30 +496,29 @@ private struct DuelHeader: View {
                 VStack(alignment: .leading, spacing: 4) {
                     TextField("Duel name", text: $duel.name)
                         .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(AC.text)
                         .textFieldStyle(.plain)
                     TextField("Describe the goal or situation", text: $duel.description)
                         .font(.system(size: 12))
                         .textFieldStyle(.plain)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AC.textSub)
                 }
                 Spacer()
                 if duel.isCompleted {
                     Button(action: onReopen) {
                         Label("Reopen", systemImage: "arrow.uturn.backward")
-                            .font(.system(size: 11))
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(ArenaOutlineButtonStyle())
                 } else {
                     Button(action: onComplete) {
                         Label("Complete", systemImage: "checkmark.seal")
-                            .font(.system(size: 11))
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.gold.opacity(0.55)))
                 }
                 Button(action: onExport) { Text("Export PDF") }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(ArenaOutlineButtonStyle())
                 Button(action: { onSave(duel) }) { Text("Save Duel") }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(ArenaButtonStyle())
             }
             .padding(.horizontal, 14)
             .padding(.top, 12)
@@ -509,13 +528,14 @@ private struct DuelHeader: View {
             HStack(spacing: 8) {
                 Image(systemName: "star.fill")
                     .font(.system(size: 10))
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(AC.gold)
                 Text("Victory:")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AC.textSub)
                 TextField("Define what success looks like…", text: $duel.victoryCondition)
                     .font(.system(size: 11))
                     .textFieldStyle(.plain)
+                    .foregroundStyle(AC.text)
             }
             .padding(.horizontal, 14)
             .padding(.bottom, 4)
@@ -528,9 +548,13 @@ private struct DuelHeader: View {
                     Text(outcome.title)
                         .font(.system(size: 10, weight: .semibold))
                 }
+                .foregroundStyle(outcomeColor(outcome))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
-                .background(RoundedRectangle(cornerRadius: 8).fill(outcomeColor(outcome).opacity(0.15)))
+                .background(
+                    AngularCardShape(cornerRadius: 6, cornerCut: 10)
+                        .fill(outcomeColor(outcome).opacity(0.15))
+                )
                 .padding(.horizontal, 14)
                 .padding(.bottom, 4)
             }
@@ -549,21 +573,24 @@ private struct DuelHeader: View {
             } label: {
                 Text("Context fields")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AC.textSub)
             }
+            .tint(AC.cyan)
             .padding(.horizontal, 14)
             .padding(.bottom, 8)
         }
+        .background(AC.surface)
+        .colorScheme(.dark)
         .onChange(of: duel) { _, new in onSave(new) }
     }
 
     private func outcomeColor(_ outcome: DuelOutcome) -> Color {
         switch outcome {
-        case .victory: return .yellow
+        case .victory: return AC.gold
         case .partialVictory: return .orange
-        case .stalemate: return .gray
-        case .failure: return .red
-        case .abandoned: return .gray
+        case .stalemate: return AC.textDim
+        case .failure: return AC.threat
+        case .abandoned: return AC.textDim
         }
     }
 }
@@ -575,18 +602,22 @@ private struct DuelContextField: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 6) {
-            Text(label)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 68, alignment: .trailing)
+            Text(label.uppercased())
+                .font(.system(size: 9, weight: .black, design: .monospaced))
+                .foregroundStyle(AC.textDim)
+                .kerning(1)
+                .frame(width: 74, alignment: .trailing)
             TextField(placeholder, text: $text)
-                .font(.system(size: 11))
-                .textFieldStyle(.roundedBorder)
+                .arenaFieldStyle()
         }
     }
 }
 
 // MARK: - Export
+//
+// Rendered to PDF for sharing outside the app — kept on the system light
+// chrome (rather than the arena theme) since it's a printable document, not
+// an on-screen surface.
 
 private struct DuelExportView: View {
     let duel: Duel
@@ -794,9 +825,7 @@ private struct DuelPanelBrowser: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Panels")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                ArenaSectionLabel(text: "Panels")
                 Spacer()
                 Button(action: {
                     onInsertAfter(duel.currentPanel?.id ?? duel.sortedPanels.last?.id ?? duel.sortedPanels.first!.id)
@@ -804,6 +833,7 @@ private struct DuelPanelBrowser: View {
                     Image(systemName: "plus")
                 }
                 .buttonStyle(.plain)
+                .foregroundStyle(AC.cyan)
                 .help("Add step after current panel")
             }
             ScrollView {
@@ -845,10 +875,10 @@ private struct DuelPanelBrowserRow: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Step \(panel.order + 1): \(panel.title)")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                            .foregroundStyle(isSelected ? AC.cyan : AC.text)
                         Text(panel.narration.isEmpty ? "No narration yet." : panel.narration)
                             .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AC.textSub)
                             .lineLimit(2)
                     }
                     Spacer()
@@ -856,12 +886,15 @@ private struct DuelPanelBrowserRow: View {
                         Image(systemName: "doc.on.doc")
                     }
                     .buttonStyle(.plain)
+                    .foregroundStyle(AC.textDim)
                     Button(action: { onDelete(panel.id) }) {
                         Image(systemName: "trash")
                     }
                     .buttonStyle(.plain)
+                    .foregroundStyle(AC.threat.opacity(0.7))
                 }
             }
+            .buttonStyle(.plain)
             HStack(spacing: 8) {
                 Button(action: { onMoveUp(panel.id) }) {
                     Image(systemName: "arrow.up")
@@ -877,13 +910,21 @@ private struct DuelPanelBrowserRow: View {
                 if !panel.reasoning.isEmpty {
                     Image(systemName: "text.quote")
                         .font(.system(size: 9))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AC.textDim)
                         .help("Has move reasoning")
                 }
             }
+            .foregroundStyle(AC.textSub)
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 10).fill(isSelected ? Color.accentColor.opacity(0.1) : Color(.controlBackgroundColor)))
+        .background(
+            AngularCardShape(cornerRadius: 8, cornerCut: 12)
+                .fill(isSelected ? AC.cyanSoft : AC.surface)
+        )
+        .overlay(
+            AngularCardShape(cornerRadius: 8, cornerCut: 12)
+                .stroke(isSelected ? AC.cyan.opacity(0.5) : AC.borderDim, lineWidth: isSelected ? 1 : 0.75)
+        )
     }
 }
 
@@ -920,23 +961,19 @@ private struct DuelPanelEditorView: View {
                     HStack {
                         Text("Panel \(panel.order + 1)")
                             .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(AC.text)
                         Spacer()
                         if panel.order != 0 {
                             Text("Snapshot mode")
                                 .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AC.textDim)
                         }
                     }
-                    TextField("Panel title", text: $panel.title)
-                        .textFieldStyle(.roundedBorder)
-                    TextField("Narration or blurbs", text: $panel.narration)
-                        .textFieldStyle(.roundedBorder)
-                    TextField("Opponent caption", text: $panel.opponentCaption)
-                        .textFieldStyle(.roundedBorder)
-                    TextField("Player caption", text: $panel.playerCaption)
-                        .textFieldStyle(.roundedBorder)
-                    TextField("Outcome text", text: $panel.outcome)
-                        .textFieldStyle(.roundedBorder)
+                    TextField("Panel title", text: $panel.title).arenaFieldStyle()
+                    TextField("Narration or blurbs", text: $panel.narration).arenaFieldStyle()
+                    TextField("Opponent caption", text: $panel.opponentCaption).arenaFieldStyle()
+                    TextField("Player caption", text: $panel.playerCaption).arenaFieldStyle()
+                    TextField("Outcome text", text: $panel.outcome).arenaFieldStyle()
                 }
 
                 // Zone editors
@@ -976,24 +1013,26 @@ private struct DuelPanelEditorView: View {
                     HStack(spacing: 6) {
                         Text("Move Reasoning")
                             .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(AC.text)
                         if !panel.reasoning.isEmpty {
                             Circle()
-                                .fill(Color.accentColor)
+                                .fill(AC.cyan)
                                 .frame(width: 6, height: 6)
                         }
                     }
                 }
+                .tint(AC.cyan)
 
                 Button(action: savePanel) {
                     Text("Save Panel")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(ArenaButtonStyle())
                 .padding(.top, 8)
             }
             .padding(18)
         }
-        .background(Color(.windowBackgroundColor))
+        .background(Color.clear)
         .onChange(of: panel) { _, _ in savePanel() }
     }
 
@@ -1021,9 +1060,7 @@ private struct DuelTransitionSummaryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Changes since last panel")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.secondary)
+            ArenaSectionLabel(text: "Changes since last panel")
             ForEach(Array(transitions.enumerated()), id: \.offset) { _, change in
                 HStack(spacing: 6) {
                     Image(systemName: change.systemImage)
@@ -1031,21 +1068,24 @@ private struct DuelTransitionSummaryView: View {
                         .foregroundStyle(changeColor(change))
                     Text(change.label)
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AC.textSub)
                 }
             }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color(.controlBackgroundColor).opacity(0.5)))
+        .background(
+            AngularCardShape(cornerRadius: 8, cornerCut: 12)
+                .fill(AC.surface.opacity(0.7))
+        )
     }
 
     private func changeColor(_ change: SnapshotChange) -> Color {
         switch change.kind {
-        case .added: return .green
-        case .removed: return .red
+        case .added: return AC.available
+        case .removed: return AC.threat
         case .statusChanged: return .orange
-        case .strategicZoneChanged: return .blue
+        case .strategicZoneChanged: return AC.cyan
         }
     }
 }
@@ -1080,13 +1120,13 @@ private struct ReasoningField: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 6) {
-            Text(label)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.secondary)
+            Text(label.uppercased())
+                .font(.system(size: 9, weight: .black, design: .monospaced))
+                .foregroundStyle(AC.textDim)
+                .kerning(0.5)
                 .frame(width: 100, alignment: .trailing)
             TextField(placeholder, text: $text)
-                .font(.system(size: 11))
-                .textFieldStyle(.roundedBorder)
+                .arenaFieldStyle()
         }
     }
 }
@@ -1108,25 +1148,28 @@ private struct DuelZoneEditor: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(zone.title)
                         .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AC.text)
                     Text(zone.subtitle)
                         .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AC.textDim)
                 }
                 Spacer()
                 Button(action: onAdd) {
                     Label("Add Card", systemImage: "plus")
-                        .font(.system(size: 11, weight: .semibold))
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.55)))
             }
 
             if snapshots.isEmpty {
                 Text("No cards yet in this zone. Add a card to start the scene.")
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AC.textSub)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color(.controlBackgroundColor)))
+                    .background(
+                        AngularCardShape(cornerRadius: 8, cornerCut: 12)
+                            .fill(AC.surface)
+                    )
             } else {
                 VStack(spacing: 10) {
                     ForEach(snapshots) { snapshot in
@@ -1144,7 +1187,14 @@ private struct DuelZoneEditor: View {
             }
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color(.controlBackgroundColor)))
+        .background(
+            AngularCardShape(cornerRadius: 10, cornerCut: 16)
+                .fill(AC.glassPanel.opacity(0.6))
+        )
+        .overlay(
+            AngularCardShape(cornerRadius: 10, cornerCut: 16)
+                .stroke(AC.borderDim, lineWidth: 0.75)
+        )
     }
 }
 
@@ -1167,12 +1217,14 @@ private struct DuelSnapshotRow: View {
                         if let suite { SuiteBadge(suite: suite, size: 18) }
                         Text(card.title)
                             .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(AC.text)
                         if snapshot.isNew {
-                            Text("new")
-                                .font(.system(size: 10, weight: .bold))
+                            Text("NEW")
+                                .font(.system(size: 8, weight: .black, design: .monospaced))
+                                .foregroundStyle(AC.cyan)
                                 .padding(.horizontal, 6)
-                                .padding(.vertical, 4)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(Color.accentColor.opacity(0.15)))
+                                .padding(.vertical, 3)
+                                .background(AngularCardShape(cornerRadius: 4, cornerCut: 6).fill(AC.cyanSoft))
                         }
                         if snapshot.isManuallyOverridden {
                             Image(systemName: "hand.raised")
@@ -1183,7 +1235,7 @@ private struct DuelSnapshotRow: View {
                     }
                     Text(snapshot.annotation.isEmpty ? card.frontText : snapshot.annotation)
                         .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AC.textSub)
                         .lineLimit(2)
                 }
                 Spacer()
@@ -1203,14 +1255,19 @@ private struct DuelSnapshotRow: View {
                     HStack(spacing: 4) {
                         Image(systemName: snapshot.strategicZone.systemImage)
                             .font(.system(size: 9))
-                        Text(snapshot.strategicZone.title)
-                            .font(.system(size: 10, weight: .semibold))
+                        Text(snapshot.strategicZone.title.uppercased())
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(strategicZoneColor(snapshot.strategicZone).opacity(0.12)))
+                    .background(
+                        AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                            .fill(strategicZoneColor(snapshot.strategicZone).opacity(0.14))
+                    )
                     .foregroundStyle(strategicZoneColor(snapshot.strategicZone))
                 }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
 
                 // Status menu
                 Menu {
@@ -1226,19 +1283,25 @@ private struct DuelSnapshotRow: View {
                     Button("Discard") { snapshot.status = .discarded; onStatusChange(snapshot) }
                     Button("Resolved") { snapshot.status = .resolved; onStatusChange(snapshot) }
                 } label: {
-                    Text(snapshot.status.title)
-                        .font(.system(size: 10, weight: .semibold))
-                        .padding(.horizontal, 10)
+                    Text(snapshot.status.title.uppercased())
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundStyle(AC.textSub)
+                        .padding(.horizontal, 9)
                         .padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.5)))
+                        .background(
+                            AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                                .stroke(AC.borderDim, lineWidth: 0.75)
+                        )
                 }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
 
                 // Playability info (only shown when rules are defined)
                 if !card.playabilityRules.isEmpty {
                     Button(action: { showingPlayability.toggle() }) {
                         Image(systemName: "info.circle")
                             .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AC.textDim)
                     }
                     .buttonStyle(.plain)
                     .popover(isPresented: $showingPlayability, arrowEdge: .trailing) {
@@ -1250,28 +1313,31 @@ private struct DuelSnapshotRow: View {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.plain)
+                .foregroundStyle(AC.threat.opacity(0.75))
             }
             TextField("Note", text: Binding(
                 get: { snapshot.annotation },
                 set: { snapshot.annotation = $0; onStatusChange(snapshot) }
             ))
-            .textFieldStyle(.roundedBorder)
-            .font(.system(size: 11))
+            .arenaFieldStyle()
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.windowBackgroundColor)))
+        .background(
+            AngularCardShape(cornerRadius: 8, cornerCut: 12)
+                .fill(AC.surface)
+        )
         .opacity(snapshot.strategicZone == .locked ? 0.65 : 1.0)
     }
 
     private func strategicZoneColor(_ zone: StrategicZone) -> Color {
         switch zone {
-        case .deck: return .blue
-        case .hand: return .green
-        case .field: return .accentColor
-        case .locked: return .gray
+        case .deck: return AC.cyanDim
+        case .hand: return AC.available
+        case .field: return AC.cyan
+        case .locked: return AC.lockedTint
         case .exhausted: return .orange
-        case .discarded: return .red
-        case .resolved: return .teal
+        case .discarded: return AC.threat
+        case .resolved: return AC.resolved
         }
     }
 }
@@ -1284,20 +1350,19 @@ private struct PlayabilityInfoPopover: View {
     var body: some View {
         let rules = card.playabilityRules
         VStack(alignment: .leading, spacing: 10) {
-            Text("Playability Rules")
-                .font(.system(size: 12, weight: .semibold))
+            ArenaSectionLabel(text: "Playability Rules")
 
             if !rules.prerequisites.isEmpty {
-                PlayabilitySection(title: "Prerequisites", items: rules.prerequisites, color: .blue)
+                PlayabilitySection(title: "Prerequisites", items: rules.prerequisites, color: AC.cyan)
             }
             if !rules.requiredActiveCardTitles.isEmpty {
-                PlayabilitySection(title: "Requires active", items: rules.requiredActiveCardTitles, color: .green)
+                PlayabilitySection(title: "Requires active", items: rules.requiredActiveCardTitles, color: AC.available)
             }
             if !rules.blockedByCardTitles.isEmpty {
-                PlayabilitySection(title: "Blocked by", items: rules.blockedByCardTitles, color: .red)
+                PlayabilitySection(title: "Blocked by", items: rules.blockedByCardTitles, color: AC.threat)
             }
             if !rules.unlockedByCardTitles.isEmpty {
-                PlayabilitySection(title: "Unlocked by", items: rules.unlockedByCardTitles, color: .teal)
+                PlayabilitySection(title: "Unlocked by", items: rules.unlockedByCardTitles, color: AC.resolved)
             }
             if !rules.unlocksCardTitles.isEmpty {
                 PlayabilitySection(title: "Unlocks", items: rules.unlocksCardTitles, color: .purple)
@@ -1309,17 +1374,19 @@ private struct PlayabilityInfoPopover: View {
                 if !rules.canBeReused {
                     Label("Single use", systemImage: "1.circle")
                         .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AC.textSub)
                 }
                 if rules.exhaustsAfterUse {
                     Label("Exhausts after use", systemImage: "bolt.slash")
                         .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AC.textSub)
                 }
             }
         }
         .padding(14)
         .frame(minWidth: 220)
+        .background(AC.glassPanel)
+        .colorScheme(.dark)
     }
 }
 
@@ -1330,13 +1397,14 @@ private struct PlayabilitySection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.system(size: 10, weight: .semibold))
+            Text(title.uppercased())
+                .font(.system(size: 9, weight: .black, design: .monospaced))
                 .foregroundStyle(color)
+                .kerning(1)
             ForEach(items, id: \.self) { item in
                 HStack(spacing: 4) {
                     Circle().fill(color).frame(width: 4, height: 4)
-                    Text(item).font(.system(size: 10))
+                    Text(item).font(.system(size: 10)).foregroundStyle(AC.textSub)
                 }
             }
         }
@@ -1394,28 +1462,33 @@ private struct DuelCardPickerView: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Add card to \(zone.title)")
-                        .font(.system(size: 16, weight: .semibold))
+                    Text("ADD CARD TO \(zone.title.uppercased())")
+                        .font(.system(size: 15, weight: .black, design: .monospaced))
+                        .foregroundStyle(AC.cyan)
+                        .kerning(1)
                     Text("Search and choose from your existing cards.")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AC.textSub)
                 }
                 Spacer()
                 Button("Done", action: onDismiss)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(ArenaOutlineButtonStyle())
             }
             .padding(16)
+            .background(AC.surface)
 
-            Divider()
+            Rectangle().fill(AC.cyan.opacity(0.2)).frame(height: 1)
 
             VStack(spacing: 10) {
                 HStack(spacing: 10) {
                     TextField("Search cards…", text: $searchText)
-                        .textFieldStyle(.roundedBorder)
+                        .arenaFieldStyle()
                     Toggle("Favorites", isOn: $favoritesOnly)
                         .toggleStyle(.button)
+                        .tint(AC.gold)
                     Toggle("Available only", isOn: $showAvailableOnly)
                         .toggleStyle(.button)
+                        .tint(AC.cyan)
                 }
 
                 HStack(spacing: 12) {
@@ -1426,6 +1499,7 @@ private struct DuelCardPickerView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .tint(AC.cyan)
 
                     Picker("Category", selection: $selectedSuitID) {
                         Text("All categories").tag(String?.none)
@@ -1434,10 +1508,12 @@ private struct DuelCardPickerView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .tint(AC.cyan)
                 }
                 .padding(.horizontal, 16)
             }
             .padding(.bottom, 8)
+            .padding(.top, 10)
 
             if !recentCards.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -1445,20 +1521,15 @@ private struct DuelCardPickerView: View {
                         ForEach(recentCards) { card in
                             Button(action: { onAdd(card.id) }) {
                                 Text(card.title)
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(.primary)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(RoundedRectangle(cornerRadius: 10).fill(Color(.controlBackgroundColor)))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(ArenaOutlineButtonStyle())
                         }
                     }
                     .padding(.horizontal, 16)
                 }
             }
 
-            Divider()
+            Rectangle().fill(AC.borderDim).frame(height: 1)
 
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 180), spacing: 10)], spacing: 10) {
@@ -1490,8 +1561,8 @@ private struct DuelCardPickerView: View {
                                 }
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 3)
-                                .background(Capsule().fill(result.isPlayable ? Color.green.opacity(0.85) : Color.gray.opacity(0.85)))
-                                .foregroundStyle(.white)
+                                .background(Capsule().fill(result.isPlayable ? AC.available.opacity(0.85) : AC.textDim.opacity(0.85)))
+                                .foregroundStyle(AC.bg)
                                 .padding(6)
                             }
                         }
@@ -1518,6 +1589,8 @@ private struct DuelCardPickerView: View {
                 .padding(16)
             }
         }
+        .background(AC.bg)
+        .colorScheme(.dark)
         .sheet(item: $previewCard) { card in
             KnowledgeCardDetailView(
                 card: card,
@@ -1549,21 +1622,24 @@ private struct DuelCompletionSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Complete Duel")
-                    .font(.system(size: 16, weight: .semibold))
+                Text("COMPLETE DUEL")
+                    .font(.system(size: 15, weight: .black, design: .monospaced))
+                    .foregroundStyle(AC.gold)
+                    .kerning(1.5)
                 Spacer()
                 Button("Cancel") { isPresented = false }
+                    .buttonStyle(ArenaOutlineButtonStyle())
                     .keyboardShortcut(.cancelAction)
             }
             .padding(16)
-            Divider()
+            .background(AC.surface)
+            Rectangle().fill(AC.gold.opacity(0.25)).frame(height: 1)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     // Outcome selector
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Outcome")
-                            .font(.system(size: 12, weight: .semibold))
+                        ArenaSectionLabel(text: "Outcome", color: AC.gold)
                         HStack(spacing: 8) {
                             ForEach(DuelOutcome.allCases, id: \.self) { outcome in
                                 Button(action: { selectedOutcome = outcome }) {
@@ -1575,24 +1651,26 @@ private struct DuelCompletionSheet: View {
                                     }
                                     .padding(10)
                                     .frame(minWidth: 70)
-                                    .background(RoundedRectangle(cornerRadius: 10).fill(
-                                        selectedOutcome == outcome ? Color.accentColor.opacity(0.2) : Color(.controlBackgroundColor)
-                                    ))
-                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(
-                                        selectedOutcome == outcome ? Color.accentColor : Color.clear
-                                    ))
+                                    .foregroundStyle(selectedOutcome == outcome ? AC.gold : AC.textSub)
+                                    .background(
+                                        AngularCardShape(cornerRadius: 8, cornerCut: 12)
+                                            .fill(selectedOutcome == outcome ? AC.goldSoft : AC.surface)
+                                    )
+                                    .overlay(
+                                        AngularCardShape(cornerRadius: 8, cornerCut: 12)
+                                            .stroke(selectedOutcome == outcome ? AC.gold : AC.borderDim, lineWidth: selectedOutcome == outcome ? 1.25 : 0.75)
+                                    )
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
                     }
 
-                    Divider()
+                    Rectangle().fill(AC.borderDim).frame(height: 1)
 
                     // Reflection
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Reflection  ·  optional")
-                            .font(.system(size: 12, weight: .semibold))
+                        ArenaSectionLabel(text: "Reflection · optional")
                         CompactReflectionField("Which card mattered most?", text: $reflection.cardThatMatteredMost)
                         CompactReflectionField("Should have played earlier?", text: $reflection.cardToPlayEarlier)
                         CompactReflectionField("Unnecessary card?", text: $reflection.unnecessaryCard)
@@ -1604,23 +1682,21 @@ private struct DuelCompletionSheet: View {
 
                     // Lesson → card
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Lesson Learned")
-                            .font(.system(size: 12, weight: .semibold))
+                        ArenaSectionLabel(text: "Lesson Learned")
                         TextField("Summarize the most important lesson…", text: $reflection.lessonLearned)
-                            .textFieldStyle(.roundedBorder)
+                            .arenaFieldStyle()
                         if !reflection.lessonLearned.isEmpty {
                             Button(action: { showingCreateCard = true }) {
                                 Label("Create card from this lesson", systemImage: "plus.rectangle.on.rectangle")
-                                    .font(.system(size: 11))
                             }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.55)))
                         }
                     }
                 }
                 .padding(18)
             }
 
-            Divider()
+            Rectangle().fill(AC.borderDim).frame(height: 1)
             HStack {
                 Spacer()
                 Button("Complete Duel") {
@@ -1628,10 +1704,13 @@ private struct DuelCompletionSheet: View {
                     isPresented = false
                 }
                 .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(ArenaButtonStyle(color: AC.gold))
             }
             .padding(14)
+            .background(AC.surface)
         }
+        .background(AC.bg)
+        .colorScheme(.dark)
         .sheet(isPresented: $showingCreateCard) {
             CreateCardFromLessonSheet(
                 lessonText: reflection.lessonLearned,
@@ -1665,8 +1744,7 @@ private struct CompactReflectionField: View {
 
     var body: some View {
         TextField(prompt, text: $text)
-            .font(.system(size: 11))
-            .textFieldStyle(.roundedBorder)
+            .arenaFieldStyle()
     }
 }
 
@@ -1679,16 +1757,19 @@ private struct CreateCardFromLessonSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Create Card from Lesson")
-                .font(.system(size: 14, weight: .semibold))
+            Text("CREATE CARD FROM LESSON")
+                .font(.system(size: 13, weight: .black, design: .monospaced))
+                .foregroundStyle(AC.cyan)
+                .kerning(1)
             Text("Lesson: \(lessonText)")
                 .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AC.textSub)
                 .lineLimit(3)
             TextField("Card title (e.g. Reproduce Before Modification)", text: $cardTitle)
-                .textFieldStyle(.roundedBorder)
+                .arenaFieldStyle()
             HStack {
                 Button("Cancel") { isPresented = false }
+                    .buttonStyle(ArenaOutlineButtonStyle())
                     .keyboardShortcut(.cancelAction)
                 Spacer()
                 Button("Create Card") {
@@ -1696,11 +1777,14 @@ private struct CreateCardFromLessonSheet: View {
                     onCreate(cardTitle)
                     isPresented = false
                 }
+                .buttonStyle(ArenaButtonStyle(isDisabled: cardTitle.trimmingCharacters(in: .whitespaces).isEmpty))
                 .keyboardShortcut(.defaultAction)
                 .disabled(cardTitle.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
         .padding(20)
+        .background(AC.bg)
+        .colorScheme(.dark)
         .onAppear {
             cardTitle = lessonText
                 .components(separatedBy: .whitespacesAndNewlines)

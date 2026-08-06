@@ -14,101 +14,11 @@ enum DuelBoardViewMode: String, CaseIterable {
     }
 }
 
-// MARK: - Arena color system
-
-private enum AC {
-    // Backgrounds
-    static let bg         = Color(red: 0.03, green: 0.06, blue: 0.13)
-    static let surface    = Color(red: 0.06, green: 0.10, blue: 0.20)
-    static let surfaceHi  = Color(red: 0.09, green: 0.15, blue: 0.28)
-    static let glassPanel = Color(red: 0.08, green: 0.14, blue: 0.26)
-    // Cyan / player accent
-    static let cyan       = Color(red: 0.15, green: 0.75, blue: 1.00)
-    static let cyanDim    = Color(red: 0.10, green: 0.50, blue: 0.80)
-    static let cyanGlow   = Color(red: 0.15, green: 0.75, blue: 1.00).opacity(0.55)
-    static let cyanSoft   = Color(red: 0.10, green: 0.45, blue: 0.75).opacity(0.18)
-    // Opponent accent
-    static let threat     = Color(red: 0.95, green: 0.30, blue: 0.35)
-    static let threatSoft = Color(red: 0.80, green: 0.20, blue: 0.25).opacity(0.18)
-    // Objective
-    static let gold       = Color(red: 1.00, green: 0.85, blue: 0.20)
-    static let goldSoft   = Color(red: 1.00, green: 0.85, blue: 0.20).opacity(0.15)
-    // Status
-    static let available  = Color(red: 0.20, green: 0.90, blue: 0.50)
-    static let lockedTint = Color(white: 0.35)
-    static let exhausted  = Color(white: 0.28)
-    static let resolved   = Color(red: 0.20, green: 0.85, blue: 0.65)
-    // Grid / borders
-    static let gridLine   = Color(red: 0.10, green: 0.30, blue: 0.60).opacity(0.18)
-    static let border     = Color(red: 0.15, green: 0.40, blue: 0.75).opacity(0.55)
-    static let borderDim  = Color(red: 0.10, green: 0.25, blue: 0.50).opacity(0.35)
-    // Text
-    static let text       = Color.white
-    static let textSub    = Color(white: 0.68)
-    static let textDim    = Color(white: 0.40)
-    static let textGhost  = Color(white: 0.25)
-}
-
-// MARK: - Angular card shape (futuristic diagonal cut on top-right)
-
-private struct AngularCardShape: Shape {
-    var cornerRadius: CGFloat = 7
-    var cornerCut: CGFloat = 10
-
-    func path(in rect: CGRect) -> Path {
-        let cr  = min(cornerRadius, rect.width * 0.4, rect.height * 0.4)
-        let cut = min(cornerCut,    rect.width * 0.4)
-        var p = Path()
-        p.move(to: CGPoint(x: rect.minX + cr, y: rect.minY))
-        p.addLine(to: CGPoint(x: rect.maxX - cut, y: rect.minY))
-        p.addLine(to: CGPoint(x: rect.maxX,       y: rect.minY + cut))
-        p.addLine(to: CGPoint(x: rect.maxX,       y: rect.maxY - cr))
-        p.addQuadCurve(to: CGPoint(x: rect.maxX - cr, y: rect.maxY),
-                       control: CGPoint(x: rect.maxX, y: rect.maxY))
-        p.addLine(to: CGPoint(x: rect.minX + cr, y: rect.maxY))
-        p.addQuadCurve(to: CGPoint(x: rect.minX, y: rect.maxY - cr),
-                       control: CGPoint(x: rect.minX, y: rect.maxY))
-        p.addLine(to: CGPoint(x: rect.minX, y: rect.minY + cr))
-        p.addQuadCurve(to: CGPoint(x: rect.minX + cr, y: rect.minY),
-                       control: CGPoint(x: rect.minX, y: rect.minY))
-        p.closeSubpath()
-        return p
-    }
-}
-
-// MARK: - CardKind arena extensions
-
-private extension CardKind {
-    var boardSFSymbol: String {
-        switch self {
-        case .action:      return "bolt.fill"
-        case .condition:   return "exclamationmark.circle.fill"
-        case .principle:   return "star.fill"
-        case .observation: return "eye.fill"
-        case .entity:      return "person.fill"
-        case .relation:    return "arrow.left.and.right"
-        case .modifier:    return "slider.horizontal.3"
-        case .chunk:       return "rectangle.stack.fill"
-        case .strategy:    return "map.fill"
-        }
-    }
-
-    var arenaColor: Color {
-        switch self {
-        case .action:      return Color(red: 1.0, green: 0.50, blue: 0.10)
-        case .condition:   return Color(red: 1.0, green: 0.25, blue: 0.32)
-        case .principle:   return Color(red: 0.70, green: 0.35, blue: 1.00)
-        case .observation: return Color(red: 0.15, green: 0.90, blue: 0.80)
-        case .entity:      return Color(red: 0.25, green: 0.65, blue: 1.00)
-        case .relation:    return Color(red: 0.20, green: 0.90, blue: 0.50)
-        case .modifier:    return Color(red: 1.00, green: 0.80, blue: 0.10)
-        case .chunk:       return Color(red: 0.60, green: 0.50, blue: 1.00)
-        case .strategy:    return AC.cyan
-        }
-    }
-}
-
 // MARK: - Layout constants
+//
+// Shared arena design system (AC palette, AngularCardShape, CardKind arena
+// extensions, DigitalArenaBackground, ArenaZoneDivider, ArenaEmptySlot,
+// ArenaStackBadge, ArenaActionBanner) lives in Views/Shared/ArenaTheme.swift.
 
 private enum BL {
     static let opponentCard = CGSize(width: 80,  height: 98)
@@ -348,52 +258,6 @@ struct StrategyDuelBoardView: View {
     }
 }
 
-// MARK: - Digital arena background
-
-private struct DigitalArenaBackground: View {
-    let reduceEffects: Bool
-
-    var body: some View {
-        ZStack {
-            AC.bg
-
-            // Depth gradient — opponent recedes into dark
-            LinearGradient(
-                stops: [
-                    .init(color: Color.black.opacity(0.55), location: 0.00),
-                    .init(color: Color.black.opacity(0.20), location: 0.28),
-                    .init(color: Color.clear,               location: 0.48),
-                    .init(color: AC.cyanSoft.opacity(0.3),  location: 1.00),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            if !reduceEffects {
-                // Circuit grid
-                Canvas { ctx, size in
-                    let s: CGFloat = 44
-                    var grid = Path()
-                    var x: CGFloat = 0
-                    while x <= size.width  { grid.move(to: .init(x: x, y: 0)); grid.addLine(to: .init(x: x, y: size.height)); x += s }
-                    var y: CGFloat = 0
-                    while y <= size.height { grid.move(to: .init(x: 0, y: y)); grid.addLine(to: .init(x: size.width, y: y)); y += s }
-                    ctx.stroke(grid, with: .color(AC.gridLine), lineWidth: 0.5)
-
-                    // Center horizon glow
-                    let mid = size.height * 0.5
-                    var h = Path()
-                    h.move(to: .init(x: 0, y: mid))
-                    h.addLine(to: .init(x: size.width, y: mid))
-                    ctx.stroke(h, with: .color(AC.cyan.opacity(0.10)), lineWidth: 1.5)
-                }
-                .allowsHitTesting(false)
-            }
-        }
-        .ignoresSafeArea()
-    }
-}
-
 // MARK: - Opponent identity panel
 
 private struct OpponentIdentityPanel: View {
@@ -444,44 +308,6 @@ private struct OpponentIdentityPanel: View {
                 .fill(AC.threat.opacity(0.4))
                 .frame(height: 1)
         }
-    }
-}
-
-// MARK: - Arena zone divider
-
-private struct ArenaZoneDivider: View {
-    let label: String
-    let color: Color
-
-    var body: some View {
-        ZStack {
-            HStack(spacing: 0) {
-                LinearGradient(colors: [.clear, color.opacity(0.5)],
-                               startPoint: .leading, endPoint: .trailing)
-                    .frame(height: 1)
-                LinearGradient(colors: [color.opacity(0.5), .clear],
-                               startPoint: .leading, endPoint: .trailing)
-                    .frame(height: 1)
-            }
-            HStack {
-                Text(label)
-                    .font(.system(size: 8, weight: .black, design: .monospaced))
-                    .foregroundStyle(color.opacity(0.85))
-                    .kerning(2.5)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 3)
-                    .background(
-                        AngularCardShape(cornerRadius: 3, cornerCut: 6)
-                            .fill(AC.bg)
-                            .overlay(AngularCardShape(cornerRadius: 3, cornerCut: 6)
-                                .stroke(color.opacity(0.35), lineWidth: 0.75))
-                    )
-                    .padding(.leading, 14)
-                Spacer()
-            }
-        }
-        .frame(height: 20)
-        .shadow(color: color.opacity(0.3), radius: 6)
     }
 }
 
@@ -1394,89 +1220,3 @@ private struct ArenaCardInspector: View {
     }
 }
 
-// MARK: - Action banner
-
-private struct ArenaActionBanner: View {
-    let text: String
-
-    var body: some View {
-        VStack {
-            Spacer()
-            HStack {
-                Spacer()
-                Text(text)
-                    .font(.system(size: 18, weight: .black, design: .monospaced))
-                    .foregroundStyle(AC.cyan)
-                    .kerning(3)
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 11)
-                    .background(
-                        ZStack {
-                            AngularCardShape(cornerRadius: 4, cornerCut: 14)
-                                .fill(AC.bg.opacity(0.96))
-                            AngularCardShape(cornerRadius: 4, cornerCut: 14)
-                                .stroke(AC.cyan.opacity(0.8), lineWidth: 1.5)
-                        }
-                    )
-                    .shadow(color: AC.cyanGlow, radius: 20)
-                Spacer()
-            }
-            Spacer()
-        }
-        .allowsHitTesting(false)
-    }
-}
-
-// MARK: - Arena stack badge
-
-private struct ArenaStackBadge: View {
-    let count: Int
-    let label: String
-    let color: Color
-
-    var body: some View {
-        VStack(spacing: 3) {
-            ZStack {
-                ForEach(0..<min(count, 3), id: \.self) { i in
-                    AngularCardShape(cornerRadius: 5, cornerCut: 7)
-                        .fill(AC.surfaceHi)
-                        .overlay(AngularCardShape(cornerRadius: 5, cornerCut: 7)
-                            .stroke(AC.borderDim, lineWidth: 0.75))
-                        .frame(width: 38, height: 50)
-                        .offset(x: CGFloat(i) * 2, y: CGFloat(i) * -2)
-                }
-            }
-            .frame(width: 44, height: 56)
-            Text("\(count)")
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundStyle(color)
-            Text(label)
-                .font(.system(size: 7, weight: .bold, design: .monospaced))
-                .foregroundStyle(color.opacity(0.7))
-                .kerning(1)
-        }
-    }
-}
-
-// MARK: - Empty zone slot
-
-private struct ArenaEmptySlot: View {
-    let text: String
-    let size: CGSize
-    let color: Color
-
-    var body: some View {
-        ZStack {
-            AngularCardShape(cornerRadius: 7, cornerCut: 10)
-                .stroke(color, style: StrokeStyle(lineWidth: 1, dash: [4]))
-            AngularCardShape(cornerRadius: 7, cornerCut: 10)
-                .fill(color.opacity(0.04))
-            Text(text)
-                .font(.system(size: 9))
-                .foregroundStyle(color.opacity(0.6))
-                .multilineTextAlignment(.center)
-                .padding(6)
-        }
-        .frame(width: size.width, height: size.height)
-    }
-}

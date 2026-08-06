@@ -28,6 +28,8 @@ struct KnowledgeCardEditorView: View {
     @State private var unlocksText: String = ""
     @State private var disablesText: String = ""
 
+    private var kindColor: Color { card.kind.arenaColor }
+
     /// `nil` when `card.metadata` isn't `.softwareStrategy` — used to hide
     /// the software-strategy-only sections rather than fabricate blank
     /// fields and silently clobber whatever metadata case the card actually
@@ -70,21 +72,23 @@ struct KnowledgeCardEditorView: View {
         VStack(spacing: 0) {
             HStack {
                 Button("Cancel", action: onCancel)
+                    .buttonStyle(ArenaOutlineButtonStyle())
                     .keyboardShortcut(.escape)
                 Spacer()
-                Text(mode == .create ? "New Card" : "Edit Card")
-                    .font(.system(size: 13, weight: .semibold))
+                Text(mode == .create ? "NEW CARD" : "EDIT CARD")
+                    .font(.system(size: 11, weight: .black, design: .monospaced))
+                    .foregroundStyle(kindColor)
+                    .kerning(2)
                 Spacer()
                 Button("Save") { commitAndSave() }
+                    .buttonStyle(ArenaButtonStyle(color: kindColor, isDisabled: card.title.trimmingCharacters(in: .whitespaces).isEmpty))
                     .keyboardShortcut(.return, modifiers: .command)
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
                     .disabled(card.title.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-
-            Divider()
+            .background(AC.surface)
+            .overlay(alignment: .bottom) { Rectangle().fill(kindColor.opacity(0.3)).frame(height: 1) }
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -99,6 +103,7 @@ struct KnowledgeCardEditorView: View {
                                 }
                             }
                             .labelsHidden()
+                            .tint(AC.cyan)
                         }
                         LabeledField("Tags (comma-separated)") {
                             TextField("e.g. hash, lookup, membership", text: $tagsText)
@@ -185,7 +190,7 @@ struct KnowledgeCardEditorView: View {
                     section("Playability Rules") {
                         Text("Define when this card is available in a Duel. Leave blank to make it always available.")
                             .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AC.textSub)
                         LabeledField("Prerequisites (one per line)") {
                             TextEditor(text: $prereqText)
                                 .frame(minHeight: 40)
@@ -217,14 +222,19 @@ struct KnowledgeCardEditorView: View {
                         HStack(spacing: 16) {
                             Toggle("Can be reused", isOn: $card.playabilityRules.canBeReused)
                                 .font(.system(size: 11))
+                                .tint(AC.cyan)
                             Toggle("Exhausts after use", isOn: $card.playabilityRules.exhaustsAfterUse)
                                 .font(.system(size: 11))
+                                .tint(AC.cyan)
                         }
+                        .foregroundStyle(AC.textSub)
                     }
                 }
                 .padding(14)
             }
         }
+        .background(AC.bg)
+        .colorScheme(.dark)
         .onAppear { populateListFields() }
     }
 
@@ -232,13 +242,16 @@ struct KnowledgeCardEditorView: View {
 
     private func section<C: View>(_ title: String, @ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-                .kerning(0.5)
+            ArenaSectionLabel(text: title, color: kindColor)
             content()
         }
+        .padding(12)
+        .background(
+            AngularCardShape(cornerRadius: 8, cornerCut: 12)
+                .fill(AC.surface.opacity(0.6))
+                .overlay(AngularCardShape(cornerRadius: 8, cornerCut: 12)
+                    .stroke(AC.borderDim, lineWidth: 0.75))
+        )
     }
 
     private func populateListFields() {
@@ -297,12 +310,12 @@ private struct LabeledField<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(label)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.secondary)
+            Text(label.uppercased())
+                .font(.system(size: 8, weight: .black, design: .monospaced))
+                .foregroundStyle(AC.textDim)
+                .kerning(1)
             content
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 12))
+                .arenaFieldStyle()
         }
     }
 }

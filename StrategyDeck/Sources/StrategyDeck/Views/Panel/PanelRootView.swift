@@ -36,9 +36,9 @@ struct PanelRootView: View {
             .padding(.horizontal, 10)
             .padding(.top, 10)
             .padding(.bottom, 6)
-            .background(.bar)
+            .background(AC.surface)
 
-            Divider()
+            Rectangle().fill(AC.cyan.opacity(0.2)).frame(height: 1)
 
             if activeTab == .library {
                 VStack(spacing: 0) {
@@ -59,7 +59,7 @@ struct PanelRootView: View {
                         }
                     )
 
-                    Divider()
+                    Rectangle().fill(AC.borderDim).frame(height: 1)
 
                     HStack(spacing: 0) {
                         if isSidebarVisible {
@@ -70,7 +70,7 @@ struct PanelRootView: View {
                                 selectedSuiteID: $selectedSuiteID
                             )
                             .frame(width: 150)
-                            Divider()
+                            Rectangle().fill(AC.borderDim).frame(width: 1)
                         }
 
                         VStack(spacing: 0) {
@@ -88,7 +88,8 @@ struct PanelRootView: View {
                     .environmentObject(sequenceStore)
             }
         }
-        .background(Color(.windowBackgroundColor))
+        .background(AC.bg)
+        .colorScheme(.dark)
         .alertState($alertState)
         .onAppear {
             if selectedDeckID == nil { selectedDeckID = cardStore.decks.first?.id }
@@ -108,18 +109,23 @@ struct PanelRootView: View {
         Button(action: { activeTab = tab }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                Text(title)
+                Text(title.uppercased())
+                    .kerning(0.5)
             }
-            .font(.system(size: 11, weight: .semibold))
+            .font(.system(size: 10, weight: .black, design: .monospaced))
             .padding(.vertical, 6)
             .padding(.horizontal, 10)
             .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(activeTab == tab ? Color.accentColor.opacity(0.18) : Color.clear)
+                AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                    .fill(activeTab == tab ? AC.cyanSoft : Color.clear)
+            )
+            .overlay(
+                AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                    .stroke(activeTab == tab ? AC.cyan.opacity(0.5) : Color.clear, lineWidth: 0.75)
             )
         }
         .buttonStyle(.plain)
-        .foregroundStyle(activeTab == tab ? Color.accentColor : Color.primary)
+        .foregroundStyle(activeTab == tab ? AC.cyan : AC.textSub)
     }
 }
 
@@ -200,6 +206,7 @@ private struct InternalGrid: View {
                 .padding(.vertical, 6)
             }
         }
+        .background(AC.bg)
         .alertState($alertState)
         // Wire the proxy so the header can trigger "new card"
         .onAppear {
@@ -263,10 +270,10 @@ private struct InternalGrid: View {
         VStack(spacing: 10) {
             Image(systemName: "rectangle.stack.badge.magnifyingglass")
                 .font(.system(size: 28))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(AC.textGhost)
             Text(filter.query.isEmpty ? "No cards in this suite." : "No cards match \"\(filter.query)\".")
                 .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AC.textSub)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 40)

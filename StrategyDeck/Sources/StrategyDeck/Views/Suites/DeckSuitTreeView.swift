@@ -9,7 +9,7 @@ struct DeckSuitTreeView: View {
     let suits: [CardSuit]
     @Binding var selectedDeckID: String?
     @Binding var selectedSuiteID: String?
-    
+
     @EnvironmentObject var cardStore: CardStore
     @State private var showingNewDeckDialog = false
     @State private var newDeckName = ""
@@ -22,21 +22,24 @@ struct DeckSuitTreeView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "plus.circle")
                             .font(.system(size: 10, weight: .semibold))
-                        Text("New Deck")
-                            .font(.system(size: 10.5, weight: .semibold))
+                        Text("NEW DECK")
+                            .font(.system(size: 9.5, weight: .black, design: .monospaced))
+                            .kerning(0.5)
                         Spacer()
                     }
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(AC.cyan)
                     .padding(.vertical, 4)
                     .padding(.horizontal, 4)
-                    .background(RoundedRectangle(cornerRadius: 5).fill(Color.accentColor.opacity(0.08)))
+                    .background(
+                        AngularCardShape(cornerRadius: 5, cornerCut: 7)
+                            .fill(AC.cyanSoft)
+                    )
                 }
                 .buttonStyle(.plain)
                 .padding(.bottom, 4)
-                
-                Divider()
-                    .padding(.vertical, 2)
-                
+
+                Rectangle().fill(AC.borderDim).frame(height: 1).padding(.vertical, 2)
+
                 ForEach(decks.sorted { $0.displayOrder < $1.displayOrder }) { deck in
                     DeckRow(
                         deck: deck,
@@ -48,7 +51,8 @@ struct DeckSuitTreeView: View {
             }
             .padding(6)
         }
-        .background(.bar)
+        .background(AC.surface)
+        .colorScheme(.dark)
         .sheet(isPresented: $showingNewDeckDialog) {
             NewDeckDialog(
                 name: $newDeckName,
@@ -71,7 +75,7 @@ private struct DeckRow: View {
     let suits: [CardSuit]
     @Binding var selectedDeckID: String?
     @Binding var selectedSuiteID: String?
-    
+
     @EnvironmentObject var cardStore: CardStore
     @State private var isExpanded = true
     @State private var showingNewSuitDialog = false
@@ -100,20 +104,23 @@ private struct DeckRow: View {
                     Text(deck.name)
                         .font(.system(size: 11, weight: .semibold))
                     Spacer(minLength: 0)
-                    
+
                     // Add category button for this deck
                     Button(action: { showingNewSuitDialog = true }) {
                         Image(systemName: "plus.circle")
                             .font(.system(size: 9))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AC.textDim)
                     }
                     .buttonStyle(.plain)
                     .help("Add category to this deck")
                 }
-                .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                .foregroundStyle(isSelected ? AC.cyan : AC.text)
                 .padding(.vertical, 3)
                 .padding(.horizontal, 4)
-                .background(RoundedRectangle(cornerRadius: 5).fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear))
+                .background(
+                    AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                        .fill(isSelected ? AC.cyanSoft : Color.clear)
+                )
             }
             .buttonStyle(.plain)
 
@@ -189,11 +196,14 @@ private struct SuitRow: View {
                         .font(.system(size: 10.5))
                     Spacer(minLength: 0)
                 }
-                .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                .foregroundStyle(isSelected ? AC.cyan : AC.textSub)
                 .padding(.vertical, 2.5)
                 .padding(.leading, CGFloat(depth) * 12)
                 .padding(.trailing, 4)
-                .background(RoundedRectangle(cornerRadius: 5).fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear))
+                .background(
+                    AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                        .fill(isSelected ? AC.cyanSoft : Color.clear)
+                )
             }
             .buttonStyle(.plain)
 
@@ -221,39 +231,46 @@ private struct NewDeckDialog: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("Create New Deck")
-                .font(.system(size: 14, weight: .semibold))
-            
+            Text("CREATE NEW DECK")
+                .font(.system(size: 14, weight: .black, design: .monospaced))
+                .foregroundStyle(AC.cyan)
+                .kerning(1.5)
+
             VStack(alignment: .leading, spacing: 6) {
-                Text("Deck Name")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                Text("DECK NAME")
+                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .foregroundStyle(AC.textDim)
+                    .kerning(1)
                 TextField("e.g., Engineering", text: $name)
-                    .textFieldStyle(.roundedBorder)
+                    .arenaFieldStyle()
                     .focused($isFocused)
             }
-            
+
             HStack(spacing: 12) {
                 Button("Cancel") {
                     isPresented = false
                     name = ""
                 }
+                .buttonStyle(ArenaOutlineButtonStyle())
                 .keyboardShortcut(.cancelAction)
-                
+
                 Spacer()
-                
+
                 Button("Create", action: {
                     onCreate()
                     isPresented = false
                 })
+                .buttonStyle(ArenaButtonStyle(isDisabled: name.trimmingCharacters(in: .whitespaces).isEmpty))
                 .keyboardShortcut(.defaultAction)
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
-            
+
             Spacer()
         }
         .padding(20)
         .frame(minWidth: 300, minHeight: 140)
+        .background(AC.bg)
+        .colorScheme(.dark)
         .onAppear {
             isFocused = true
         }
@@ -268,42 +285,48 @@ private struct NewSuitDialog: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("Create New Category")
-                .font(.system(size: 14, weight: .semibold))
-            
+            Text("CREATE NEW CATEGORY")
+                .font(.system(size: 14, weight: .black, design: .monospaced))
+                .foregroundStyle(AC.cyan)
+                .kerning(1.5)
+
             VStack(alignment: .leading, spacing: 6) {
-                Text("Category Name")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                Text("CATEGORY NAME")
+                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .foregroundStyle(AC.textDim)
+                    .kerning(1)
                 TextField("e.g., Best Practices", text: $name)
-                    .textFieldStyle(.roundedBorder)
+                    .arenaFieldStyle()
                     .focused($isFocused)
             }
-            
+
             HStack(spacing: 12) {
                 Button("Cancel") {
                     isPresented = false
                     name = ""
                 }
+                .buttonStyle(ArenaOutlineButtonStyle())
                 .keyboardShortcut(.cancelAction)
-                
+
                 Spacer()
-                
+
                 Button("Create", action: {
                     onCreate()
                     isPresented = false
                 })
+                .buttonStyle(ArenaButtonStyle(isDisabled: name.trimmingCharacters(in: .whitespaces).isEmpty))
                 .keyboardShortcut(.defaultAction)
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
-            
+
             Spacer()
         }
         .padding(20)
         .frame(minWidth: 300, minHeight: 140)
+        .background(AC.bg)
+        .colorScheme(.dark)
         .onAppear {
             isFocused = true
         }
     }
 }
-
