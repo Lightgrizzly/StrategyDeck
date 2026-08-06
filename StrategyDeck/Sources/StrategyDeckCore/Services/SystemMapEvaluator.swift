@@ -120,6 +120,7 @@ public struct SystemMapEvaluator: Sendable {
             isOverridden: override != nil,
             overrideReason: override?.reason,
             overrideScope: override?.scope,
+            effectiveCustomStatusID: override?.customStatusID,
             relevance: isRelevant,
             validTargetKinds: rules.systemTargetTypes,
             satisfiedRequirements: result.availableReasons,

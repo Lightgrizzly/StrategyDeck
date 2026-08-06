@@ -103,6 +103,10 @@ public struct SystemCardStatusOverride: Codable, Identifiable, Hashable, Sendabl
     public var targetElementID: UUID?
     public var scope: SystemOverrideScope
     public var overriddenStatus: SystemCardStatus
+    /// When set, this override is labeled as this custom status for display
+    /// purposes — `overriddenStatus` still holds the underlying behavior
+    /// (playability, drag-and-drop actions) that custom status wears.
+    public var customStatusID: String?
     public var reason: String
     public var createdAt: Date
     public var updatedAt: Date
@@ -113,6 +117,7 @@ public struct SystemCardStatusOverride: Codable, Identifiable, Hashable, Sendabl
         targetElementID: UUID? = nil,
         scope: SystemOverrideScope = .thisElementOnly,
         overriddenStatus: SystemCardStatus,
+        customStatusID: String? = nil,
         reason: String = "",
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -122,6 +127,7 @@ public struct SystemCardStatusOverride: Codable, Identifiable, Hashable, Sendabl
         self.targetElementID = targetElementID
         self.scope = scope
         self.overriddenStatus = overriddenStatus
+        self.customStatusID = customStatusID
         self.reason = reason
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -134,6 +140,7 @@ public struct SystemCardStatusOverride: Codable, Identifiable, Hashable, Sendabl
         targetElementID = try c.decodeIfPresent(UUID.self, forKey: .targetElementID)
         scope = try c.decodeIfPresent(SystemOverrideScope.self, forKey: .scope) ?? .thisElementOnly
         overriddenStatus = try c.decodeIfPresent(SystemCardStatus.self, forKey: .overriddenStatus) ?? .available
+        customStatusID = try c.decodeIfPresent(String.self, forKey: .customStatusID)
         reason = try c.decodeIfPresent(String.self, forKey: .reason) ?? ""
         createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()

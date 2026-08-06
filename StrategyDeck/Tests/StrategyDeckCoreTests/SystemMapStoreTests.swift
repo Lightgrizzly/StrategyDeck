@@ -349,4 +349,87 @@ final class SystemMapStoreTests: XCTestCase {
         let map = decoded.first!
         XCTAssertNil(map.effectiveDeckID(for: map.scenarios.first!))
     }
+
+    // MARK: - Status customization
+
+    func testMapWithoutStatusFieldsDecodesToEmptyCatalog() throws {
+        // A save file from before custom statuses existed (no
+        // "customStatuses"/"statusLabelOverrides" keys at all) must not
+        // crash and must fall back to an empty catalog.
+        let json = """
+        [
+          {
+            "id": "30000000-0000-0000-0000-000000000001",
+            "title": "Pre-Status-Customization Map",
+            "createdAt": "2024-01-01T00:00:00Z",
+            "updatedAt": "2024-01-01T00:00:00Z",
+            "elements": [], "flows": [], "relationships": [],
+            "scenarios": [
+              { "id": "30000000-0000-0000-0000-000000000002", "name": "Current State", "isDefault": true }
+            ]
+          }
+        ]
+        """
+        let decoded = try JSONCoding.decoder.decode([SystemMap].self, from: json.data(using: .utf8)!)
+        let map = decoded.first!
+        XCTAssertTrue(map.customStatuses.isEmpty)
+        XCTAssertTrue(map.statusLabelOverrides.isEmpty)
+        XCTAssertTrue(map.statusCatalog.customStatuses.isEmpty)
+    }
+
+    func testCreateCustomStatusAssignsIncrementingDisplayOrder() {
+        let store = makeStore()
+        store.createSystemMap(title: "Test Map")
+        let first = store.createCustomStatus(name: "Needs Review", behavesLike: .locked)
+        let second = store.createCustomStatus(name: "Blocked by Legal", behavesLike: .disabled)
+        XCTAssertEqual(store.currentSystemMap?.customStatuses.count, 2)
+        XCTAssertLessThan(first.displayOrder, second.displayOrder)
+        XCTAssertEqual(store.currentSystemMap?.customStatuses.first(where: { $0.id == first.id })?.behavesLike, .locked)
+    }
+
+    func testSetCardStatusOverrideStoresCustomStatusID() {
+        let store = makeStore()
+        store.createSystemMap(title: "Test Map")
+        let custom = store.createCustomStatus(name: "Needs Review", behavesLike: .locked)
+        let scenarioID = store.currentSystemMap!.scenarios.first!.id
+        let cardID = UUID()
+
+        store.setCardStatusOverride(
+            cardID: cardID, targetElementID: nil, scope: .entireScenario,
+            status: .locked, customStatusID: custom.id, reason: "", scenarioID: scenarioID
+        )
+
+        let override = store.currentSystemMap?.scenarios.first?.cardStatusOverrides.first
+        XCTAssertEqual(override?.overriddenStatus, .locked, "behavior must stay whatever the custom status behaves like")
+        XCTAssertEqual(override?.customStatusID, custom.id)
+    }
+
+    func testDeletingCustomStatusClearsReferencesWithoutChangingBehavior() {
+        let store = makeStore()
+        store.createSystemMap(title: "Test Map")
+        let custom = store.createCustomStatus(name: "Needs Review", behavesLike: .locked)
+        let scenarioID = store.currentSystemMap!.scenarios.first!.id
+        let cardID = UUID()
+        store.setCardStatusOverride(
+            cardID: cardID, targetElementID: nil, scope: .entireScenario,
+            status: .locked, customStatusID: custom.id, reason: "", scenarioID: scenarioID
+        )
+
+        store.deleteCustomStatus(id: custom.id)
+
+        XCTAssertTrue(store.currentSystemMap?.customStatuses.isEmpty ?? false)
+        let override = store.currentSystemMap?.scenarios.first?.cardStatusOverrides.first
+        XCTAssertNil(override?.customStatusID, "deleting the custom status must clear the reference")
+        XCTAssertEqual(override?.overriddenStatus, .locked, "the underlying behavior must be untouched")
+    }
+
+    func testSetStatusLabelOverridesAndResets() {
+        let store = makeStore()
+        store.createSystemMap(title: "Test Map")
+        store.setStatusLabel(for: .pending, label: "Needs Review")
+        XCTAssertEqual(store.currentSystemMap?.statusLabelOverrides["pending"], "Needs Review")
+
+        store.setStatusLabel(for: .pending, label: nil)
+        XCTAssertNil(store.currentSystemMap?.statusLabelOverrides["pending"])
+    }
 }

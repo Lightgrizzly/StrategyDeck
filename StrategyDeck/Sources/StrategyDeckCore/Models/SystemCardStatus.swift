@@ -95,6 +95,10 @@ public struct SystemCardEvaluation: Sendable {
     public let isOverridden: Bool
     public let overrideReason: String?
     public let overrideScope: SystemOverrideScope?
+    /// The custom status this evaluation's `effectiveStatus` is labeled
+    /// as, if the matching override named one. `effectiveStatus` itself is
+    /// still whichever built-in behavior that custom status behaves like.
+    public let effectiveCustomStatusID: String?
     public let relevance: Bool
     public let validTargetKinds: [SystemTargetKind]
     public let satisfiedRequirements: [String]
@@ -110,6 +114,7 @@ public struct SystemCardEvaluation: Sendable {
         isOverridden: Bool,
         overrideReason: String?,
         overrideScope: SystemOverrideScope?,
+        effectiveCustomStatusID: String? = nil,
         relevance: Bool,
         validTargetKinds: [SystemTargetKind],
         satisfiedRequirements: [String],
@@ -124,6 +129,7 @@ public struct SystemCardEvaluation: Sendable {
         self.isOverridden = isOverridden
         self.overrideReason = overrideReason
         self.overrideScope = overrideScope
+        self.effectiveCustomStatusID = effectiveCustomStatusID
         self.relevance = relevance
         self.validTargetKinds = validTargetKinds
         self.satisfiedRequirements = satisfiedRequirements

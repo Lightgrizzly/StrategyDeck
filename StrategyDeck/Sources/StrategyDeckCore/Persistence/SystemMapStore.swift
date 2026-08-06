@@ -360,6 +360,7 @@ public final class SystemMapStore: ObservableObject {
         targetElementID: UUID?,
         scope: SystemOverrideScope,
         status: SystemCardStatus,
+        customStatusID: String? = nil,
         reason: String,
         scenarioID: UUID
     ) {
@@ -369,6 +370,7 @@ public final class SystemMapStore: ObservableObject {
             targetElementID: resolvedTargetID,
             scope: scope,
             overriddenStatus: status,
+            customStatusID: customStatusID,
             reason: reason
         )
         updateCurrentSystemMap { map in
@@ -395,6 +397,67 @@ public final class SystemMapStore: ObservableObject {
                     $0.cardID == cardID && $0.scope == scope && $0.targetElementID == targetElementID
                 }
                 map.scenarios[idx].updatedAt = Date()
+            }
+        }
+    }
+
+    // MARK: - Status customization
+    //
+    // A custom status doesn't invent new behavior — it wears a custom
+    // name/icon/color over one of the existing built-in behaviors
+    // (`behavesLike`), so playability/drag-and-drop/status-menu logic never
+    // needs to know a status is custom.
+
+    @discardableResult
+    public func createCustomStatus(
+        name: String,
+        iconName: String = "tag.fill",
+        colorToken: StatusColorToken = .cyan,
+        behavesLike: SystemCardStatus = .available
+    ) -> CustomCardStatus {
+        var created = CustomCardStatus(name: name, iconName: iconName, colorToken: colorToken, behavesLike: behavesLike)
+        updateCurrentSystemMap { map in
+            let order = (map.customStatuses.map(\.displayOrder).max() ?? -1) + 1
+            created.displayOrder = order
+            map.customStatuses.append(created)
+        }
+        return created
+    }
+
+    public func updateCustomStatus(_ status: CustomCardStatus) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.customStatuses.firstIndex(where: { $0.id == status.id }) else { return }
+            map.customStatuses[idx] = status
+        }
+    }
+
+    /// Deletes a custom status. Any override referencing it keeps behaving
+    /// exactly as it did (its `overriddenStatus` is untouched) — it just
+    /// loses its custom label/color and displays as the built-in status it
+    /// was already behaving like.
+    public func deleteCustomStatus(id: String) {
+        updateCurrentSystemMap { map in
+            map.customStatuses.removeAll { $0.id == id }
+            for i in map.scenarios.indices {
+                for j in map.scenarios[i].cardStatusOverrides.indices where map.scenarios[i].cardStatusOverrides[j].customStatusID == id {
+                    map.scenarios[i].cardStatusOverrides[j].customStatusID = nil
+                }
+            }
+            for i in map.workflowDefaultOverrides.indices where map.workflowDefaultOverrides[i].customStatusID == id {
+                map.workflowDefaultOverrides[i].customStatusID = nil
+            }
+        }
+    }
+
+    /// Renames a built-in status's display label. `nil` or blank clears
+    /// the override, restoring the default label.
+    public func setStatusLabel(for status: SystemCardStatus, label: String?) {
+        updateCurrentSystemMap { map in
+            let trimmed = label?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if trimmed.isEmpty {
+                map.statusLabelOverrides.removeValue(forKey: status.rawValue)
+            } else {
+                map.statusLabelOverrides[status.rawValue] = trimmed
             }
         }
     }

@@ -221,6 +221,7 @@ private struct SystemsMapEditorView: View {
     @State private var showingCreateCardSheet = false
     @State private var newCard = KnowledgeCard(deckIDs: [], suitIDs: [], kind: .action, metadata: .softwareStrategy(SoftwareStrategyFields()), title: "")
     @State private var editingCardFromTray: KnowledgeCard?
+    @State private var showingManageStatuses = false
     @State private var alertState: AlertState?
     @State private var undoStack: [EditorSnapshot] = []
     @State private var redoStack: [EditorSnapshot] = []
@@ -418,15 +419,16 @@ private struct SystemsMapEditorView: View {
                 suits: cardStore.suits,
                 deckSuits: suitsForSelectedDeck(),
                 evaluations: evaluations,
+                statusCatalog: map.statusCatalog,
                 selectionLabel: selectionLabel,
                 isEditable: true,
                 onViewDetails: { showingDetailsFor = $0 },
                 onEditCard: { editingCardFromTray = $0 },
                 onApplyIntervention: { showingInterventionSheetFor = $0 },
-                onChangeStatus: { card, status, scope in
+                onChangeStatus: { card, status, customStatusID, scope in
                     systemMapStore.setCardStatusOverride(
                         cardID: card.id, targetElementID: selectedElementID,
-                        scope: scope, status: status, reason: "", scenarioID: scenario.id
+                        scope: scope, status: status, customStatusID: customStatusID, reason: "", scenarioID: scenario.id
                     )
                 },
                 onResetToAutomatic: { card in clearOverrideMatchingSelection(for: card) },
@@ -436,12 +438,12 @@ private struct SystemsMapEditorView: View {
                     showingCreateCardSheet = true
                 },
                 onAssignToSelectedElement: { card in handleCardDrop(cardID: card.id, onto: selection) },
-                onDropCardToStatus: { cardID, status in
+                onDropCardToStatus: { cardID, status, customStatusID in
                     guard let card = cardStore.cards.first(where: { $0.id == cardID }) else { return }
                     pushOverrideUndo()
                     systemMapStore.setCardStatusOverride(
                         cardID: card.id, targetElementID: selectedElementID,
-                        scope: .thisElementOnly, status: status, reason: "", scenarioID: scenario.id
+                        scope: .thisElementOnly, status: status, customStatusID: customStatusID, reason: "", scenarioID: scenario.id
                     )
                 },
                 onQuickCreateCard: { title, suitID, description in
@@ -455,7 +457,8 @@ private struct SystemsMapEditorView: View {
                 },
                 onBulkCreateCards: { entries in
                     cardStore.bulkCreateCards(entries, deckID: effectiveDeckID)
-                }
+                },
+                onManageStatuses: { showingManageStatuses = true }
             )
             .frame(maxHeight: .infinity)
         }
@@ -595,6 +598,18 @@ private struct SystemsMapEditorView: View {
                 onCancel: { editingCardFromTray = nil }
             )
             .frame(minWidth: 380, minHeight: 500)
+        }
+        .sheet(isPresented: $showingManageStatuses) {
+            ManageStatusesSheet(
+                map: map,
+                onSetLabel: { status, label in systemMapStore.setStatusLabel(for: status, label: label) },
+                onCreateCustomStatus: { name, iconName, colorToken, behavesLike in
+                    systemMapStore.createCustomStatus(name: name, iconName: iconName, colorToken: colorToken, behavesLike: behavesLike)
+                },
+                onUpdateCustomStatus: { systemMapStore.updateCustomStatus($0) },
+                onDeleteCustomStatus: { systemMapStore.deleteCustomStatus(id: $0) },
+                isPresented: $showingManageStatuses
+            )
         }
     }
 

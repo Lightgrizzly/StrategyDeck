@@ -204,6 +204,26 @@ final class SystemMapEvaluatorTests: XCTestCase {
         XCTAssertEqual(resultB.effectiveStatus, .pending)
     }
 
+    // MARK: - Custom statuses
+
+    func testCustomStatusIDSurfacesOnEffectiveStatusOnly() {
+        let card = makeCard(title: "No Rules")
+        var scenario = makeScenario()
+        scenario.cardStatusOverrides = [
+            SystemCardStatusOverride(cardID: card.id, scope: .entireScenario, overriddenStatus: .locked, customStatusID: "needs-review")
+        ]
+        let result = SystemMapEvaluator.evaluate(
+            card: card, map: makeMap(), scenario: scenario,
+            selectedTargetKind: nil, selectedElementID: nil, allCards: [card]
+        )
+        XCTAssertEqual(result.effectiveStatus, .locked, "behavior is whatever the custom status behaves like")
+        XCTAssertEqual(result.effectiveCustomStatusID, "needs-review")
+        XCTAssertNil(SystemMapEvaluator.evaluate(
+            card: card, map: makeMap(), scenario: makeScenario(),
+            selectedTargetKind: nil, selectedElementID: nil, allCards: [card]
+        ).effectiveCustomStatusID, "no override, no custom status")
+    }
+
     func testTargetKindMapping() {
         XCTAssertEqual(SystemMapEvaluator.targetKind(for: .stock), .stock)
         XCTAssertEqual(SystemMapEvaluator.targetKind(for: .goal), .goal)

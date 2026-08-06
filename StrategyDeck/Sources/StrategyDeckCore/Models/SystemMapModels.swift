@@ -720,6 +720,19 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
     /// `init(from:)`; never written to by current code.
     public var legacyStepsArchive: [SystemStep]?
 
+    /// Wholly new, user-defined statuses for this map's card vocabulary.
+    public var customStatuses: [CustomCardStatus]
+    /// Renamed display labels for the built-in statuses, keyed by
+    /// `SystemCardStatus.rawValue`. A missing key means "use the default
+    /// label."
+    public var statusLabelOverrides: [String: String]
+
+    /// Convenience bundle of both status-customization fields, for UI code
+    /// that needs to resolve a status's display name/icon/color.
+    public var statusCatalog: StatusCatalog {
+        StatusCatalog(customStatuses: customStatuses, labelOverrides: statusLabelOverrides)
+    }
+
     public init(
         id: UUID = UUID(),
         title: String,
@@ -736,7 +749,9 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         selectedScenarioID: UUID? = nil,
         defaultDeckID: String? = nil,
         workflowDefaultOverrides: [SystemCardStatusOverride] = [],
-        legacyStepsArchive: [SystemStep]? = nil
+        legacyStepsArchive: [SystemStep]? = nil,
+        customStatuses: [CustomCardStatus] = [],
+        statusLabelOverrides: [String: String] = [:]
     ) {
         self.id = id
         self.title = title
@@ -754,6 +769,8 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         self.defaultDeckID = defaultDeckID
         self.workflowDefaultOverrides = workflowDefaultOverrides
         self.legacyStepsArchive = legacyStepsArchive
+        self.customStatuses = customStatuses
+        self.statusLabelOverrides = statusLabelOverrides
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -762,6 +779,7 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         case scenarios, selectedScenarioID, defaultDeckID, workflowDefaultOverrides
         case legacyStepsArchive
         case legacySteps = "steps"
+        case customStatuses, statusLabelOverrides
     }
 
     public init(from decoder: Decoder) throws {
@@ -774,6 +792,8 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
         viewport = try c.decodeIfPresent(SystemViewport.self, forKey: .viewport) ?? SystemViewport()
+        customStatuses = try c.decodeIfPresent([CustomCardStatus].self, forKey: .customStatuses) ?? []
+        statusLabelOverrides = try c.decodeIfPresent([String: String].self, forKey: .statusLabelOverrides) ?? [:]
 
         let decodedElements = try c.decodeIfPresent([SystemElement].self, forKey: .elements)
         let decodedFlows = try c.decodeIfPresent([SystemFlow].self, forKey: .flows)
@@ -849,6 +869,8 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         try c.encodeIfPresent(defaultDeckID, forKey: .defaultDeckID)
         try c.encode(workflowDefaultOverrides, forKey: .workflowDefaultOverrides)
         try c.encodeIfPresent(legacyStepsArchive, forKey: .legacyStepsArchive)
+        try c.encode(customStatuses, forKey: .customStatuses)
+        try c.encode(statusLabelOverrides, forKey: .statusLabelOverrides)
     }
 
     public var sortedScenarios: [SystemScenario] {

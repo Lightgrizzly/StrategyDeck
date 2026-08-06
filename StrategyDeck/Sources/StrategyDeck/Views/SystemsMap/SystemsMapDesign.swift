@@ -110,6 +110,49 @@ extension SystemCardStatus {
     }
 }
 
+extension StatusColorToken {
+    var color: Color {
+        switch self {
+        case .cyan: return AC.cyan
+        case .available: return AC.available
+        case .gold: return AC.gold
+        case .threat: return AC.threat
+        case .orange: return .orange
+        case .purple: return .purple
+        case .resolved: return AC.resolved
+        case .textDim: return AC.textDim
+        }
+    }
+}
+
+/// The resolved name/icon/color for a status once custom statuses and
+/// renamed built-in labels are taken into account.
+struct StatusDisplayInfo {
+    let name: String
+    let icon: String
+    let color: Color
+}
+
+extension SystemCardEvaluation {
+    /// Display info for `effectiveStatus`, preferring a custom status's
+    /// name/icon/color when the matching override named one.
+    func displayInfo(catalog: StatusCatalog) -> StatusDisplayInfo {
+        if let customID = effectiveCustomStatusID, let custom = catalog.customStatuses.first(where: { $0.id == customID }) {
+            return StatusDisplayInfo(name: custom.name, icon: custom.iconName, color: custom.colorToken.color)
+        }
+        let name = catalog.labelOverrides[effectiveStatus.rawValue] ?? effectiveStatus.displayName
+        return StatusDisplayInfo(name: name, icon: effectiveStatus.systemImage, color: effectiveStatus.arenaColor)
+    }
+
+    /// Display info for `automaticStatus` (used in the "Why?" panel) — the
+    /// automatic engine never assigns a custom status (only an explicit
+    /// override can), so this only needs the label-override lookup.
+    func automaticDisplayInfo(catalog: StatusCatalog) -> StatusDisplayInfo {
+        let name = catalog.labelOverrides[automaticStatus.rawValue] ?? automaticStatus.displayName
+        return StatusDisplayInfo(name: name, icon: automaticStatus.systemImage, color: automaticStatus.arenaColor)
+    }
+}
+
 extension SystemElementState {
     var arenaColor: Color {
         switch self {
