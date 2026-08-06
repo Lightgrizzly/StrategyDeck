@@ -80,9 +80,13 @@ public enum SystemCardStatus: String, Codable, Hashable, Sendable, CaseIterable 
 ///
 /// `automaticStatus` is always the pure rule-engine result (never persisted,
 /// always recomputed — so it can never go stale) and can only be one of
-/// irrelevant/disabled/locked/available/recommended: a status like Active
-/// or Resolved is a fact the user asserted, not something rules alone can
-/// deduce, so it only ever appears via `effectiveStatus` once an override
+/// irrelevant/disabled/locked/pending/recommended. A playable card with no
+/// explicit target-type signal defaults to `.pending` rather than
+/// `.available` — availability is something the user chooses via an
+/// override, not something every rule-less card gets automatically. A
+/// status like Active, Available, or Resolved is a fact the user asserted,
+/// not something rules alone can deduce, so it only ever appears via
+/// `effectiveStatus` once an override
 /// exists. `effectiveStatus` is what should actually be displayed/used.
 public struct SystemCardEvaluation: Sendable {
     public let cardID: UUID

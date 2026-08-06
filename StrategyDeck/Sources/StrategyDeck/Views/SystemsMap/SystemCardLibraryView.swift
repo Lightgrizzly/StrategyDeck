@@ -17,6 +17,7 @@ struct SystemCardLibraryView: View {
     let selectionLabel: String
     let isEditable: Bool
     let onViewDetails: (KnowledgeCard) -> Void
+    let onEditCard: ((KnowledgeCard) -> Void)?
     let onApplyIntervention: (KnowledgeCard) -> Void
     let onChangeStatus: (KnowledgeCard, SystemCardStatus, SystemOverrideScope) -> Void
     let onResetToAutomatic: (KnowledgeCard) -> Void
@@ -37,6 +38,7 @@ struct SystemCardLibraryView: View {
         selectionLabel: String,
         isEditable: Bool,
         onViewDetails: @escaping (KnowledgeCard) -> Void,
+        onEditCard: ((KnowledgeCard) -> Void)? = nil,
         onApplyIntervention: @escaping (KnowledgeCard) -> Void,
         onChangeStatus: @escaping (KnowledgeCard, SystemCardStatus, SystemOverrideScope) -> Void,
         onResetToAutomatic: @escaping (KnowledgeCard) -> Void,
@@ -56,6 +58,7 @@ struct SystemCardLibraryView: View {
         self.selectionLabel = selectionLabel
         self.isEditable = isEditable
         self.onViewDetails = onViewDetails
+        self.onEditCard = onEditCard
         self.onApplyIntervention = onApplyIntervention
         self.onChangeStatus = onChangeStatus
         self.onResetToAutomatic = onResetToAutomatic
@@ -161,6 +164,7 @@ struct SystemCardLibraryView: View {
                                             isEditable: isEditable,
                                             selectionLabel: selectionLabel,
                                             onViewDetails: { onViewDetails(card) },
+                                            onEdit: onEditCard.map { edit in { edit(card) } },
                                             onApplyIntervention: { onApplyIntervention(card) },
                                             onChangeStatus: { onChangeStatus(card, $0, $1) },
                                             onResetToAutomatic: { onResetToAutomatic(card) },
@@ -415,6 +419,7 @@ private struct SystemLibraryCardView: View {
     let isEditable: Bool
     let selectionLabel: String
     let onViewDetails: () -> Void
+    let onEdit: (() -> Void)?
     let onApplyIntervention: () -> Void
     let onChangeStatus: (SystemCardStatus, SystemOverrideScope) -> Void
     let onResetToAutomatic: () -> Void
@@ -479,6 +484,10 @@ private struct SystemLibraryCardView: View {
             HStack(spacing: 6) {
                 Button("Details", action: onViewDetails)
                     .buttonStyle(ArenaOutlineButtonStyle(color: AC.borderDim))
+                if isEditable, let onEdit {
+                    Button("Edit", action: onEdit)
+                        .buttonStyle(ArenaOutlineButtonStyle(color: AC.borderDim))
+                }
                 if isEditable, evaluation?.isPlayable == true {
                     Button(status == .recommended ? "APPLY (RECOMMENDED)" : "APPLY") {
                         onApplyIntervention()
@@ -514,6 +523,9 @@ private struct SystemLibraryCardView: View {
                 Divider()
             }
             Button("View Details", action: onViewDetails)
+            if isEditable, let onEdit {
+                Button("Edit", action: onEdit)
+            }
             if isEditable, evaluation?.isPlayable == true {
                 Button("Apply Intervention", action: onApplyIntervention)
             }

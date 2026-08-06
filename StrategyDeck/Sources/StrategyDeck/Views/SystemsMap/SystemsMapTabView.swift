@@ -421,6 +421,7 @@ private struct SystemsMapEditorView: View {
                 selectionLabel: selectionLabel,
                 isEditable: true,
                 onViewDetails: { showingDetailsFor = $0 },
+                onEditCard: { editingCardFromTray = $0 },
                 onApplyIntervention: { showingInterventionSheetFor = $0 },
                 onChangeStatus: { card, status, scope in
                     systemMapStore.setCardStatusOverride(
@@ -480,7 +481,10 @@ private struct SystemsMapEditorView: View {
                 suite: cardStore.suits.first(where: { card.suitIDs.contains($0.id) }),
                 allCards: cardStore.cards,
                 relationships: cardStore.relationships,
-                onEdit: {},
+                onEdit: {
+                    showingDetailsFor = nil
+                    editingCardFromTray = card
+                },
                 onAddToTray: {},
                 onDismiss: { showingDetailsFor = nil }
             )
@@ -1103,7 +1107,10 @@ private struct PendingCardDropSheet: View {
             let targets = drop.evaluation.validTargetKinds.map(\.displayName).joined(separator: " or ")
             Text("Invalid target — this card can only target \(targets.isEmpty ? "specific element types" : targets).")
                 .font(.system(size: 12)).foregroundStyle(AC.threat)
-        case .exhausted, .resolved, .pending:
+        case .pending:
+            Text("This card is playable here but hasn't been marked available. Set it as Active, or make it Available first.")
+                .font(.system(size: 12)).foregroundStyle(AC.textSub)
+        case .exhausted, .resolved:
             Text("This card is \(drop.evaluation.effectiveStatus.displayName) and won't be replayed automatically.")
                 .font(.system(size: 12)).foregroundStyle(AC.textSub)
         }
@@ -1164,7 +1171,16 @@ private struct PendingCardDropSheet: View {
                 Button("Override Relevance → Available") { onAction(.overrideStatus(.available)) }
                     .buttonStyle(ArenaOutlineButtonStyle(color: AC.threat.opacity(0.5)))
             }
-        case .exhausted, .resolved, .pending:
+        case .pending:
+            HStack(spacing: 6) {
+                Button("Mark as Available") { onAction(.overrideStatus(.available)) }
+                    .buttonStyle(ArenaButtonStyle(color: AC.available))
+                Button("Set as Active") { onAction(.setActive) }
+                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.6)))
+                Button("View Details") { onAction(.viewDetails) }
+                    .buttonStyle(ArenaOutlineButtonStyle())
+            }
+        case .exhausted, .resolved:
             HStack(spacing: 6) {
                 Button("View Details") { onAction(.viewDetails) }
                     .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.6)))

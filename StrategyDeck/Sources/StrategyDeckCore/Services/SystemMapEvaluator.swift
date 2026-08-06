@@ -84,7 +84,14 @@ public struct SystemMapEvaluator: Sendable {
             automaticStatus = .irrelevant
         } else if result.isPlayable {
             let isRecommended = selectedTargetKind != nil && declaresTargets && rules.systemTargetTypes.contains(selectedTargetKind!)
-            automaticStatus = isRecommended ? .recommended : .available
+            // A card that explicitly declares this target type is a strong
+            // enough signal to surface as Recommended automatically. A
+            // plain playable card with no such signal defaults to Pending
+            // instead of Available — availability is something the user
+            // chooses (via override), not something every rule-less card
+            // gets by default, so the Available group doesn't fill up with
+            // every card in the deck.
+            automaticStatus = isRecommended ? .recommended : .pending
         } else {
             automaticStatus = result.blockingCards.isEmpty ? .locked : .disabled
         }
@@ -187,11 +194,21 @@ public struct SystemMapEvaluator: Sendable {
             let targetList = card.playabilityRules.systemTargetTypes.map(\.displayName).joined(separator: " or ")
             let selectionName = selectedTargetKind?.displayName ?? "the current selection"
             return "Irrelevant to this selection because this card targets \(targetList), and the selected element is a \(selectionName)."
-        case .recommended, .available:
+        case .recommended:
+            return "Recommended — this card explicitly targets \(selectedTargetKind?.displayName ?? "this selection")."
+        case .available:
+            // Only ever the *effective* status here, via an explicit
+            // override — the automatic engine no longer produces
+            // `.available` on its own (see `.pending`).
             if result.availableReasons.isEmpty {
                 return "Available — no prerequisites are required."
             }
             return "Available because " + result.availableReasons.joined(separator: "; ") + "."
+        case .pending:
+            if result.availableReasons.isEmpty {
+                return "Playable — no prerequisites are required — but not marked available automatically. Change its status to make it available here."
+            }
+            return "Playable because " + result.availableReasons.joined(separator: "; ") + ", but not marked available automatically. Change its status to make it available here."
         case .locked:
             if !result.unlockingCards.isEmpty {
                 return "Locked because " + result.blockedReasons.joined(separator: "; ") + ". Playing " + result.unlockingCards.joined(separator: " or ") + " would unlock it."
@@ -199,7 +216,7 @@ public struct SystemMapEvaluator: Sendable {
             return "Locked because " + result.blockedReasons.joined(separator: "; ") + "."
         case .disabled:
             return "Disabled because " + result.blockedReasons.joined(separator: "; ") + "."
-        case .active, .exhausted, .resolved, .pending:
+        case .active, .exhausted, .resolved:
             // The automatic (pure rule-engine) status never resolves to
             // these on its own — they only ever appear as an override's
             // effective status. Kept exhaustive for compiler safety.

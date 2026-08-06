@@ -18,16 +18,19 @@ final class SystemMapEvaluatorTests: XCTestCase {
         SystemScenario(name: "Test Scenario", isDefault: true)
     }
 
-    func testUnconstrainedCardIsAvailable() {
+    func testUnconstrainedCardDefaultsToPendingNotAvailable() {
+        // Playable with no explicit target-type signal must NOT default to
+        // Available — availability is something the user chooses via an
+        // override, so a rule-less card lands in Pending instead.
         let card = makeCard(title: "No Rules")
         let result = SystemMapEvaluator.evaluate(
             card: card, map: makeMap(), scenario: makeScenario(),
             selectedTargetKind: nil, selectedElementID: nil, allCards: [card]
         )
-        XCTAssertEqual(result.automaticStatus, .available)
-        XCTAssertEqual(result.effectiveStatus, .available)
+        XCTAssertEqual(result.automaticStatus, .pending)
+        XCTAssertEqual(result.effectiveStatus, .pending)
         XCTAssertFalse(result.isOverridden)
-        XCTAssertTrue(result.isPlayable)
+        XCTAssertFalse(result.isPlayable, "Pending is not playable until the user explicitly marks it available")
     }
 
     func testMissingKnownInformationLocksCard() {
@@ -50,7 +53,7 @@ final class SystemMapEvaluatorTests: XCTestCase {
             card: card, map: makeMap(), scenario: scenario,
             selectedTargetKind: nil, selectedElementID: nil, allCards: [card]
         )
-        XCTAssertEqual(result.automaticStatus, .available)
+        XCTAssertEqual(result.automaticStatus, .pending)
     }
 
     func testCardIsIrrelevantWhenSelectionDoesNotMatchDeclaredTargets() {
@@ -77,13 +80,14 @@ final class SystemMapEvaluatorTests: XCTestCase {
 
     func testUntargetedCardIsNeverIrrelevant() {
         // No systemTargetTypes declared — must remain usable everywhere so
-        // pre-existing cards authored before this feature keep working.
+        // pre-existing cards authored before this feature keep working
+        // (just not automatically Available — see `.pending`).
         let card = makeCard(title: "General Principle")
         let result = SystemMapEvaluator.evaluate(
             card: card, map: makeMap(), scenario: makeScenario(),
             selectedTargetKind: .flow, selectedElementID: nil, allCards: [card]
         )
-        XCTAssertEqual(result.automaticStatus, .available)
+        XCTAssertEqual(result.automaticStatus, .pending)
     }
 
     func testReciprocalUnlockWorksFromEitherSide() {
@@ -108,7 +112,7 @@ final class SystemMapEvaluatorTests: XCTestCase {
             card: cardB, map: makeMap(), scenario: scenarioAfter,
             selectedTargetKind: nil, selectedElementID: nil, allCards: allCards
         )
-        XCTAssertEqual(after.automaticStatus, .available)
+        XCTAssertEqual(after.automaticStatus, .pending)
         XCTAssertTrue(after.satisfiedRequirements.contains(where: { $0.contains("Measure Demand") }))
     }
 
@@ -134,7 +138,7 @@ final class SystemMapEvaluatorTests: XCTestCase {
             card: card, map: makeMap(), scenario: scenario,
             selectedTargetKind: .stock, selectedElementID: otherElementID, allCards: [card]
         )
-        XCTAssertEqual(offTarget.effectiveStatus, .available)
+        XCTAssertEqual(offTarget.effectiveStatus, .pending)
         XCTAssertFalse(offTarget.isOverridden)
     }
 
@@ -149,7 +153,7 @@ final class SystemMapEvaluatorTests: XCTestCase {
             selectedTargetKind: .goal, selectedElementID: UUID(), allCards: [card]
         )
         XCTAssertEqual(result.effectiveStatus, .active)
-        XCTAssertEqual(result.automaticStatus, .available, "automaticStatus must ignore the override")
+        XCTAssertEqual(result.automaticStatus, .pending, "automaticStatus must ignore the override")
     }
 
     func testWorkflowDefaultOverrideAppliesAcrossScenarios() {
@@ -197,7 +201,7 @@ final class SystemMapEvaluatorTests: XCTestCase {
         let resultB = SystemMapEvaluator.evaluate(card: card, map: map, scenario: scenarioB, selectedTargetKind: nil, selectedElementID: nil, allCards: [card])
 
         XCTAssertEqual(resultA.effectiveStatus, .disabled)
-        XCTAssertEqual(resultB.effectiveStatus, .available)
+        XCTAssertEqual(resultB.effectiveStatus, .pending)
     }
 
     func testTargetKindMapping() {
