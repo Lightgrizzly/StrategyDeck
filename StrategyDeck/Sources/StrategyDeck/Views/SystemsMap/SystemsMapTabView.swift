@@ -220,6 +220,7 @@ private struct SystemsMapEditorView: View {
     @State private var editingDeckID: String?
     @State private var showingCreateCardSheet = false
     @State private var newCard = KnowledgeCard(deckIDs: [], suitIDs: [], kind: .action, metadata: .softwareStrategy(SoftwareStrategyFields()), title: "")
+    @State private var editingCardFromTray: KnowledgeCard?
     @State private var alertState: AlertState?
     @State private var undoStack: [EditorSnapshot] = []
     @State private var redoStack: [EditorSnapshot] = []
@@ -415,6 +416,7 @@ private struct SystemsMapEditorView: View {
             SystemCardLibraryView(
                 cards: deckScopedCards,
                 suits: cardStore.suits,
+                deckSuits: suitsForSelectedDeck(),
                 evaluations: evaluations,
                 selectionLabel: selectionLabel,
                 isEditable: true,
@@ -440,6 +442,18 @@ private struct SystemsMapEditorView: View {
                         cardID: card.id, targetElementID: selectedElementID,
                         scope: .thisElementOnly, status: status, reason: "", scenarioID: scenario.id
                     )
+                },
+                onQuickCreateCard: { title, suitID, description in
+                    cardStore.quickCreateCard(title: title, deckID: effectiveDeckID, suitID: suitID, shortDescription: description)
+                },
+                onQuickCreateAndEdit: { title, suitID, description in
+                    editingCardFromTray = cardStore.quickCreateCard(title: title, deckID: effectiveDeckID, suitID: suitID, shortDescription: description)
+                },
+                onCreateSuiteInline: effectiveDeckID.map { deckID in
+                    { name in cardStore.createSuit(deckID: deckID, name: name) }
+                },
+                onBulkCreateCards: { entries in
+                    cardStore.bulkCreateCards(entries, deckID: effectiveDeckID)
                 }
             )
             .frame(maxHeight: .infinity)
@@ -562,6 +576,19 @@ private struct SystemsMapEditorView: View {
                     showingCreateCardSheet = false
                 },
                 onCancel: { showingCreateCardSheet = false }
+            )
+            .frame(minWidth: 380, minHeight: 500)
+        }
+        .sheet(item: $editingCardFromTray) { card in
+            KnowledgeCardEditorView(
+                mode: .edit,
+                card: Binding(get: { editingCardFromTray ?? card }, set: { editingCardFromTray = $0 }),
+                suits: suitsForSelectedDeck(),
+                onSave: { updated in
+                    cardStore.update(updated)
+                    editingCardFromTray = nil
+                },
+                onCancel: { editingCardFromTray = nil }
             )
             .frame(minWidth: 380, minHeight: 500)
         }

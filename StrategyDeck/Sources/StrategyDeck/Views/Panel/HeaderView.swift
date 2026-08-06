@@ -6,10 +6,25 @@ struct HeaderView: View {
     @Binding var favoritesOnly: Bool
     let isPinned: Bool
     @Binding var isSidebarVisible: Bool
+    let selectedDeckID: String?
+    let cardGridProxy: CardGridViewProxy
     let onTogglePin: () -> Void
-    let onAddCard: () -> Void
     let onShowSettings: () -> Void
     let onResetSeed: () -> Void
+
+    @EnvironmentObject var cardStore: CardStore
+    @State private var showingQuickCreate = false
+    @State private var showingBulkAdd = false
+
+    private var currentDeckSuits: [CardSuit] {
+        guard let selectedDeckID else { return cardStore.suits }
+        return cardStore.suits.filter { $0.deckID == selectedDeckID }
+    }
+
+    private var existingTitlesInDeck: [String] {
+        let inDeck = selectedDeckID.map { id in cardStore.cards.filter { $0.deckIDs.contains(id) } } ?? cardStore.cards
+        return inDeck.map(\.title)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -36,13 +51,52 @@ struct HeaderView: View {
                 .foregroundStyle(isSidebarVisible ? AC.cyan : AC.textDim)
                 .help(isSidebarVisible ? "Hide library sidebar" : "Show library sidebar")
 
-                Button(action: onAddCard) {
+                Button(action: { showingQuickCreate = true }) {
                     Image(systemName: "plus")
                         .font(.system(size: 11, weight: .semibold))
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(AC.textSub)
-                .help("New card")
+                .help("Quick add card")
+                .popover(isPresented: $showingQuickCreate, arrowEdge: .bottom) {
+                    QuickCreateCardPopover(
+                        suits: currentDeckSuits,
+                        onCreate: { title, suitID, description in
+                            cardStore.quickCreateCard(title: title, deckID: selectedDeckID, suitID: suitID, shortDescription: description)
+                        },
+                        onCreateAndEdit: { title, suitID, description in
+                            let created = cardStore.quickCreateCard(title: title, deckID: selectedDeckID, suitID: suitID, shortDescription: description)
+                            showingQuickCreate = false
+                            cardGridProxy.presentEditCard?(created)
+                        },
+                        onCreateSuite: selectedDeckID.map { deckID in
+                            { name in cardStore.createSuit(deckID: deckID, name: name) }
+                        },
+                        onOpenBlankFullEditor: {
+                            showingQuickCreate = false
+                            cardGridProxy.presentCreate?()
+                        },
+                        onClose: { showingQuickCreate = false }
+                    )
+                }
+
+                Button(action: { showingBulkAdd = true }) {
+                    Image(systemName: "list.bullet.clipboard")
+                        .font(.system(size: 11))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(AC.textSub)
+                .help("Bulk add cards")
+                .sheet(isPresented: $showingBulkAdd) {
+                    BulkAddCardsSheet(
+                        suits: currentDeckSuits,
+                        existingTitles: existingTitlesInDeck,
+                        onCommit: { entries in
+                            cardStore.bulkCreateCards(entries, deckID: selectedDeckID)
+                        },
+                        onDone: { showingBulkAdd = false }
+                    )
+                }
 
                 Toggle(isOn: Binding(get: { isPinned }, set: { _ in onTogglePin() })) {
                     Image(systemName: isPinned ? "pin.fill" : "pin")

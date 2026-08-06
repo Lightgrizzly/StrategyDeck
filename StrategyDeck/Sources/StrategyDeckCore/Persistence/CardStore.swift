@@ -88,15 +88,96 @@ public final class CardStore: ObservableObject {
         save()
     }
 
-    public func duplicate(_ card: KnowledgeCard) {
+    @discardableResult
+    public func duplicate(_ card: KnowledgeCard, titleSuffix: String = " (copy)") -> KnowledgeCard {
         var copy = card
         copy.id = UUID()
-        copy.title = card.title + " (copy)"
+        copy.title = card.title + titleSuffix
         copy.isFavorite = false
         copy.createdAt = Date()
         copy.updatedAt = Date()
         cards.append(copy)
         save()
+        return copy
+    }
+
+    /// Duplicates a card into a specific deck rather than wherever the
+    /// original lives — any suit membership that doesn't belong to the
+    /// destination deck is dropped, since a suit only ever belongs to one
+    /// deck.
+    @discardableResult
+    public func duplicateCard(_ card: KnowledgeCard, intoDeckID deckID: String) -> KnowledgeCard {
+        var copy = card
+        copy.id = UUID()
+        copy.title = card.title + " (copy)"
+        copy.deckIDs = [deckID]
+        let deckSuitIDs = Set(suits.filter { $0.deckID == deckID }.map(\.id))
+        copy.suitIDs = card.suitIDs.filter { deckSuitIDs.contains($0) }
+        copy.isFavorite = false
+        copy.createdAt = Date()
+        copy.updatedAt = Date()
+        cards.append(copy)
+        save()
+        return copy
+    }
+
+    /// Duplicates a card into a specific suit, adding that suit's deck to
+    /// the copy's `deckIDs` if it isn't already there.
+    @discardableResult
+    public func duplicateCard(_ card: KnowledgeCard, intoSuitID suitID: String) -> KnowledgeCard {
+        var copy = card
+        copy.id = UUID()
+        copy.title = card.title + " (copy)"
+        copy.suitIDs = [suitID]
+        if let deckID = suits.first(where: { $0.id == suitID })?.deckID, !copy.deckIDs.contains(deckID) {
+            copy.deckIDs.append(deckID)
+        }
+        copy.isFavorite = false
+        copy.createdAt = Date()
+        copy.updatedAt = Date()
+        cards.append(copy)
+        save()
+        return copy
+    }
+
+    // MARK: - Quick Create / Bulk Create
+
+    /// Creates a fully valid, saved card from just a title — the same
+    /// underlying model a card built through the full editor would produce,
+    /// just reached in one step. Deck/suite membership is optional.
+    @discardableResult
+    public func quickCreateCard(title: String, deckID: String?, suitID: String?, shortDescription: String = "") -> KnowledgeCard {
+        let card = KnowledgeCard(
+            deckIDs: deckID.map { [$0] } ?? [],
+            suitIDs: suitID.map { [$0] } ?? [],
+            kind: .action,
+            metadata: .softwareStrategy(SoftwareStrategyFields()),
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+            frontText: shortDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+        cards.append(card)
+        save()
+        return card
+    }
+
+    /// Creates one card per entry in the same deck. Duplicate detection and
+    /// row-level editing happen in the bulk-add UI before this is called —
+    /// this always creates exactly what it's given.
+    @discardableResult
+    public func bulkCreateCards(_ entries: [(title: String, suitID: String?)], deckID: String?) -> [KnowledgeCard] {
+        guard !entries.isEmpty else { return [] }
+        let created = entries.map { entry in
+            KnowledgeCard(
+                deckIDs: deckID.map { [$0] } ?? [],
+                suitIDs: entry.suitID.map { [$0] } ?? [],
+                kind: .action,
+                metadata: .softwareStrategy(SoftwareStrategyFields()),
+                title: entry.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+        }
+        cards.append(contentsOf: created)
+        save()
+        return created
     }
 
     // MARK: - Suit tree lookups

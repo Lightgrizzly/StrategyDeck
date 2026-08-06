@@ -49,8 +49,9 @@ struct PanelRootView: View {
                         favoritesOnly: $favoritesOnly,
                         isPinned: panelController.isPinned,
                         isSidebarVisible: $isSidebarVisible,
+                        selectedDeckID: selectedDeckID,
+                        cardGridProxy: cardGridRef,
                         onTogglePin: { panelController.setPin(!panelController.isPinned) },
-                        onAddCard: { cardGridRef.presentCreate?() },
                         onShowSettings: { showingSettings = true },
                         onResetSeed: {
                             alertState = .destructive(
@@ -140,6 +141,7 @@ struct PanelRootView: View {
 /// without creating a circular view dependency.
 final class CardGridViewProxy: ObservableObject {
     var presentCreate: (() -> Void)?
+    var presentEditCard: ((KnowledgeCard) -> Void)?
 }
 
 /// Wrapper that captures the proxy reference and hands it to the grid.
@@ -180,8 +182,21 @@ private struct InternalGrid: View {
 
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 6)]
 
+    private var inlineAddPlaceholder: String {
+        if let suiteName = suits.first(where: { $0.id == filter.suitID })?.name {
+            return "Enter new card title for \(suiteName)…"
+        }
+        return "Enter new card title…"
+    }
+
     var body: some View {
         ScrollView {
+            InlineCreateRow(placeholder: inlineAddPlaceholder) { title in
+                cardStore.quickCreateCard(title: title, deckID: selectedDeckID, suitID: filter.suitID)
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 8)
+
             if filteredCards.isEmpty {
                 emptyState
             } else {
@@ -205,6 +220,15 @@ private struct InternalGrid: View {
                                 ) {
                                     if let id = pendingDeleteID { cardStore.delete(id: id) }
                                 }
+                            },
+                            availableSuits: suits,
+                            onDuplicateIntoCurrentDeck: selectedDeckID.map { deckID in
+                                { cardStore.duplicateCard(card, intoDeckID: deckID) }
+                            },
+                            onDuplicateIntoSuite: { suit in cardStore.duplicateCard(card, intoSuitID: suit.id) },
+                            onDuplicateAsVariation: {
+                                let copy = cardStore.duplicate(card, titleSuffix: " (Variation)")
+                                editingCard = copy
                             }
                         )
                     }
@@ -215,9 +239,11 @@ private struct InternalGrid: View {
         }
         .background(AC.bg)
         .alertState($alertState)
-        // Wire the proxy so the header can trigger "new card"
+        // Wire the proxy so the header can trigger "new card" / open a
+        // just-quick-created card in the full editor.
         .onAppear {
             proxy.presentCreate = { presentCreate() }
+            proxy.presentEditCard = { card in editingCard = card }
         }
         // Card detail
         .sheet(item: Binding(get: { detailCard }, set: { detailCard = $0 })) { card in

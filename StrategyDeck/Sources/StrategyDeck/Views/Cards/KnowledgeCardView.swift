@@ -12,6 +12,12 @@ struct KnowledgeCardView: View {
     let onEdit: () -> Void
     let onDuplicate: () -> Void
     let onDelete: () -> Void
+    /// Duplicate variations — all optional so existing call sites (e.g. the
+    /// Duel tab's read-only card browser) compile unchanged.
+    var availableSuits: [CardSuit] = []
+    var onDuplicateIntoCurrentDeck: (() -> Void)? = nil
+    var onDuplicateIntoSuite: ((CardSuit) -> Void)? = nil
+    var onDuplicateAsVariation: (() -> Void)? = nil
 
     @State private var isHovered = false
 
@@ -128,7 +134,28 @@ struct KnowledgeCardView: View {
         Button { onAddToTray() } label: { Label("Add to Sequence", systemImage: "plus.circle") }
         Divider()
         Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
-        Button { onDuplicate() } label: { Label("Duplicate", systemImage: "plus.square.on.square") }
+        if onDuplicateIntoCurrentDeck == nil && onDuplicateIntoSuite == nil && onDuplicateAsVariation == nil {
+            Button { onDuplicate() } label: { Label("Duplicate", systemImage: "plus.square.on.square") }
+        } else {
+            Menu {
+                Button { onDuplicate() } label: { Label("Duplicate", systemImage: "plus.square.on.square") }
+                if let onDuplicateIntoCurrentDeck {
+                    Button("Duplicate into Current Deck", action: onDuplicateIntoCurrentDeck)
+                }
+                if let onDuplicateIntoSuite, !availableSuits.isEmpty {
+                    Menu("Duplicate into Another Suite") {
+                        ForEach(availableSuits.sorted { $0.displayOrder < $1.displayOrder }) { suit in
+                            Button(suit.name) { onDuplicateIntoSuite(suit) }
+                        }
+                    }
+                }
+                if let onDuplicateAsVariation {
+                    Button("Duplicate as Variation…", action: onDuplicateAsVariation)
+                }
+            } label: {
+                Label("Duplicate", systemImage: "plus.square.on.square")
+            }
+        }
         Button { onFavorite() } label: {
             Label(card.isFavorite ? "Unfavorite" : "Favorite", systemImage: card.isFavorite ? "star.slash" : "star")
         }

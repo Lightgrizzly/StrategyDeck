@@ -9,6 +9,10 @@ import StrategyDeckCore
 struct SystemCardLibraryView: View {
     let cards: [KnowledgeCard]
     let suits: [CardSuit]
+    /// Suits scoped to the currently selected deck — used for Quick Add /
+    /// Bulk Add's suite pickers (`suits` above is the global list, used
+    /// only for the suite filter chips).
+    let deckSuits: [CardSuit]
     let evaluations: [SystemCardEvaluation]
     let selectionLabel: String
     let isEditable: Bool
@@ -20,10 +24,15 @@ struct SystemCardLibraryView: View {
     let onCreateCard: (() -> Void)?
     let onAssignToSelectedElement: ((KnowledgeCard) -> Void)?
     let onDropCardToStatus: ((UUID, SystemCardStatus) -> Void)?
+    let onQuickCreateCard: ((String, String?, String) -> Void)?
+    let onQuickCreateAndEdit: ((String, String?, String) -> Void)?
+    let onCreateSuiteInline: ((String) -> CardSuit)?
+    let onBulkCreateCards: (([(title: String, suitID: String?)]) -> Void)?
 
     init(
         cards: [KnowledgeCard],
         suits: [CardSuit],
+        deckSuits: [CardSuit] = [],
         evaluations: [SystemCardEvaluation],
         selectionLabel: String,
         isEditable: Bool,
@@ -34,10 +43,15 @@ struct SystemCardLibraryView: View {
         onChooseAnotherDeck: (() -> Void)? = nil,
         onCreateCard: (() -> Void)? = nil,
         onAssignToSelectedElement: ((KnowledgeCard) -> Void)? = nil,
-        onDropCardToStatus: ((UUID, SystemCardStatus) -> Void)? = nil
+        onDropCardToStatus: ((UUID, SystemCardStatus) -> Void)? = nil,
+        onQuickCreateCard: ((String, String?, String) -> Void)? = nil,
+        onQuickCreateAndEdit: ((String, String?, String) -> Void)? = nil,
+        onCreateSuiteInline: ((String) -> CardSuit)? = nil,
+        onBulkCreateCards: (([(title: String, suitID: String?)]) -> Void)? = nil
     ) {
         self.cards = cards
         self.suits = suits
+        self.deckSuits = deckSuits
         self.evaluations = evaluations
         self.selectionLabel = selectionLabel
         self.isEditable = isEditable
@@ -49,6 +63,10 @@ struct SystemCardLibraryView: View {
         self.onCreateCard = onCreateCard
         self.onAssignToSelectedElement = onAssignToSelectedElement
         self.onDropCardToStatus = onDropCardToStatus
+        self.onQuickCreateCard = onQuickCreateCard
+        self.onQuickCreateAndEdit = onQuickCreateAndEdit
+        self.onCreateSuiteInline = onCreateSuiteInline
+        self.onBulkCreateCards = onBulkCreateCards
     }
 
     @State private var searchText = ""
@@ -56,6 +74,8 @@ struct SystemCardLibraryView: View {
     @State private var selectedSuitIDs: Set<String> = []
     @State private var favoritesOnly = false
     @State private var isDropTargetedStatus: SystemCardStatus?
+    @State private var showingQuickCreate = false
+    @State private var showingBulkAdd = false
 
     private var evaluationByID: [UUID: SystemCardEvaluation] {
         Dictionary(uniqueKeysWithValues: evaluations.map { ($0.cardID, $0) })
@@ -218,6 +238,48 @@ struct SystemCardLibraryView: View {
             HStack(spacing: 8) {
                 ArenaSectionLabel(text: "Card Library — \(selectionLabel)", icon: "square.stack.3d.up")
                 Spacer()
+                if onQuickCreateCard != nil {
+                    Button(action: { showingQuickCreate = true }) {
+                        Label("QUICK ADD", systemImage: "plus")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    }
+                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.55)))
+                    .popover(isPresented: $showingQuickCreate, arrowEdge: .bottom) {
+                        QuickCreateCardPopover(
+                            suits: deckSuits,
+                            initialSuitID: selectedSuitIDs.count == 1 ? selectedSuitIDs.first : nil,
+                            onCreate: { title, suitID, description in
+                                onQuickCreateCard?(title, suitID, description)
+                            },
+                            onCreateAndEdit: { title, suitID, description in
+                                showingQuickCreate = false
+                                onQuickCreateAndEdit?(title, suitID, description)
+                            },
+                            onCreateSuite: onCreateSuiteInline,
+                            onOpenBlankFullEditor: {
+                                showingQuickCreate = false
+                                onCreateCard?()
+                            },
+                            onClose: { showingQuickCreate = false }
+                        )
+                    }
+                }
+                if onBulkCreateCards != nil {
+                    Button(action: { showingBulkAdd = true }) {
+                        Image(systemName: "list.bullet.clipboard")
+                    }
+                    .buttonStyle(ArenaOutlineButtonStyle())
+                    .help("Bulk add cards")
+                    .sheet(isPresented: $showingBulkAdd) {
+                        BulkAddCardsSheet(
+                            suits: deckSuits,
+                            existingTitles: cards.map(\.title),
+                            initialSuitID: selectedSuitIDs.count == 1 ? selectedSuitIDs.first : nil,
+                            onCommit: { entries in onBulkCreateCards?(entries) },
+                            onDone: { showingBulkAdd = false }
+                        )
+                    }
+                }
                 Text("\(filteredCards.count) / \(cards.count)")
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .foregroundStyle(AC.textDim)
