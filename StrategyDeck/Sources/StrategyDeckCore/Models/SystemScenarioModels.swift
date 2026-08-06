@@ -163,6 +163,10 @@ public struct SystemScenario: Codable, Identifiable, Hashable, Sendable {
     public var cardStatusOverrides: [SystemCardStatusOverride]
     public var cardNotes: [UUID: String]
 
+    /// Overrides the map's `defaultDeckID` for this scenario only. `nil`
+    /// means "inherit the map's default deck." See `SystemMap.effectiveDeckID(for:)`.
+    public var deckOverrideID: String?
+
     public var selectedElementID: UUID?
 
     public var createdAt: Date
@@ -181,6 +185,7 @@ public struct SystemScenario: Codable, Identifiable, Hashable, Sendable {
         unknownInformation: String = "",
         cardStatusOverrides: [SystemCardStatusOverride] = [],
         cardNotes: [UUID: String] = [:],
+        deckOverrideID: String? = nil,
         selectedElementID: UUID? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -197,6 +202,7 @@ public struct SystemScenario: Codable, Identifiable, Hashable, Sendable {
         self.unknownInformation = unknownInformation
         self.cardStatusOverrides = cardStatusOverrides
         self.cardNotes = cardNotes
+        self.deckOverrideID = deckOverrideID
         self.selectedElementID = selectedElementID
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -216,6 +222,7 @@ public struct SystemScenario: Codable, Identifiable, Hashable, Sendable {
         unknownInformation = try c.decodeIfPresent(String.self, forKey: .unknownInformation) ?? ""
         cardStatusOverrides = try c.decodeIfPresent([SystemCardStatusOverride].self, forKey: .cardStatusOverrides) ?? []
         cardNotes = try c.decodeIfPresent([UUID: String].self, forKey: .cardNotes) ?? [:]
+        deckOverrideID = try c.decodeIfPresent(String.self, forKey: .deckOverrideID)
         selectedElementID = try c.decodeIfPresent(UUID.self, forKey: .selectedElementID)
         createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()

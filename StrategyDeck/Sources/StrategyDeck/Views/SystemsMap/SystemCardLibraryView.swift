@@ -16,11 +16,46 @@ struct SystemCardLibraryView: View {
     let onApplyIntervention: (KnowledgeCard) -> Void
     let onChangeStatus: (KnowledgeCard, SystemCardStatus, SystemOverrideScope) -> Void
     let onResetToAutomatic: (KnowledgeCard) -> Void
+    let onChooseAnotherDeck: (() -> Void)?
+    let onCreateCard: (() -> Void)?
+    let onAssignToSelectedElement: ((KnowledgeCard) -> Void)?
+    let onDropCardToStatus: ((UUID, SystemCardStatus) -> Void)?
+
+    init(
+        cards: [KnowledgeCard],
+        suits: [CardSuit],
+        evaluations: [SystemCardEvaluation],
+        selectionLabel: String,
+        isEditable: Bool,
+        onViewDetails: @escaping (KnowledgeCard) -> Void,
+        onApplyIntervention: @escaping (KnowledgeCard) -> Void,
+        onChangeStatus: @escaping (KnowledgeCard, SystemCardStatus, SystemOverrideScope) -> Void,
+        onResetToAutomatic: @escaping (KnowledgeCard) -> Void,
+        onChooseAnotherDeck: (() -> Void)? = nil,
+        onCreateCard: (() -> Void)? = nil,
+        onAssignToSelectedElement: ((KnowledgeCard) -> Void)? = nil,
+        onDropCardToStatus: ((UUID, SystemCardStatus) -> Void)? = nil
+    ) {
+        self.cards = cards
+        self.suits = suits
+        self.evaluations = evaluations
+        self.selectionLabel = selectionLabel
+        self.isEditable = isEditable
+        self.onViewDetails = onViewDetails
+        self.onApplyIntervention = onApplyIntervention
+        self.onChangeStatus = onChangeStatus
+        self.onResetToAutomatic = onResetToAutomatic
+        self.onChooseAnotherDeck = onChooseAnotherDeck
+        self.onCreateCard = onCreateCard
+        self.onAssignToSelectedElement = onAssignToSelectedElement
+        self.onDropCardToStatus = onDropCardToStatus
+    }
 
     @State private var searchText = ""
     @State private var statusFilter: SystemCardStatus?
     @State private var selectedSuitIDs: Set<String> = []
     @State private var favoritesOnly = false
+    @State private var isDropTargetedStatus: SystemCardStatus?
 
     private var evaluationByID: [UUID: SystemCardEvaluation] {
         Dictionary(uniqueKeysWithValues: evaluations.map { ($0.cardID, $0) })
@@ -75,7 +110,9 @@ struct SystemCardLibraryView: View {
             suiteBar
             Rectangle().fill(AC.borderDim).frame(height: 1)
 
-            if filteredCards.isEmpty {
+            if cards.isEmpty {
+                emptyDeckState
+            } else if filteredCards.isEmpty {
                 VStack(spacing: 6) {
                     Image(systemName: "rectangle.stack.badge.magnifyingglass").font(.system(size: 22)).foregroundStyle(AC.textGhost)
                     Text("No cards match the current filters.").font(.system(size: 11)).foregroundStyle(AC.textSub)
@@ -89,7 +126,12 @@ struct SystemCardLibraryView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(groupedCards, id: \.title) { group in
                             VStack(alignment: .leading, spacing: 6) {
-                                ArenaSectionLabel(text: "\(group.title) (\(group.cards.count))", color: group.status.arenaColor)
+                                HStack(spacing: 6) {
+                                    ArenaSectionLabel(text: "\(group.title) (\(group.cards.count))", color: group.status.arenaColor)
+                                    if isDropTargetedStatus == group.status {
+                                        Image(systemName: "arrow.down.circle.fill").font(.system(size: 9)).foregroundStyle(group.status.arenaColor)
+                                    }
+                                }
                                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 200, maximum: 250), spacing: 8)], spacing: 8) {
                                     ForEach(group.cards) { card in
                                         SystemLibraryCardView(
@@ -97,13 +139,37 @@ struct SystemCardLibraryView: View {
                                             suite: suits.first(where: { card.suitIDs.contains($0.id) }),
                                             evaluation: evaluationByID[card.id],
                                             isEditable: isEditable,
+                                            selectionLabel: selectionLabel,
                                             onViewDetails: { onViewDetails(card) },
                                             onApplyIntervention: { onApplyIntervention(card) },
                                             onChangeStatus: { onChangeStatus(card, $0, $1) },
-                                            onResetToAutomatic: { onResetToAutomatic(card) }
+                                            onResetToAutomatic: { onResetToAutomatic(card) },
+                                            onAssignToSelectedElement: onAssignToSelectedElement.map { assign in { assign(card) } }
                                         )
                                     }
                                 }
+                                .padding(6)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(isDropTargetedStatus == group.status ? group.status.arenaColor.opacity(0.12) : Color.clear)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(isDropTargetedStatus == group.status ? group.status.arenaColor.opacity(0.6) : Color.clear, lineWidth: 1.5)
+                                )
+                                .dropDestination(for: String.self, action: { items, _ in
+                                    guard let onDropCardToStatus else { return false }
+                                    var accepted = false
+                                    for item in items {
+                                        if let cardID = UUID(uuidString: item) {
+                                            onDropCardToStatus(cardID, group.status)
+                                            accepted = true
+                                        }
+                                    }
+                                    return accepted
+                                }, isTargeted: { targeted in
+                                    isDropTargetedStatus = targeted ? group.status : (isDropTargetedStatus == group.status ? nil : isDropTargetedStatus)
+                                })
                             }
                         }
                     }
@@ -112,6 +178,32 @@ struct SystemCardLibraryView: View {
             }
         }
         .background(AC.bg)
+        .onChange(of: usedSuits.map(\.id)) { _, newIDs in
+            // A deck change may drop the suit the user had selected — keep
+            // whichever selected suits still exist in the new deck, or fall
+            // back to "All Suites" if none of them do.
+            let stillValid = selectedSuitIDs.intersection(Set(newIDs))
+            if stillValid != selectedSuitIDs { selectedSuitIDs = stillValid }
+        }
+    }
+
+    private var emptyDeckState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "tray").font(.system(size: 26)).foregroundStyle(AC.textGhost)
+            Text("This deck does not contain any cards yet.")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(AC.textSub)
+            HStack(spacing: 8) {
+                if let onCreateCard {
+                    Button("Create Card", action: onCreateCard).buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.55)))
+                }
+                if let onChooseAnotherDeck {
+                    Button("Choose Another Deck", action: onChooseAnotherDeck).buttonStyle(ArenaOutlineButtonStyle())
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 30)
     }
 
     private func resetFilters() {
@@ -259,10 +351,12 @@ private struct SystemLibraryCardView: View {
     let suite: CardSuit?
     let evaluation: SystemCardEvaluation?
     let isEditable: Bool
+    let selectionLabel: String
     let onViewDetails: () -> Void
     let onApplyIntervention: () -> Void
     let onChangeStatus: (SystemCardStatus, SystemOverrideScope) -> Void
     let onResetToAutomatic: () -> Void
+    let onAssignToSelectedElement: (() -> Void)?
 
     @State private var showingWhy = false
 
@@ -341,6 +435,30 @@ private struct SystemLibraryCardView: View {
                 .stroke(status.arenaColor.opacity(0.5), lineWidth: 1)
         )
         .opacity(status == .irrelevant ? 0.55 : 1.0)
+        .draggable(card.id.uuidString) {
+            // Compact drag preview: title, suite initials, effective status.
+            HStack(spacing: 5) {
+                if let suite { SuiteBadge(suite: suite, size: 14) }
+                Text(card.title).font(.system(size: 11, weight: .semibold)).foregroundStyle(AC.text)
+                Text(status.displayName.uppercased()).font(.system(size: 7, weight: .black, design: .monospaced)).foregroundStyle(status.arenaColor)
+            }
+            .padding(8)
+            .background(AngularCardShape(cornerRadius: 6, cornerCut: 9).fill(AC.surfaceHi))
+            .colorScheme(.dark)
+        }
+        .contextMenu {
+            if let onAssignToSelectedElement {
+                Button("Assign to \(selectionLabel)") { onAssignToSelectedElement() }
+                Divider()
+            }
+            Button("View Details", action: onViewDetails)
+            if isEditable, evaluation?.isPlayable == true {
+                Button("Apply Intervention", action: onApplyIntervention)
+            }
+            if evaluation?.isOverridden == true {
+                Button("Reset to Automatic", action: onResetToAutomatic)
+            }
+        }
     }
 
     @ViewBuilder

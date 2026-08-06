@@ -268,4 +268,85 @@ final class SystemMapStoreTests: XCTestCase {
         XCTAssertEqual(decoded.first?.scenarios.count, 1)
         XCTAssertNil(decoded.first?.legacyStepsArchive)
     }
+
+    // MARK: - Deck selection
+
+    func testDefaultDeckIsNilMeaningAllCards() {
+        let store = makeStore()
+        store.createSystemMap(title: "Test Map")
+        XCTAssertNil(store.currentSystemMap?.defaultDeckID)
+        let scenario = store.currentSystemMap!.scenarios.first!
+        XCTAssertNil(store.currentSystemMap?.effectiveDeckID(for: scenario))
+    }
+
+    func testSetDefaultDeckAppliesToEveryScenario() {
+        let store = makeStore()
+        store.createSystemMap(title: "Test Map")
+        store.createScenario(name: "Second Scenario")
+        store.setDefaultDeck("deck-a")
+
+        guard let map = store.currentSystemMap else { return XCTFail("no map") }
+        for scenario in map.scenarios {
+            XCTAssertEqual(map.effectiveDeckID(for: scenario), "deck-a")
+        }
+    }
+
+    func testScenarioDeckOverrideWinsOverMapDefault() {
+        let store = makeStore()
+        store.createSystemMap(title: "Test Map")
+        store.setDefaultDeck("deck-a")
+        store.createScenario(name: "Override Scenario")
+
+        guard let overrideScenarioID = store.currentSystemMap?.scenarios.first(where: { $0.name == "Override Scenario" })?.id else {
+            return XCTFail("no override scenario")
+        }
+        store.setScenarioDeckOverride(scenarioID: overrideScenarioID, deckID: "deck-b")
+
+        let map = store.currentSystemMap!
+        let overrideScenario = map.scenarios.first(where: { $0.id == overrideScenarioID })!
+        let defaultScenario = map.scenarios.first(where: { $0.id != overrideScenarioID })!
+
+        XCTAssertEqual(map.effectiveDeckID(for: overrideScenario), "deck-b")
+        XCTAssertEqual(map.effectiveDeckID(for: defaultScenario), "deck-a", "other scenarios must keep using the map default")
+    }
+
+    func testResettingScenarioDeckOverrideFallsBackToMapDefault() {
+        let store = makeStore()
+        store.createSystemMap(title: "Test Map")
+        store.setDefaultDeck("deck-a")
+        let scenarioID = store.currentSystemMap!.scenarios.first!.id
+
+        store.setScenarioDeckOverride(scenarioID: scenarioID, deckID: "deck-b")
+        XCTAssertEqual(store.currentSystemMap?.effectiveDeckID(for: store.currentSystemMap!.scenarios.first!), "deck-b")
+
+        store.setScenarioDeckOverride(scenarioID: scenarioID, deckID: nil)
+        XCTAssertEqual(store.currentSystemMap?.effectiveDeckID(for: store.currentSystemMap!.scenarios.first!), "deck-a")
+    }
+
+    func testMapWithoutDeckFieldDecodesToAllCards() throws {
+        // A save file from before deck selection existed (no "defaultDeckID"
+        // key at all) must not crash and must fall back to "All Cards"
+        // rather than some invalid state.
+        let json = """
+        [
+          {
+            "id": "20000000-0000-0000-0000-000000000001",
+            "title": "Pre-Deck Map",
+            "createdAt": "2024-01-01T00:00:00Z",
+            "updatedAt": "2024-01-01T00:00:00Z",
+            "elements": [],
+            "flows": [],
+            "relationships": [],
+            "scenarios": [
+              { "id": "20000000-0000-0000-0000-000000000002", "name": "Current State", "isDefault": true }
+            ]
+          }
+        ]
+        """
+        let decoded = try JSONCoding.decoder.decode([SystemMap].self, from: json.data(using: .utf8)!)
+        XCTAssertNil(decoded.first?.defaultDeckID)
+        XCTAssertEqual(decoded.first?.scenarios.first?.deckOverrideID, nil)
+        let map = decoded.first!
+        XCTAssertNil(map.effectiveDeckID(for: map.scenarios.first!))
+    }
 }

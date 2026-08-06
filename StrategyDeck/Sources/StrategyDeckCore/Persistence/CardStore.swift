@@ -137,6 +137,61 @@ public final class CardStore: ObservableObject {
         return newDeck
     }
 
+    /// Renames a deck in place.
+    public func renameDeck(id deckID: String, name: String) {
+        guard let idx = decks.firstIndex(where: { $0.id == deckID }) else { return }
+        decks[idx].name = name
+        save()
+    }
+
+    /// Duplicates a deck's structure (the deck row and its suit tree) as a
+    /// new, empty deck — card membership is intentionally not copied, since
+    /// a card can belong to multiple decks and silently multiplying that
+    /// association would be surprising.
+    /// - Returns: The newly created deck.
+    @discardableResult
+    public func duplicateDeck(id deckID: String) -> KnowledgeDeck? {
+        guard let original = decks.first(where: { $0.id == deckID }) else { return nil }
+        let newDeck = createDeck(name: original.name + " Copy", description: original.description, iconName: original.iconName)
+
+        // Recreate the suit tree, preserving parent/child structure by
+        // walking parents before children (suits are stored flat with a
+        // `parentSuitID`, so a suit can only be recreated once its parent's
+        // new ID is known).
+        var oldToNewSuitID: [String: String] = [:]
+        let originalSuits = suits.filter { $0.deckID == deckID }
+        var remaining = originalSuits
+        while !remaining.isEmpty {
+            let ready = remaining.filter { $0.parentSuitID == nil || oldToNewSuitID[$0.parentSuitID!] != nil }
+            guard !ready.isEmpty else { break } // malformed/cyclic parent chain — stop rather than loop forever
+            for suit in ready {
+                let newParentID = suit.parentSuitID.flatMap { oldToNewSuitID[$0] }
+                let newSuit = createSuit(deckID: newDeck.id, name: suit.name, parentSuitID: newParentID, description: suit.description, iconName: suit.iconName)
+                oldToNewSuitID[suit.id] = newSuit.id
+            }
+            remaining.removeAll { suit in ready.contains(where: { $0.id == suit.id }) }
+        }
+        return newDeck
+    }
+
+    /// Adds a card to a deck (a no-op if it's already a member). Deck
+    /// membership is a reference — this never touches the reusable card
+    /// definition itself beyond its `deckIDs` association.
+    public func addCardToDeck(cardID: UUID, deckID: String) {
+        guard let idx = cards.firstIndex(where: { $0.id == cardID }), !cards[idx].deckIDs.contains(deckID) else { return }
+        cards[idx].deckIDs.append(deckID)
+        cards[idx].updatedAt = Date()
+        save()
+    }
+
+    /// Removes a card from a deck without deleting the card itself.
+    public func removeCardFromDeck(cardID: UUID, deckID: String) {
+        guard let idx = cards.firstIndex(where: { $0.id == cardID }) else { return }
+        cards[idx].deckIDs.removeAll { $0 == deckID }
+        cards[idx].updatedAt = Date()
+        save()
+    }
+
     /// Deletes a deck and all its associated suits and cards.
     /// - Parameter deckID: The ID of the deck to delete
     public func deleteDeck(id deckID: String) {

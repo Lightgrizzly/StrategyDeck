@@ -704,6 +704,11 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
     public var scenarios: [SystemScenario]
     public var selectedScenarioID: UUID?
 
+    /// The deck that supplies this map's card library by default. `nil`
+    /// means "All Cards." A scenario may override this via
+    /// `SystemScenario.deckOverrideID` — see `effectiveDeckID(for:)`.
+    public var defaultDeckID: String?
+
     /// Card-status overrides that apply across every scenario for this map
     /// (`SystemOverrideScope.workflowDefault`). Scenario-scoped overrides
     /// live on `SystemScenario.cardStatusOverrides` instead.
@@ -729,6 +734,7 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         viewport: SystemViewport = SystemViewport(),
         scenarios: [SystemScenario] = [],
         selectedScenarioID: UUID? = nil,
+        defaultDeckID: String? = nil,
         workflowDefaultOverrides: [SystemCardStatusOverride] = [],
         legacyStepsArchive: [SystemStep]? = nil
     ) {
@@ -745,6 +751,7 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         self.viewport = viewport
         self.scenarios = scenarios
         self.selectedScenarioID = selectedScenarioID
+        self.defaultDeckID = defaultDeckID
         self.workflowDefaultOverrides = workflowDefaultOverrides
         self.legacyStepsArchive = legacyStepsArchive
     }
@@ -752,7 +759,7 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case id, title, description, primaryGoal, failureCondition, createdAt, updatedAt
         case elements, flows, relationships, viewport
-        case scenarios, selectedScenarioID, workflowDefaultOverrides
+        case scenarios, selectedScenarioID, defaultDeckID, workflowDefaultOverrides
         case legacyStepsArchive
         case legacySteps = "steps"
     }
@@ -782,6 +789,7 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
             relationships = decodedRelationships ?? []
             scenarios = decodedScenarios
             selectedScenarioID = try c.decodeIfPresent(UUID.self, forKey: .selectedScenarioID)
+            defaultDeckID = try c.decodeIfPresent(String.self, forKey: .defaultDeckID)
             workflowDefaultOverrides = try c.decodeIfPresent([SystemCardStatusOverride].self, forKey: .workflowDefaultOverrides) ?? []
             legacyStepsArchive = try c.decodeIfPresent([SystemStep].self, forKey: .legacyStepsArchive)
         } else if let legacySteps, !legacySteps.isEmpty {
@@ -807,6 +815,7 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
                 scenarios = [currentState]
             }
             selectedScenarioID = currentState.id
+            defaultDeckID = nil
             workflowDefaultOverrides = []
             legacyStepsArchive = sorted
         } else {
@@ -816,6 +825,7 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
             relationships = []
             scenarios = []
             selectedScenarioID = nil
+            defaultDeckID = nil
             workflowDefaultOverrides = []
             legacyStepsArchive = nil
         }
@@ -836,6 +846,7 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         try c.encode(viewport, forKey: .viewport)
         try c.encode(scenarios, forKey: .scenarios)
         try c.encodeIfPresent(selectedScenarioID, forKey: .selectedScenarioID)
+        try c.encodeIfPresent(defaultDeckID, forKey: .defaultDeckID)
         try c.encode(workflowDefaultOverrides, forKey: .workflowDefaultOverrides)
         try c.encodeIfPresent(legacyStepsArchive, forKey: .legacyStepsArchive)
     }
@@ -865,6 +876,13 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
             if let notes = override.notes { merged.notes = notes }
             return merged
         }
+    }
+
+    /// Resolves which deck should supply the card library for a scenario:
+    /// the scenario's own override, falling back to the map's default,
+    /// falling back to `nil` ("All Cards").
+    public func effectiveDeckID(for scenario: SystemScenario) -> String? {
+        scenario.deckOverrideID ?? defaultDeckID
     }
 
     public func effectiveFlows(for scenario: SystemScenario) -> [SystemFlow] {

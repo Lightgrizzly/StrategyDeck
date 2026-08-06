@@ -85,6 +85,11 @@ struct SystemDiagramCanvasView: View {
     /// Per-element/flow semantic state tag for the selected scenario, used
     /// only for visual dimming/badging (hidden/disabled/at-risk etc).
     let elementStates: [UUID: SystemElementState]
+    /// Count of cards currently Active specifically on each element (via a
+    /// `.thisElementOnly` override) — a compact "what's attached here"
+    /// indicator. Selecting the element already reveals which cards via the
+    /// card library below, so this is display-only.
+    let elementActiveCardCounts: [UUID: Int]
     let isEditable: Bool
     @Binding var selection: DiagramSelection?
     @Binding var tool: DiagramTool
@@ -93,12 +98,22 @@ struct SystemDiagramCanvasView: View {
     let onMoveElement: (UUID, SystemPoint) -> Void
     let onAddFlow: (SystemFlow) -> Void
     let onAddRelationship: (SystemRelationship) -> Void
+    /// A card was dropped onto this target (`nil` = background / entire
+    /// system). Dropping never changes state by itself — the caller decides
+    /// what to do based on the card's effective status for this target.
+    let onDropCard: (UUID, DiagramSelection?) -> Void
 
     @State private var panOffset: CGSize = .zero
     @State private var zoom: CGFloat = 1.0
     @State private var draggingElementID: UUID?
     @State private var dragTranslation: CGSize = .zero
+    @State private var dropTargetedSelection: DiagramSelection?
+    @State private var isBackgroundDropTargeted = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private func cardID(from items: [String]) -> UUID? {
+        items.first.flatMap { UUID(uuidString: $0) }
+    }
 
     private var positionsByID: [UUID: CGPoint] {
         Dictionary(uniqueKeysWithValues: elements.map { ($0.id, CGPoint(x: $0.position.x, y: $0.position.y)) })
@@ -133,6 +148,16 @@ struct SystemDiagramCanvasView: View {
         .gesture(MagnificationGesture().onChanged { value in
             zoom = min(max(0.4, value), 2.5)
         })
+        .overlay(
+            RoundedRectangle(cornerRadius: 0)
+                .fill(isBackgroundDropTargeted ? AC.cyanSoft.opacity(0.15) : Color.clear)
+                .allowsHitTesting(false)
+        )
+        .dropDestination(for: String.self, action: { items, _ in
+            guard let cardID = cardID(from: items) else { return false }
+            onDropCard(cardID, nil)
+            return true
+        }, isTargeted: { isBackgroundDropTargeted = $0 })
     }
 
     private var flowLabelsLayer: some View {
@@ -142,10 +167,18 @@ struct SystemDiagramCanvasView: View {
                     label: flow.name,
                     color: AC.cyan,
                     isSelected: selection == .flow(flow.id),
-                    isEnabled: flow.isEnabled
+                    isEnabled: flow.isEnabled,
+                    isDropTargeted: dropTargetedSelection == .flow(flow.id)
                 )
                 .position(x: (from.x + to.x) / 2, y: (from.y + to.y) / 2)
                 .onTapGesture { selection = .flow(flow.id) }
+                .dropDestination(for: String.self, action: { items, _ in
+                    guard let cardID = cardID(from: items) else { return false }
+                    onDropCard(cardID, .flow(flow.id))
+                    return true
+                }, isTargeted: { targeted in
+                    dropTargetedSelection = targeted ? .flow(flow.id) : (dropTargetedSelection == .flow(flow.id) ? nil : dropTargetedSelection)
+                })
             }
         }
     }
@@ -157,10 +190,18 @@ struct SystemDiagramCanvasView: View {
                     label: rel.relationshipType.marker,
                     color: rel.relationshipType.arenaColor,
                     isSelected: selection == .relationship(rel.id),
-                    isEnabled: true
+                    isEnabled: true,
+                    isDropTargeted: dropTargetedSelection == .relationship(rel.id)
                 )
                 .position(x: (s.x + t.x) / 2, y: (s.y + t.y) / 2 - 16)
                 .onTapGesture { selection = .relationship(rel.id) }
+                .dropDestination(for: String.self, action: { items, _ in
+                    guard let cardID = cardID(from: items) else { return false }
+                    onDropCard(cardID, .relationship(rel.id))
+                    return true
+                }, isTargeted: { targeted in
+                    dropTargetedSelection = targeted ? .relationship(rel.id) : (dropTargetedSelection == .relationship(rel.id) ? nil : dropTargetedSelection)
+                })
             }
         }
     }
@@ -171,7 +212,9 @@ struct SystemDiagramCanvasView: View {
                 element: element,
                 state: elementStates[element.id] ?? .normal,
                 isSelected: selection == .element(element.id),
-                isConnectSource: pendingConnectSourceID == element.id
+                isConnectSource: pendingConnectSourceID == element.id,
+                isDropTargeted: dropTargetedSelection == .element(element.id),
+                activeCardCount: elementActiveCardCounts[element.id] ?? 0
             )
             .position(
                 x: element.position.x + (draggingElementID == element.id ? dragTranslation.width : 0),
@@ -180,6 +223,13 @@ struct SystemDiagramCanvasView: View {
             .gesture(isEditable ? nodeDragGesture(for: element) : nil)
             .onTapGesture { handleTap(elementID: element.id) }
             .highPriorityGesture(TapGesture().onEnded { handleTap(elementID: element.id) })
+            .dropDestination(for: String.self, action: { items, _ in
+                guard let cardID = cardID(from: items) else { return false }
+                onDropCard(cardID, .element(element.id))
+                return true
+            }, isTargeted: { targeted in
+                dropTargetedSelection = targeted ? .element(element.id) : (dropTargetedSelection == .element(element.id) ? nil : dropTargetedSelection)
+            })
         }
     }
 
@@ -337,6 +387,8 @@ struct SystemElementNodeView: View {
     let state: SystemElementState
     let isSelected: Bool
     let isConnectSource: Bool
+    var isDropTargeted: Bool = false
+    var activeCardCount: Int = 0
 
     private var color: Color { element.kind.arenaColor }
     private var isDimmed: Bool { state == .hidden || state == .disabled }
@@ -352,15 +404,35 @@ struct SystemElementNodeView: View {
         .frame(width: element.size.width, height: element.size.height)
         .overlay(
             AngularCardShape(cornerRadius: 8, cornerCut: 12)
-                .stroke(isConnectSource ? AC.gold : (isSelected ? color : AC.borderDim), lineWidth: isSelected || isConnectSource ? 2 : 1)
+                .stroke(isDropTargeted ? AC.gold : (isConnectSource ? AC.gold : (isSelected ? color : AC.borderDim)), lineWidth: isDropTargeted ? 2.5 : (isSelected || isConnectSource ? 2 : 1))
         )
         .overlay(alignment: .topTrailing) {
             if state != .normal {
                 stateBadge
             }
         }
-        .shadow(color: isSelected ? color.opacity(0.6) : .clear, radius: 8)
+        .overlay(alignment: .topLeading) {
+            if activeCardCount > 0 {
+                activeCardBadge
+            }
+        }
+        .shadow(color: isDropTargeted ? AC.gold.opacity(0.8) : (isSelected ? color.opacity(0.6) : .clear), radius: isDropTargeted ? 12 : 8)
         .opacity(isDimmed ? 0.5 : 1)
+        .scaleEffect(isDropTargeted ? 1.06 : 1.0)
+        .animation(.easeOut(duration: 0.12), value: isDropTargeted)
+    }
+
+    private var activeCardBadge: some View {
+        HStack(spacing: 2) {
+            Image(systemName: "bolt.fill").font(.system(size: 6))
+            Text("\(activeCardCount)").font(.system(size: 7, weight: .black, design: .monospaced))
+        }
+        .foregroundStyle(AC.bg)
+        .padding(.horizontal, 4).padding(.vertical, 2)
+        .background(Capsule().fill(AC.cyan))
+        .shadow(color: AC.cyanGlow, radius: 3)
+        .offset(x: -4, y: -4)
+        .help("\(activeCardCount) card\(activeCardCount == 1 ? "" : "s") active on this element")
     }
 
     private var stateBadge: some View {
@@ -431,6 +503,7 @@ private struct EdgeLabelView: View {
     let color: Color
     let isSelected: Bool
     let isEnabled: Bool
+    var isDropTargeted: Bool = false
 
     var body: some View {
         Text(label)
@@ -441,7 +514,10 @@ private struct EdgeLabelView: View {
             .background(
                 Circle().fill(isSelected ? color : AC.bg.opacity(0.85))
             )
-            .overlay(Circle().stroke(color.opacity(isEnabled ? 0.8 : 0.3), lineWidth: 1))
+            .overlay(Circle().stroke(isDropTargeted ? AC.gold : color.opacity(isEnabled ? 0.8 : 0.3), lineWidth: isDropTargeted ? 2.5 : 1))
+            .shadow(color: isDropTargeted ? AC.gold.opacity(0.8) : .clear, radius: 8)
+            .scaleEffect(isDropTargeted ? 1.25 : 1.0)
+            .animation(.easeOut(duration: 0.12), value: isDropTargeted)
             .opacity(isEnabled ? 1 : 0.5)
             .contentShape(Circle())
     }

@@ -216,14 +216,23 @@ private struct SystemsMapEditorView: View {
     @State private var showingRenameScenarioSheet = false
     @State private var renameScenarioText = ""
     @State private var showingCompareSheet = false
+    @State private var showingDeckPicker = false
+    @State private var editingDeckID: String?
+    @State private var showingCreateCardSheet = false
+    @State private var newCard = KnowledgeCard(deckIDs: [], suitIDs: [], kind: .action, metadata: .softwareStrategy(SoftwareStrategyFields()), title: "")
     @State private var alertState: AlertState?
-    @State private var undoStack: [DiagramSnapshot] = []
-    @State private var redoStack: [DiagramSnapshot] = []
+    @State private var undoStack: [EditorSnapshot] = []
+    @State private var redoStack: [EditorSnapshot] = []
+    @State private var pendingDrop: PendingCardDrop?
 
-    private struct DiagramSnapshot {
+    /// One undo entry — diagram structure plus the current scenario's
+    /// override state, so a drag-driven status change or target assignment
+    /// is just as undoable as a diagram edit, in the same stack.
+    private struct EditorSnapshot {
         var elements: [SystemElement]
         var flows: [SystemFlow]
         var relationships: [SystemRelationship]
+        var scenario: SystemScenario
     }
 
     private var map: SystemMap { systemMapStore.currentSystemMap ?? SystemMap(title: "") }
@@ -231,6 +240,14 @@ private struct SystemsMapEditorView: View {
 
     private var effectiveElements: [SystemElement] { map.effectiveElements(for: scenario) }
     private var effectiveFlows: [SystemFlow] { map.effectiveFlows(for: scenario) }
+
+    private var elementActiveCardCounts: [UUID: Int] {
+        var counts: [UUID: Int] = [:]
+        for override in scenario.cardStatusOverrides where override.scope == .thisElementOnly && override.overriddenStatus == .active {
+            if let id = override.targetElementID { counts[id, default: 0] += 1 }
+        }
+        return counts
+    }
 
     private var elementStates: [UUID: SystemElementState] {
         var result: [UUID: SystemElementState] = [:]
@@ -264,9 +281,27 @@ private struct SystemsMapEditorView: View {
         }
     }
 
+    /// Deck resolution: scenario override → map default → All Cards. Only
+    /// the resulting card *pool* is affected — overrides/statuses remain
+    /// keyed by card ID regardless of which deck is currently selected, so
+    /// switching decks never loses saved state for cards outside the pool.
+    private var effectiveDeckID: String? { map.effectiveDeckID(for: scenario) }
+
+    private var deckName: String {
+        guard let effectiveDeckID else { return "All Cards" }
+        return cardStore.decks.first(where: { $0.id == effectiveDeckID })?.name ?? "All Cards"
+    }
+
+    private var isUsingScenarioDeckOverride: Bool { scenario.deckOverrideID != nil }
+
+    private var deckScopedCards: [KnowledgeCard] {
+        guard let effectiveDeckID else { return cardStore.cards }
+        return cardStore.cards.filter { $0.deckIDs.contains(effectiveDeckID) }
+    }
+
     private var evaluations: [SystemCardEvaluation] {
         SystemMapEvaluator.evaluateAll(
-            cards: cardStore.cards,
+            cards: deckScopedCards,
             map: map,
             scenario: scenario,
             selectedTargetKind: selectedTargetKind,
@@ -298,6 +333,7 @@ private struct SystemsMapEditorView: View {
                     flows: effectiveFlows,
                     relationships: map.relationships,
                     elementStates: elementStates,
+                    elementActiveCardCounts: elementActiveCardCounts,
                     isEditable: true,
                     selection: $selection,
                     tool: $tool,
@@ -305,7 +341,8 @@ private struct SystemsMapEditorView: View {
                     onAddElement: { element in pushUndo(); systemMapStore.addElement(element) },
                     onMoveElement: { id, pos in pushUndo(); moveElement(id: id, to: pos) },
                     onAddFlow: { flow in pushUndo(); systemMapStore.addFlow(flow) },
-                    onAddRelationship: { rel in pushUndo(); systemMapStore.addRelationship(rel) }
+                    onAddRelationship: { rel in pushUndo(); systemMapStore.addRelationship(rel) },
+                    onDropCard: { cardID, targetSelection in handleCardDrop(cardID: cardID, onto: targetSelection) }
                 )
                 if showingInspector {
                     Rectangle().fill(AC.borderDim).frame(width: 1)
@@ -376,7 +413,7 @@ private struct SystemsMapEditorView: View {
             )
 
             SystemCardLibraryView(
-                cards: cardStore.cards,
+                cards: deckScopedCards,
                 suits: cardStore.suits,
                 evaluations: evaluations,
                 selectionLabel: selectionLabel,
@@ -389,7 +426,21 @@ private struct SystemsMapEditorView: View {
                         scope: scope, status: status, reason: "", scenarioID: scenario.id
                     )
                 },
-                onResetToAutomatic: { card in clearOverrideMatchingSelection(for: card) }
+                onResetToAutomatic: { card in clearOverrideMatchingSelection(for: card) },
+                onChooseAnotherDeck: { showingDeckPicker = true },
+                onCreateCard: {
+                    newCard = blankCard()
+                    showingCreateCardSheet = true
+                },
+                onAssignToSelectedElement: { card in handleCardDrop(cardID: card.id, onto: selection) },
+                onDropCardToStatus: { cardID, status in
+                    guard let card = cardStore.cards.first(where: { $0.id == cardID }) else { return }
+                    pushOverrideUndo()
+                    systemMapStore.setCardStatusOverride(
+                        cardID: card.id, targetElementID: selectedElementID,
+                        scope: .thisElementOnly, status: status, reason: "", scenarioID: scenario.id
+                    )
+                }
             )
             .frame(maxHeight: .infinity)
         }
@@ -456,7 +507,84 @@ private struct SystemsMapEditorView: View {
             ScenarioComparisonSheet(map: map, allCards: cardStore.cards, isPresented: $showingCompareSheet)
                 .frame(minWidth: 480, minHeight: 440)
         }
+        .sheet(item: $pendingDrop) { drop in
+            PendingCardDropSheet(
+                drop: drop,
+                onAction: { action in handleDropAction(action, for: drop) },
+                onCancel: { pendingDrop = nil }
+            )
+            .frame(minWidth: 420, minHeight: 300)
+        }
+        .sheet(isPresented: $showingDeckPicker) {
+            SystemDeckSelectorSheet(
+                decks: cardStore.decks,
+                allCards: cardStore.cards,
+                map: map,
+                scenario: scenario,
+                selectedTargetKind: selectedTargetKind,
+                selectedElementID: selectedElementID,
+                currentDeckID: effectiveDeckID,
+                onSelectDeck: { deckID in
+                    if isUsingScenarioDeckOverride {
+                        systemMapStore.setScenarioDeckOverride(scenarioID: scenario.id, deckID: deckID)
+                    } else {
+                        systemMapStore.setDefaultDeck(deckID)
+                    }
+                },
+                onCreateDeck: { name in
+                    let newDeck = cardStore.createDeck(name: name)
+                    systemMapStore.setDefaultDeck(newDeck.id)
+                },
+                onRenameDeck: { id, name in cardStore.renameDeck(id: id, name: name) },
+                onDuplicateDeck: { id in cardStore.duplicateDeck(id: id) },
+                onDeleteDeck: { id in
+                    cardStore.deleteDeck(id: id)
+                    if map.defaultDeckID == id { systemMapStore.setDefaultDeck(nil) }
+                    if scenario.deckOverrideID == id { systemMapStore.setScenarioDeckOverride(scenarioID: scenario.id, deckID: nil) }
+                },
+                onEditDeck: { id in editingDeckID = id },
+                onDropCardOntoDeck: { cardID, deckID in cardStore.addCardToDeck(cardID: cardID, deckID: deckID) },
+                isPresented: $showingDeckPicker
+            )
+        }
+        .sheet(item: Binding(get: { editingDeckID.map { EditingDeckTarget(id: $0) } }, set: { editingDeckID = $0?.id })) { target in
+            EditDeckSheet(deckID: target.id, decks: cardStore.decks, isPresented: Binding(get: { editingDeckID != nil }, set: { if !$0 { editingDeckID = nil } }))
+                .environmentObject(cardStore)
+                .frame(minWidth: 380, minHeight: 460)
+        }
+        .sheet(isPresented: $showingCreateCardSheet) {
+            KnowledgeCardEditorView(
+                mode: .create,
+                card: $newCard,
+                suits: suitsForSelectedDeck(),
+                onSave: { created in
+                    cardStore.add(created)
+                    showingCreateCardSheet = false
+                },
+                onCancel: { showingCreateCardSheet = false }
+            )
+            .frame(minWidth: 380, minHeight: 500)
+        }
     }
+
+    private func blankCard() -> KnowledgeCard {
+        let deckSuits = suitsForSelectedDeck()
+        return KnowledgeCard(
+            deckIDs: effectiveDeckID.map { [$0] } ?? [],
+            suitIDs: deckSuits.first.map { [$0.id] } ?? [],
+            kind: .action,
+            metadata: .softwareStrategy(SoftwareStrategyFields()),
+            title: ""
+        )
+    }
+
+    private func suitsForSelectedDeck() -> [CardSuit] {
+        guard let effectiveDeckID else { return cardStore.suits }
+        let filtered = cardStore.suits.filter { $0.deckID == effectiveDeckID }
+        return filtered.isEmpty ? cardStore.suits : filtered
+    }
+
+    private struct EditingDeckTarget: Identifiable { let id: String }
 
     private var headerBar: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -490,6 +618,36 @@ private struct SystemsMapEditorView: View {
                 }
                 .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.5)))
             }
+            HStack(spacing: 6) {
+                Image(systemName: "square.stack.3d.up").font(.system(size: 9)).foregroundStyle(AC.cyan.opacity(0.7))
+                Text("DECK:").font(.system(size: 9, weight: .black, design: .monospaced)).foregroundStyle(AC.textDim).kerning(0.5)
+                Button(action: { showingDeckPicker = true }) {
+                    HStack(spacing: 3) {
+                        Text(deckName).font(.system(size: 11, weight: .semibold))
+                        Image(systemName: "chevron.down").font(.system(size: 7))
+                    }
+                    .foregroundStyle(AC.cyan)
+                }
+                .buttonStyle(.plain)
+                if isUsingScenarioDeckOverride {
+                    Text("SCENARIO OVERRIDE")
+                        .font(.system(size: 7, weight: .black, design: .monospaced))
+                        .foregroundStyle(AC.gold)
+                        .kerning(0.5)
+                        .padding(.horizontal, 5).padding(.vertical, 2)
+                        .background(Capsule().fill(AC.goldSoft))
+                    Button("Reset to Map Deck") {
+                        systemMapStore.setScenarioDeckOverride(scenarioID: scenario.id, deckID: nil)
+                    }
+                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.gold.opacity(0.5)))
+                } else {
+                    Button("Override for This Scenario") {
+                        systemMapStore.setScenarioDeckOverride(scenarioID: scenario.id, deckID: map.defaultDeckID)
+                        showingDeckPicker = true
+                    }
+                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.textDim))
+                }
+            }
             if !map.primaryGoal.isEmpty {
                 HStack(spacing: 6) {
                     Image(systemName: "flag.checkered").font(.system(size: 9)).foregroundStyle(AC.gold)
@@ -521,21 +679,35 @@ private struct SystemsMapEditorView: View {
         selection = nil
     }
 
+    private func currentSnapshot() -> EditorSnapshot {
+        EditorSnapshot(elements: map.elements, flows: map.flows, relationships: map.relationships, scenario: scenario)
+    }
+
+    private func restoreSnapshot(_ snapshot: EditorSnapshot) {
+        systemMapStore.replaceDiagram(elements: snapshot.elements, flows: snapshot.flows, relationships: snapshot.relationships)
+        systemMapStore.restoreScenario(snapshot.scenario)
+    }
+
     private func pushUndo() {
-        undoStack.append(DiagramSnapshot(elements: map.elements, flows: map.flows, relationships: map.relationships))
+        undoStack.append(currentSnapshot())
         redoStack.removeAll()
     }
 
+    /// Same undo mechanism as diagram edits — a drag-driven status change,
+    /// target assignment, or deck override is its own discrete entry, never
+    /// combined with an unrelated action.
+    private func pushOverrideUndo() { pushUndo() }
+
     private func undo() {
         guard let last = undoStack.popLast() else { return }
-        redoStack.append(DiagramSnapshot(elements: map.elements, flows: map.flows, relationships: map.relationships))
-        systemMapStore.replaceDiagram(elements: last.elements, flows: last.flows, relationships: last.relationships)
+        redoStack.append(currentSnapshot())
+        restoreSnapshot(last)
     }
 
     private func redo() {
         guard let next = redoStack.popLast() else { return }
-        undoStack.append(DiagramSnapshot(elements: map.elements, flows: map.flows, relationships: map.relationships))
-        systemMapStore.replaceDiagram(elements: next.elements, flows: next.flows, relationships: next.relationships)
+        undoStack.append(currentSnapshot())
+        restoreSnapshot(next)
     }
 
     /// "Reset to Automatic" clears whichever override the evaluator actually
@@ -559,6 +731,107 @@ private struct SystemsMapEditorView: View {
         if panel.runModal() == .OK, let url = panel.url {
             try? encoded.write(to: url, options: [.atomic])
         }
+    }
+
+    // MARK: - Card drag-and-drop onto the diagram
+    //
+    // Dropping never changes state by itself — it opens `pendingDrop`, whose
+    // sheet shows status-appropriate actions and only commits on explicit
+    // confirmation. The same entry point backs the drag gesture (from
+    // `SystemDiagramCanvasView`) and the click-based "Assign to Selected
+    // Element" menu item, so both paths behave identically.
+
+    private func handleCardDrop(cardID: UUID, onto targetSelection: DiagramSelection?) {
+        guard let card = cardStore.cards.first(where: { $0.id == cardID }) else { return }
+
+        let targetElementID: UUID?
+        let targetKind: SystemTargetKind
+        let targetLabel: String
+        switch targetSelection {
+        case .element(let id):
+            targetElementID = id
+            if let element = map.elements.first(where: { $0.id == id }) {
+                targetKind = SystemMapEvaluator.targetKind(for: element.kind)
+                targetLabel = element.name
+            } else {
+                targetKind = .system
+                targetLabel = "Entire System"
+            }
+        case .flow(let id):
+            targetElementID = nil
+            targetKind = .flow
+            targetLabel = map.flows.first(where: { $0.id == id })?.name ?? "Flow"
+        case .relationship:
+            targetElementID = nil
+            targetKind = .relationship
+            targetLabel = "Relationship"
+        case .none:
+            targetElementID = nil
+            targetKind = .system
+            targetLabel = "Entire System"
+        }
+
+        let evaluation = SystemMapEvaluator.evaluate(
+            card: card, map: map, scenario: scenario,
+            selectedTargetKind: targetKind, selectedElementID: targetElementID, allCards: cardStore.cards
+        )
+
+        // Is this card already Active somewhere else specific, so dropping
+        // here could mean "retarget" rather than "add a new target"?
+        let otherActive = scenario.cardStatusOverrides.first {
+            $0.cardID == card.id && $0.scope == .thisElementOnly && $0.overriddenStatus == .active && $0.targetElementID != targetElementID
+        }
+        let otherActiveLabel = otherActive?.targetElementID.flatMap { id in map.elements.first(where: { $0.id == id })?.name }
+
+        pendingDrop = PendingCardDrop(
+            card: card,
+            targetElementID: targetElementID,
+            targetLabel: targetLabel,
+            targetKind: targetKind,
+            evaluation: evaluation,
+            otherActiveTargetID: otherActive?.targetElementID,
+            otherActiveTargetLabel: otherActiveLabel
+        )
+    }
+
+    private func handleDropAction(_ action: PendingDropAction, for drop: PendingCardDrop) {
+        switch action {
+        case .applyIntervention:
+            pushOverrideUndo()
+            systemMapStore.applyIntervention(card: drop.card, targetElementID: drop.targetElementID, scenarioID: scenario.id)
+        case .setActive:
+            pushOverrideUndo()
+            systemMapStore.setCardStatusOverride(
+                cardID: drop.card.id, targetElementID: drop.targetElementID,
+                scope: drop.scope, status: .active, reason: "", scenarioID: scenario.id
+            )
+        case .setTargetOnly:
+            selection = drop.targetElementID.map { .element($0) } ?? selection
+        case .changeTarget:
+            pushOverrideUndo()
+            if let oldID = drop.otherActiveTargetID {
+                systemMapStore.clearCardStatusOverride(cardID: drop.card.id, scope: .thisElementOnly, targetElementID: oldID, scenarioID: scenario.id)
+            }
+            systemMapStore.setCardStatusOverride(
+                cardID: drop.card.id, targetElementID: drop.targetElementID,
+                scope: drop.scope, status: .active, reason: "", scenarioID: scenario.id
+            )
+        case .addAdditionalTarget:
+            pushOverrideUndo()
+            systemMapStore.setCardStatusOverride(
+                cardID: drop.card.id, targetElementID: drop.targetElementID,
+                scope: drop.scope, status: .active, reason: "", scenarioID: scenario.id
+            )
+        case .overrideStatus(let status):
+            pushOverrideUndo()
+            systemMapStore.setCardStatusOverride(
+                cardID: drop.card.id, targetElementID: drop.targetElementID,
+                scope: drop.scope, status: status, reason: "", scenarioID: scenario.id
+            )
+        case .viewDetails:
+            showingDetailsFor = drop.card
+        }
+        pendingDrop = nil
     }
 }
 
@@ -702,6 +975,175 @@ private struct ApplyInterventionSheet: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label.uppercased()).font(.system(size: 8, weight: .black, design: .monospaced)).foregroundStyle(color.opacity(0.8)).kerning(1)
             Text(text).font(.system(size: 11)).foregroundStyle(AC.text)
+        }
+    }
+}
+
+// MARK: - Pending card drop
+//
+// Dropping a card never changes state by itself — this sheet decides what's
+// actually appropriate for the card's *effective* status and only commits
+// on explicit confirmation. The same model backs both the drag gesture and
+// the click-based "Assign to Selected Element" alternative.
+
+private struct PendingCardDrop: Identifiable {
+    let id = UUID()
+    let card: KnowledgeCard
+    let targetElementID: UUID?
+    let targetLabel: String
+    let targetKind: SystemTargetKind
+    let evaluation: SystemCardEvaluation
+    let otherActiveTargetID: UUID?
+    let otherActiveTargetLabel: String?
+
+    /// Flow/relationship/background targets have no specific element ID to
+    /// scope an override to, so they fall back to the next-narrowest scope.
+    var scope: SystemOverrideScope { targetElementID != nil ? .thisElementOnly : .entireScenario }
+}
+
+private enum PendingDropAction {
+    case applyIntervention
+    case setActive
+    case setTargetOnly
+    case changeTarget
+    case addAdditionalTarget
+    case overrideStatus(SystemCardStatus)
+    case viewDetails
+}
+
+private struct PendingCardDropSheet: View {
+    let drop: PendingCardDrop
+    let onAction: (PendingDropAction) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("DROP CARD").font(.system(size: 14, weight: .black, design: .monospaced)).foregroundStyle(drop.card.kind.arenaColor).kerning(1.5)
+                Spacer()
+                Button("Cancel", action: onCancel).buttonStyle(ArenaOutlineButtonStyle()).keyboardShortcut(.cancelAction)
+            }
+            .padding(14)
+            .background(AC.surface)
+            Rectangle().fill(AC.borderDim).frame(height: 1)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(drop.card.title).font(.system(size: 16, weight: .bold)).foregroundStyle(AC.text)
+                    HStack(spacing: 5) {
+                        Image(systemName: "scope").font(.system(size: 9)).foregroundStyle(AC.cyan)
+                        Text("Target: \(drop.targetLabel) (\(drop.targetKind.displayName))").font(.system(size: 11)).foregroundStyle(AC.cyan)
+                    }
+                    HStack(spacing: 5) {
+                        Image(systemName: drop.evaluation.effectiveStatus.systemImage).font(.system(size: 9))
+                        Text(drop.evaluation.effectiveStatus.displayName.uppercased()).font(.system(size: 10, weight: .black, design: .monospaced)).kerning(0.5)
+                    }
+                    .foregroundStyle(drop.evaluation.effectiveStatus.arenaColor)
+
+                    statusContent
+                }
+                .padding(14)
+            }
+
+            Rectangle().fill(AC.borderDim).frame(height: 1)
+            actionRow
+                .padding(14)
+                .background(AC.surface)
+        }
+        .background(AC.bg)
+        .colorScheme(.dark)
+    }
+
+    @ViewBuilder
+    private var statusContent: some View {
+        switch drop.evaluation.effectiveStatus {
+        case .available, .recommended:
+            Text("Apply “\(drop.card.title)” to \(drop.targetLabel)?")
+                .font(.system(size: 12)).foregroundStyle(AC.textSub)
+        case .active:
+            if let otherLabel = drop.otherActiveTargetLabel {
+                Text("This card is already Active on \(otherLabel). Changing its target here would remove that association unless you add this as an additional target instead.")
+                    .font(.system(size: 12)).foregroundStyle(AC.textSub)
+            } else {
+                Text("This card is already Active on \(drop.targetLabel).")
+                    .font(.system(size: 12)).foregroundStyle(AC.textSub)
+            }
+        case .locked:
+            requirementsList("MISSING", drop.evaluation.missingRequirements, AC.threat)
+        case .disabled:
+            requirementsList("BLOCKING", drop.evaluation.blockingConditions, AC.threat)
+        case .irrelevant:
+            let targets = drop.evaluation.validTargetKinds.map(\.displayName).joined(separator: " or ")
+            Text("Invalid target — this card can only target \(targets.isEmpty ? "specific element types" : targets).")
+                .font(.system(size: 12)).foregroundStyle(AC.threat)
+        case .exhausted, .resolved, .pending:
+            Text("This card is \(drop.evaluation.effectiveStatus.displayName) and won't be replayed automatically.")
+                .font(.system(size: 12)).foregroundStyle(AC.textSub)
+        }
+    }
+
+    private func requirementsList(_ label: String, _ items: [String], _ color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label).font(.system(size: 9, weight: .black, design: .monospaced)).foregroundStyle(color).kerning(1)
+            if items.isEmpty {
+                Text("No further detail available.").font(.system(size: 11)).foregroundStyle(AC.textSub)
+            }
+            ForEach(items, id: \.self) { item in
+                Text("· \(item)").font(.system(size: 11)).foregroundStyle(AC.textSub)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var actionRow: some View {
+        switch drop.evaluation.effectiveStatus {
+        case .available, .recommended:
+            HStack(spacing: 6) {
+                Button("Apply Intervention") { onAction(.applyIntervention) }
+                    .buttonStyle(ArenaButtonStyle(color: drop.card.kind.arenaColor))
+                Button("Set as Active") { onAction(.setActive) }
+                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.6)))
+                Button("Set Target Only") { onAction(.setTargetOnly) }
+                    .buttonStyle(ArenaOutlineButtonStyle())
+            }
+        case .active:
+            HStack(spacing: 6) {
+                if drop.otherActiveTargetLabel != nil {
+                    Button("Change Target") { onAction(.changeTarget) }
+                        .buttonStyle(ArenaButtonStyle(color: AC.gold))
+                    Button("Add As Additional Target") { onAction(.addAdditionalTarget) }
+                        .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.6)))
+                } else {
+                    Button("View Details") { onAction(.viewDetails) }
+                        .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.6)))
+                }
+            }
+        case .locked:
+            HStack(spacing: 6) {
+                Button("Override as Available") { onAction(.overrideStatus(.available)) }
+                    .buttonStyle(ArenaButtonStyle(color: AC.available))
+                Button("View Details") { onAction(.viewDetails) }
+                    .buttonStyle(ArenaOutlineButtonStyle())
+            }
+        case .disabled:
+            HStack(spacing: 6) {
+                Button("Override as Available") { onAction(.overrideStatus(.available)) }
+                    .buttonStyle(ArenaButtonStyle(color: AC.available))
+                Button("View Details") { onAction(.viewDetails) }
+                    .buttonStyle(ArenaOutlineButtonStyle())
+            }
+        case .irrelevant:
+            HStack(spacing: 6) {
+                Button("Override Relevance → Available") { onAction(.overrideStatus(.available)) }
+                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.threat.opacity(0.5)))
+            }
+        case .exhausted, .resolved, .pending:
+            HStack(spacing: 6) {
+                Button("View Details") { onAction(.viewDetails) }
+                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.6)))
+                Button("Reset to Available") { onAction(.overrideStatus(.available)) }
+                    .buttonStyle(ArenaOutlineButtonStyle())
+            }
         }
     }
 }
@@ -858,5 +1300,43 @@ private struct ScenarioComparisonSheet: View {
     private func formatted(_ value: Double?) -> String {
         guard let value else { return "—" }
         return value.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(value)) : String(format: "%.1f", value)
+    }
+}
+
+// MARK: - Edit deck sheet
+//
+// Reuses the existing Library-tab deck/suit manager verbatim rather than
+// building a Systems Map–specific deck editor.
+
+private struct EditDeckSheet: View {
+    let deckID: String
+    let decks: [KnowledgeDeck]
+    @Binding var isPresented: Bool
+    @EnvironmentObject var cardStore: CardStore
+
+    @State private var selectedDeckID: String?
+    @State private var selectedSuiteID: String?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("EDIT DECK").font(.system(size: 14, weight: .black, design: .monospaced)).foregroundStyle(AC.cyan).kerning(1.5)
+                Spacer()
+                Button("Done") { isPresented = false }.buttonStyle(ArenaOutlineButtonStyle()).keyboardShortcut(.defaultAction)
+            }
+            .padding(14)
+            .background(AC.surface)
+            Rectangle().fill(AC.borderDim).frame(height: 1)
+
+            DeckSuitTreeView(
+                decks: decks.filter { $0.id == deckID },
+                suits: cardStore.suits,
+                selectedDeckID: $selectedDeckID,
+                selectedSuiteID: $selectedSuiteID
+            )
+        }
+        .background(AC.bg)
+        .colorScheme(.dark)
+        .onAppear { selectedDeckID = deckID }
     }
 }

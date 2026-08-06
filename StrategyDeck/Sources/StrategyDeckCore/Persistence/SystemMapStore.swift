@@ -204,6 +204,24 @@ public final class SystemMapStore: ObservableObject {
         }
     }
 
+    // MARK: - Deck selection
+    //
+    // The default deck belongs to the whole map; a scenario may override it.
+    // Pass `nil` to mean "All Cards" (map default) or "inherit the map's
+    // default deck" (scenario override).
+
+    public func setDefaultDeck(_ deckID: String?) {
+        updateCurrentSystemMap { $0.defaultDeckID = deckID }
+    }
+
+    public func setScenarioDeckOverride(scenarioID: UUID, deckID: String?) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+            map.scenarios[idx].deckOverrideID = deckID
+            map.scenarios[idx].updatedAt = Date()
+        }
+    }
+
     // MARK: - Shared structure editing
     //
     // These edit the base workflow directly, so changes are visible in
@@ -270,13 +288,24 @@ public final class SystemMapStore: ObservableObject {
         }
     }
 
-    /// Wholesale replace of the shared diagram — used by the canvas's
+    /// Wholesale replace of the shared diagram — used by the editor's
     /// session-scoped undo/redo stack to restore a prior snapshot.
     public func replaceDiagram(elements: [SystemElement], flows: [SystemFlow], relationships: [SystemRelationship]) {
         updateCurrentSystemMap { map in
             map.elements = elements
             map.flows = flows
             map.relationships = relationships
+        }
+    }
+
+    /// Wholesale replace of one scenario by ID — the override-state
+    /// counterpart to `replaceDiagram`, so undo/redo can restore a card
+    /// status override, target assignment, or deck-override change in one
+    /// step alongside any diagram change from the same user action.
+    public func restoreScenario(_ scenario: SystemScenario) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == scenario.id }) else { return }
+            map.scenarios[idx] = scenario
         }
     }
 
