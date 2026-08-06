@@ -38,6 +38,7 @@ struct PanelRootView: View {
             .padding(.top, 10)
             .padding(.bottom, 6)
             .background(AC.surface)
+            .background(WindowDragHandle())
 
             Rectangle().fill(AC.cyan.opacity(0.2)).frame(height: 1)
 
