@@ -11,7 +11,7 @@ struct StrategyDeckApp: App {
             MenuBarContentView()
                 .environmentObject(appDelegate.environment)
         } label: {
-            Image(systemName: "square.stack.3d.up")
+            MenuBarIconView()
         }
         .menuBarExtraStyle(.window)
     }

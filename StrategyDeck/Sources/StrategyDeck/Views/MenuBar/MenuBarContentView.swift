@@ -11,8 +11,7 @@ struct MenuBarContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Image(systemName: "square.stack.3d.up")
-                    .font(.system(size: 12))
+                MenuBarIconView(size: 13)
                     .foregroundStyle(AC.cyan)
                 Text("STRATEGY DECK")
                     .font(.system(size: 11, weight: .black, design: .monospaced))
