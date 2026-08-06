@@ -6,19 +6,26 @@ public struct PlayabilityContext: Sendable {
     public let playedCardTitles: Set<String>
     public let knownInformation: String
     public let constraints: String
+    /// Title -> titles of in-play cards whose own `unlocksCardTitles` names it.
+    /// Lets card A's "unlocks: B" declaration actually gate B without B also
+    /// having to declare "unlockedBy: A" — the relationship works from
+    /// either side.
+    public let reciprocalUnlocks: [String: Set<String>]
 
     public init(
         activeCardTitles: Set<String> = [],
         resolvedCardTitles: Set<String> = [],
         playedCardTitles: Set<String> = [],
         knownInformation: String = "",
-        constraints: String = ""
+        constraints: String = "",
+        reciprocalUnlocks: [String: Set<String>] = [:]
     ) {
         self.activeCardTitles = activeCardTitles
         self.resolvedCardTitles = resolvedCardTitles
         self.playedCardTitles = playedCardTitles
         self.knownInformation = knownInformation
         self.constraints = constraints
+        self.reciprocalUnlocks = reciprocalUnlocks
     }
 }
 
@@ -75,22 +82,22 @@ public struct PlayabilityEvaluator: Sendable {
             }
         }
 
-        // Check unlock-by relationships (at least one must be played/active)
-        if !rules.unlockedByCardTitles.isEmpty {
-            let satisfied = rules.unlockedByCardTitles.filter {
+        // Check unlock-by relationships (at least one must be played/active).
+        // Also honor the reverse declaration — another card's "unlocks: <this>"
+        // counts even if this card never lists that card in unlockedByCardTitles.
+        let effectiveUnlockedBy = Set(rules.unlockedByCardTitles)
+            .union(context.reciprocalUnlocks[card.title] ?? [])
+        if !effectiveUnlockedBy.isEmpty {
+            let satisfied = effectiveUnlockedBy.filter {
                 context.resolvedCardTitles.contains($0) ||
                 context.activeCardTitles.contains($0) ||
                 context.playedCardTitles.contains($0)
             }
-            let missing = rules.unlockedByCardTitles.filter {
-                !context.resolvedCardTitles.contains($0) &&
-                !context.activeCardTitles.contains($0) &&
-                !context.playedCardTitles.contains($0)
-            }
+            let missing = effectiveUnlockedBy.subtracting(satisfied)
             if !satisfied.isEmpty {
                 availableReasons.append(contentsOf: satisfied.map { "Unlocked by \($0)" })
             } else if !missing.isEmpty {
-                blockedReasons.append("Requires one of: \(missing.joined(separator: ", "))")
+                blockedReasons.append("Requires one of: \(missing.sorted().joined(separator: ", "))")
                 unlockingCards.append(contentsOf: missing)
             }
         }
@@ -126,13 +133,22 @@ public struct PlayabilityEvaluator: Sendable {
         let activeTitles = Set(activeSnapshots.compactMap { cardsByID[$0.cardID]?.title })
         let resolvedTitles = Set(resolvedSnapshots.compactMap { cardsByID[$0.cardID]?.title })
         let playedTitles = Set(allPlayedSnapshots.compactMap { cardsByID[$0.cardID]?.title })
+        let inPlayTitles = activeTitles.union(resolvedTitles).union(playedTitles)
+
+        var reciprocalUnlocks: [String: Set<String>] = [:]
+        for card in cardsByID.values where inPlayTitles.contains(card.title) {
+            for unlocked in card.playabilityRules.unlocksCardTitles {
+                reciprocalUnlocks[unlocked, default: []].insert(card.title)
+            }
+        }
 
         return PlayabilityContext(
             activeCardTitles: activeTitles,
             resolvedCardTitles: resolvedTitles,
             playedCardTitles: playedTitles,
             knownInformation: duel.knownInformation,
-            constraints: duel.constraints
+            constraints: duel.constraints,
+            reciprocalUnlocks: reciprocalUnlocks
         )
     }
 

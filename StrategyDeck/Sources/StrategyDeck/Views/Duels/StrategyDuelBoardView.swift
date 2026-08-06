@@ -244,7 +244,7 @@ struct StrategyDuelBoardView: View {
                             flash("STRATEGY RESOLVED")
                         }
                     )
-                    .frame(width: min(geo.size.width - 32, 390))
+                    .frame(width: min(geo.size.width - 32, 440))
                     Spacer()
                 }
                 .padding(.bottom, handH + 54)
@@ -1042,6 +1042,11 @@ private struct ArenaCardInspector: View {
     @State private var localAnnotation: String = ""
     private var kindColor: Color { card.kind.arenaColor }
 
+    private var softwareFields: SoftwareStrategyFields? {
+        if case .softwareStrategy(let f) = card.metadata { return f }
+        return nil
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
@@ -1074,12 +1079,8 @@ private struct ArenaCardInspector: View {
             }
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    if !card.frontText.isEmpty {
-                        Text(card.frontText)
-                            .font(.system(size: 11))
-                            .foregroundStyle(AC.textSub)
-                    }
+                VStack(alignment: .leading, spacing: 12) {
+                    descriptionBlock
                     if result.hasDetails {
                         Rectangle().fill(AC.borderDim).frame(height: 1)
                         playabilityBlock
@@ -1091,7 +1092,7 @@ private struct ArenaCardInspector: View {
                 }
                 .padding(12)
             }
-            .frame(maxHeight: 140)
+            .frame(maxHeight: 260)
 
             // Actions
             ZStack {
@@ -1185,6 +1186,48 @@ private struct ArenaCardInspector: View {
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var descriptionBlock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let f = softwareFields {
+                if !f.trigger.isEmpty {
+                    descriptionRow("WHEN TO USE", f.trigger, AC.cyan)
+                }
+                if !f.mechanism.isEmpty {
+                    descriptionRow("WHAT IT DOES", f.mechanism, kindColor)
+                }
+                if !f.desiredResult.isEmpty {
+                    descriptionRow("RESULT", f.desiredResult, AC.available)
+                }
+                if f.trigger.isEmpty && f.mechanism.isEmpty && f.desiredResult.isEmpty && !card.frontText.isEmpty {
+                    descriptionRow("DESCRIPTION", card.frontText, kindColor)
+                }
+            } else if !card.frontText.isEmpty {
+                descriptionRow("DESCRIPTION", card.frontText, kindColor)
+            }
+            if !card.playabilityRules.unlocksCardTitles.isEmpty {
+                descriptionRow(
+                    "UNLOCKS",
+                    card.playabilityRules.unlocksCardTitles.joined(separator: ", "),
+                    AC.available
+                )
+            }
+        }
+    }
+
+    private func descriptionRow(_ label: String, _ text: String, _ color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label)
+                .font(.system(size: 8, weight: .black, design: .monospaced))
+                .foregroundStyle(color.opacity(0.8))
+                .kerning(1.2)
+            Text(text)
+                .font(.system(size: 12))
+                .foregroundStyle(AC.text)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     @ViewBuilder

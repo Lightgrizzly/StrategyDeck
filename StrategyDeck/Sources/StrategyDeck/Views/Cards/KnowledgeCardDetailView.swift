@@ -151,6 +151,22 @@ struct KnowledgeCardDetailView: View {
                         if !f.realWorldExample.isEmpty { detailSection("Real-World Example", f.realWorldExample) }
                     }
 
+                    if !card.playabilityRules.unlocksCardTitles.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            label("Unlocks")
+                            ForEach(card.playabilityRules.unlocksCardTitles, id: \.self) { title in
+                                HStack(spacing: 5) {
+                                    Image(systemName: "lock.open.fill")
+                                        .font(.system(size: 9))
+                                        .foregroundStyle(AC.available)
+                                    Text(title)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(AC.text)
+                                }
+                            }
+                        }
+                    }
+
                     if !relatedRows.isEmpty {
                         VStack(alignment: .leading, spacing: 4) {
                             label("Relationships")
