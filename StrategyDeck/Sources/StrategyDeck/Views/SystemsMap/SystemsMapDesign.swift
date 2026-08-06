@@ -109,3 +109,16 @@ extension SystemCardStatus {
         }
     }
 }
+
+extension SystemElementState {
+    var arenaColor: Color {
+        switch self {
+        case .normal: return AC.textDim
+        case .active: return AC.cyan
+        case .disabled: return AC.threat
+        case .hidden: return AC.textGhost
+        case .atRisk: return .orange
+        case .constrained: return .purple
+        }
+    }
+}

@@ -72,9 +72,19 @@ struct SystemDiagramToolbar: View {
 }
 
 // MARK: - Canvas
+//
+// Renders the *effective* diagram for the selected scenario (base structure
+// merged with that scenario's value overrides) — the caller resolves
+// `SystemMap.effectiveElements(for:)`/`effectiveFlows(for:)` and passes the
+// result down, so this view has no scenario concept of its own.
 
 struct SystemDiagramCanvasView: View {
-    let step: SystemStep
+    let elements: [SystemElement]
+    let flows: [SystemFlow]
+    let relationships: [SystemRelationship]
+    /// Per-element/flow semantic state tag for the selected scenario, used
+    /// only for visual dimming/badging (hidden/disabled/at-risk etc).
+    let elementStates: [UUID: SystemElementState]
     let isEditable: Bool
     @Binding var selection: DiagramSelection?
     @Binding var tool: DiagramTool
@@ -91,7 +101,7 @@ struct SystemDiagramCanvasView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var positionsByID: [UUID: CGPoint] {
-        Dictionary(uniqueKeysWithValues: step.elements.map { ($0.id, CGPoint(x: $0.position.x, y: $0.position.y)) })
+        Dictionary(uniqueKeysWithValues: elements.map { ($0.id, CGPoint(x: $0.position.x, y: $0.position.y)) })
     }
 
     var body: some View {
@@ -126,7 +136,7 @@ struct SystemDiagramCanvasView: View {
     }
 
     private var flowLabelsLayer: some View {
-        ForEach(step.flows) { flow in
+        ForEach(flows) { flow in
             if let (from, to) = endpoints(for: flow) {
                 EdgeLabelView(
                     label: flow.name,
@@ -141,7 +151,7 @@ struct SystemDiagramCanvasView: View {
     }
 
     private var relationshipLabelsLayer: some View {
-        ForEach(step.relationships) { rel in
+        ForEach(relationships) { rel in
             if let s = positionsByID[rel.sourceElementID], let t = positionsByID[rel.targetElementID] {
                 EdgeLabelView(
                     label: rel.relationshipType.marker,
@@ -156,9 +166,10 @@ struct SystemDiagramCanvasView: View {
     }
 
     private var elementNodesLayer: some View {
-        ForEach(step.elements) { element in
+        ForEach(elements) { element in
             SystemElementNodeView(
                 element: element,
+                state: elementStates[element.id] ?? .normal,
                 isSelected: selection == .element(element.id),
                 isConnectSource: pendingConnectSourceID == element.id
             )
@@ -195,11 +206,11 @@ struct SystemDiagramCanvasView: View {
 
     private var edgeLinesLayer: some View {
         Canvas { ctx, _ in
-            for flow in step.flows {
+            for flow in flows {
                 guard let (s, t) = endpoints(for: flow) else { continue }
                 drawLine(from: s, to: t, ctx: &ctx, color: AC.cyan, dashed: !flow.isEnabled)
             }
-            for rel in step.relationships {
+            for rel in relationships {
                 guard let s = positionsByID[rel.sourceElementID], let t = positionsByID[rel.targetElementID] else { continue }
                 drawLine(from: s, to: t, ctx: &ctx, color: rel.relationshipType.arenaColor, dashed: true)
             }
@@ -323,10 +334,12 @@ struct SystemDiagramCanvasView: View {
 
 struct SystemElementNodeView: View {
     let element: SystemElement
+    let state: SystemElementState
     let isSelected: Bool
     let isConnectSource: Bool
 
     private var color: Color { element.kind.arenaColor }
+    private var isDimmed: Bool { state == .hidden || state == .disabled }
 
     var body: some View {
         Group {
@@ -341,7 +354,22 @@ struct SystemElementNodeView: View {
             AngularCardShape(cornerRadius: 8, cornerCut: 12)
                 .stroke(isConnectSource ? AC.gold : (isSelected ? color : AC.borderDim), lineWidth: isSelected || isConnectSource ? 2 : 1)
         )
+        .overlay(alignment: .topTrailing) {
+            if state != .normal {
+                stateBadge
+            }
+        }
         .shadow(color: isSelected ? color.opacity(0.6) : .clear, radius: 8)
+        .opacity(isDimmed ? 0.5 : 1)
+    }
+
+    private var stateBadge: some View {
+        Text(state.displayName.uppercased())
+            .font(.system(size: 6, weight: .black, design: .monospaced))
+            .foregroundStyle(AC.bg)
+            .padding(.horizontal, 4).padding(.vertical, 2)
+            .background(Capsule().fill(state.arenaColor))
+            .offset(x: 4, y: -4)
     }
 
     private var stockBody: some View {

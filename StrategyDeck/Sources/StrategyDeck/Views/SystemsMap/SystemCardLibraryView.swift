@@ -4,28 +4,34 @@ import StrategyDeckCore
 /// The complete card library, always shown in full beneath the diagram —
 /// every card, grouped by its dynamically computed ``SystemCardStatus``, so
 /// the user can see the whole action vocabulary and understand why each
-/// card is or isn't available right now.
+/// card is or isn't available right now. Filterable by suite and by status
+/// together; selecting a suite never changes the underlying evaluations.
 struct SystemCardLibraryView: View {
     let cards: [KnowledgeCard]
     let suits: [CardSuit]
     let evaluations: [SystemCardEvaluation]
     let selectionLabel: String
     let isEditable: Bool
-    let onPlay: (KnowledgeCard) -> Void
-    let onClearOverride: (KnowledgeCard) -> Void
+    let onViewDetails: (KnowledgeCard) -> Void
+    let onApplyIntervention: (KnowledgeCard) -> Void
+    let onChangeStatus: (KnowledgeCard, SystemCardStatus, SystemOverrideScope) -> Void
+    let onResetToAutomatic: (KnowledgeCard) -> Void
 
     @State private var searchText = ""
     @State private var statusFilter: SystemCardStatus?
+    @State private var selectedSuitIDs: Set<String> = []
     @State private var favoritesOnly = false
 
     private var evaluationByID: [UUID: SystemCardEvaluation] {
         Dictionary(uniqueKeysWithValues: evaluations.map { ($0.cardID, $0) })
     }
 
-    private var filteredCards: [KnowledgeCard] {
+    /// Cards used by suite filter counts and the suite bar — after
+    /// search/favorites, but before suite/status filters, so counts stay
+    /// stable reference numbers rather than shrinking as filters narrow.
+    private var baselineCards: [KnowledgeCard] {
         cards.filter { card in
             if favoritesOnly && !card.isFavorite { return false }
-            if let statusFilter, evaluationByID[card.id]?.status != statusFilter { return false }
             if !searchText.isEmpty {
                 let q = searchText.lowercased()
                 guard card.searchableText.contains(where: { $0.lowercased().contains(q) }) else { return false }
@@ -34,8 +40,21 @@ struct SystemCardLibraryView: View {
         }
     }
 
+    private var usedSuits: [CardSuit] {
+        let usedIDs = Set(cards.flatMap(\.suitIDs))
+        return suits.filter { usedIDs.contains($0.id) }.sorted { $0.displayOrder < $1.displayOrder }
+    }
+
+    private var filteredCards: [KnowledgeCard] {
+        baselineCards.filter { card in
+            if !selectedSuitIDs.isEmpty && !card.suitIDs.contains(where: { selectedSuitIDs.contains($0) }) { return false }
+            if let statusFilter, evaluationByID[card.id]?.effectiveStatus != statusFilter { return false }
+            return true
+        }
+    }
+
     private var groupedCards: [(status: SystemCardStatus, title: String, cards: [KnowledgeCard])] {
-        let groups = Dictionary(grouping: filteredCards) { evaluationByID[$0.id]?.status ?? .available }
+        let groups = Dictionary(grouping: filteredCards) { evaluationByID[$0.id]?.effectiveStatus ?? .available }
         return SystemCardStatus.allCases
             .sorted { $0.groupRank < $1.groupRank }
             .reduce(into: [(SystemCardStatus, String, [KnowledgeCard])]()) { acc, status in
@@ -53,12 +72,14 @@ struct SystemCardLibraryView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             Rectangle().fill(AC.borderDim).frame(height: 1)
+            suiteBar
+            Rectangle().fill(AC.borderDim).frame(height: 1)
 
             if filteredCards.isEmpty {
                 VStack(spacing: 6) {
                     Image(systemName: "rectangle.stack.badge.magnifyingglass").font(.system(size: 22)).foregroundStyle(AC.textGhost)
                     Text("No cards match the current filters.").font(.system(size: 11)).foregroundStyle(AC.textSub)
-                    Button("Reset Filters") { searchText = ""; statusFilter = nil; favoritesOnly = false }
+                    Button("Reset Filters", action: resetFilters)
                         .buttonStyle(ArenaOutlineButtonStyle())
                 }
                 .frame(maxWidth: .infinity)
@@ -69,15 +90,17 @@ struct SystemCardLibraryView: View {
                         ForEach(groupedCards, id: \.title) { group in
                             VStack(alignment: .leading, spacing: 6) {
                                 ArenaSectionLabel(text: "\(group.title) (\(group.cards.count))", color: group.status.arenaColor)
-                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 190, maximum: 240), spacing: 8)], spacing: 8) {
+                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 200, maximum: 250), spacing: 8)], spacing: 8) {
                                     ForEach(group.cards) { card in
                                         SystemLibraryCardView(
                                             card: card,
                                             suite: suits.first(where: { card.suitIDs.contains($0.id) }),
                                             evaluation: evaluationByID[card.id],
                                             isEditable: isEditable,
-                                            onPlay: { onPlay(card) },
-                                            onClearOverride: { onClearOverride(card) }
+                                            onViewDetails: { onViewDetails(card) },
+                                            onApplyIntervention: { onApplyIntervention(card) },
+                                            onChangeStatus: { onChangeStatus(card, $0, $1) },
+                                            onResetToAutomatic: { onResetToAutomatic(card) }
                                         )
                                     }
                                 }
@@ -89,6 +112,13 @@ struct SystemCardLibraryView: View {
             }
         }
         .background(AC.bg)
+    }
+
+    private func resetFilters() {
+        searchText = ""
+        statusFilter = nil
+        selectedSuitIDs = []
+        favoritesOnly = false
     }
 
     private var header: some View {
@@ -123,14 +153,102 @@ struct SystemCardLibraryView: View {
                 .tint(AC.cyan)
                 .frame(width: 140)
 
-                if !searchText.isEmpty || statusFilter != nil || favoritesOnly {
-                    Button("Reset") { searchText = ""; statusFilter = nil; favoritesOnly = false }
+                if !searchText.isEmpty || statusFilter != nil || !selectedSuitIDs.isEmpty || favoritesOnly {
+                    Button("Reset", action: resetFilters)
                         .buttonStyle(ArenaOutlineButtonStyle())
                 }
             }
         }
         .padding(10)
         .background(AC.surface)
+    }
+
+    private var suiteBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                SuiteFilterChip(
+                    title: "All Suites",
+                    subtitle: "\(baselineCards.count) cards",
+                    isSelected: selectedSuitIDs.isEmpty,
+                    color: AC.cyan
+                ) {
+                    selectedSuitIDs = []
+                }
+                ForEach(usedSuits) { suit in
+                    let summary = suiteSummary(suit)
+                    SuiteFilterChip(
+                        title: suit.name,
+                        subtitle: "\(summary.total) cards • \(summary.available) available • \(summary.active) active",
+                        isSelected: selectedSuitIDs.contains(suit.id),
+                        color: SuiteColors.color(for: suit.id)
+                    ) {
+                        toggleSuit(suit.id)
+                    }
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+        }
+        .background(AC.surface.opacity(0.6))
+    }
+
+    private func toggleSuit(_ id: String) {
+        if selectedSuitIDs.contains(id) {
+            selectedSuitIDs.remove(id)
+        } else {
+            selectedSuitIDs.insert(id)
+        }
+    }
+
+    private func suiteSummary(_ suit: CardSuit) -> (total: Int, available: Int, active: Int, locked: Int, disabled: Int) {
+        let inSuite = baselineCards.filter { $0.suitIDs.contains(suit.id) }
+        func count(_ statuses: SystemCardStatus...) -> Int {
+            inSuite.filter { card in
+                guard let status = evaluationByID[card.id]?.effectiveStatus else { return false }
+                return statuses.contains(status)
+            }.count
+        }
+        return (
+            total: inSuite.count,
+            available: count(.available, .recommended),
+            active: count(.active),
+            locked: count(.locked),
+            disabled: count(.disabled)
+        )
+    }
+}
+
+// MARK: - Suite filter chip
+
+private struct SuiteFilterChip: View {
+    let title: String
+    let subtitle: String
+    let isSelected: Bool
+    let color: Color
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title.uppercased())
+                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .kerning(0.5)
+                Text(subtitle)
+                    .font(.system(size: 8))
+            }
+            .foregroundStyle(isSelected ? AC.bg : color)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 6)
+            .background(
+                AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                    .fill(isSelected ? color : color.opacity(0.12))
+            )
+            .overlay(
+                AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                    .stroke(color.opacity(0.5), lineWidth: 0.75)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -141,12 +259,14 @@ private struct SystemLibraryCardView: View {
     let suite: CardSuit?
     let evaluation: SystemCardEvaluation?
     let isEditable: Bool
-    let onPlay: () -> Void
-    let onClearOverride: () -> Void
+    let onViewDetails: () -> Void
+    let onApplyIntervention: () -> Void
+    let onChangeStatus: (SystemCardStatus, SystemOverrideScope) -> Void
+    let onResetToAutomatic: () -> Void
 
     @State private var showingWhy = false
 
-    private var status: SystemCardStatus { evaluation?.status ?? .available }
+    private var status: SystemCardStatus { evaluation?.effectiveStatus ?? .available }
     private var kindColor: Color { card.kind.arenaColor }
 
     var body: some View {
@@ -158,7 +278,7 @@ private struct SystemLibraryCardView: View {
                     .foregroundStyle(AC.text)
                     .lineLimit(1)
                 Spacer(minLength: 0)
-                statusBadge
+                statusMenu
             }
 
             if let leverage = card.playabilityRules.leverageLevel {
@@ -178,24 +298,37 @@ private struct SystemLibraryCardView: View {
             .buttonStyle(.plain)
 
             if showingWhy, let evaluation {
-                Text(evaluation.explanation)
-                    .font(.system(size: 9))
-                    .foregroundStyle(AC.textSub)
-                    .fixedSize(horizontal: false, vertical: true)
-                if evaluation.isManuallyOverridden {
-                    Button("Clear manual override", action: onClearOverride)
-                        .font(.system(size: 8, weight: .bold))
-                        .buttonStyle(.plain)
-                        .foregroundStyle(AC.cyan)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("AUTOMATIC: \(evaluation.automaticStatus.displayName.uppercased())")
+                        .font(.system(size: 8, weight: .black, design: .monospaced))
+                        .foregroundStyle(evaluation.automaticStatus.arenaColor.opacity(0.85))
+                    Text(evaluation.automaticExplanation)
+                        .font(.system(size: 9))
+                        .foregroundStyle(AC.textSub)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if evaluation.isOverridden {
+                        Text("OVERRIDE (\(evaluation.overrideScope?.displayName.uppercased() ?? "")): \(evaluation.effectiveStatus.displayName.uppercased())")
+                            .font(.system(size: 8, weight: .black, design: .monospaced))
+                            .foregroundStyle(AC.cyan)
+                        if let reason = evaluation.overrideReason, !reason.isEmpty {
+                            Text(reason)
+                                .font(.system(size: 9))
+                                .italic()
+                                .foregroundStyle(AC.textSub)
+                        }
+                    }
                 }
             }
 
-            if isEditable, let evaluation, evaluation.isPlayable {
-                Button(action: onPlay) {
-                    Text(status == .recommended ? "PLAY (RECOMMENDED)" : "PLAY CARD")
-                        .frame(maxWidth: .infinity)
+            HStack(spacing: 6) {
+                Button("Details", action: onViewDetails)
+                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.borderDim))
+                if isEditable, evaluation?.isPlayable == true {
+                    Button(status == .recommended ? "APPLY (RECOMMENDED)" : "APPLY") {
+                        onApplyIntervention()
+                    }
+                    .buttonStyle(ArenaButtonStyle(color: status == .recommended ? AC.gold : kindColor))
                 }
-                .buttonStyle(ArenaButtonStyle(color: status == .recommended ? AC.gold : kindColor))
             }
         }
         .padding(9)
@@ -210,13 +343,45 @@ private struct SystemLibraryCardView: View {
         .opacity(status == .irrelevant ? 0.55 : 1.0)
     }
 
+    @ViewBuilder
+    private var statusMenu: some View {
+        Menu {
+            Section("Change Status — This Element") {
+                ForEach(SystemCardStatus.allCases, id: \.self) { s in
+                    Button(s.displayName) { onChangeStatus(s, .thisElementOnly) }
+                }
+            }
+            Menu("Change Status — Entire Scenario") {
+                ForEach(SystemCardStatus.allCases, id: \.self) { s in
+                    Button(s.displayName) { onChangeStatus(s, .entireScenario) }
+                }
+            }
+            Menu("Change Status — Default For Workflow") {
+                ForEach(SystemCardStatus.allCases, id: \.self) { s in
+                    Button(s.displayName) { onChangeStatus(s, .workflowDefault) }
+                }
+            }
+            if evaluation?.isOverridden == true {
+                Divider()
+                Button("Reset to Automatic", action: onResetToAutomatic)
+            }
+            Divider()
+            Button("View Details", action: onViewDetails)
+        } label: {
+            statusBadge
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+    }
+
     private var statusBadge: some View {
         HStack(spacing: 3) {
             Image(systemName: status.systemImage).font(.system(size: 8))
             Text(status.displayName.uppercased()).font(.system(size: 7.5, weight: .black, design: .monospaced)).kerning(0.5)
-            if evaluation?.isManuallyOverridden == true {
+            if evaluation?.isOverridden == true {
                 Image(systemName: "hand.raised.fill").font(.system(size: 7))
             }
+            Image(systemName: "chevron.down").font(.system(size: 6))
         }
         .foregroundStyle(status.arenaColor)
         .padding(.horizontal, 6).padding(.vertical, 3)

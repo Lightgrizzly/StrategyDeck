@@ -25,10 +25,10 @@ public final class SystemMapStore: ObservableObject {
     // MARK: - Map lifecycle
 
     public func createSystemMap(title: String, description: String = "", primaryGoal: String = "") {
-        let firstStep = SystemStep(index: 0, title: "Step 1")
         var map = SystemMap(title: title, description: description, primaryGoal: primaryGoal)
-        map.steps = [firstStep]
-        map.currentStepID = firstStep.id
+        let defaultScenario = SystemScenario(name: "Current State", isDefault: true)
+        map.scenarios = [defaultScenario]
+        map.selectedScenarioID = defaultScenario.id
         systemMaps.insert(map, at: 0)
         currentSystemMap = map
         persist()
@@ -88,216 +88,305 @@ public final class SystemMapStore: ObservableObject {
         persist()
     }
 
-    // MARK: - Step navigation
+    // MARK: - Scenario management
+    //
+    // A scenario is a different configuration of the same shared workflow —
+    // not a step in a sequence. There is always at least one scenario once
+    // a map has been created; `deleteScenario` refuses to remove the last one.
 
-    /// Selects a step for viewing. Diagram edits and card plays always apply
-    /// to the latest step regardless of which step is being viewed — an
-    /// older step is a read-only history view in this first implementation.
-    public func setCurrentStep(id: UUID) {
+    public func createScenario(name: String, description: String = "") {
         updateCurrentSystemMap { map in
-            map.currentStepID = id
+            let newOrder = (map.scenarios.map(\.order).max() ?? -1) + 1
+            let scenario = SystemScenario(name: name, description: description, isDefault: map.scenarios.isEmpty, order: newOrder)
+            map.scenarios.append(scenario)
+            map.selectedScenarioID = scenario.id
         }
     }
 
-    public func returnToLatestStep() {
+    public func duplicateScenario(id: UUID) {
         updateCurrentSystemMap { map in
-            map.currentStepID = map.latestStep?.id
+            guard let original = map.scenarios.first(where: { $0.id == id }) else { return }
+            var copy = original
+            copy.id = UUID()
+            copy.name = original.name + " Copy"
+            copy.isDefault = false
+            copy.order = (map.scenarios.map(\.order).max() ?? -1) + 1
+            copy.createdAt = Date()
+            copy.updatedAt = Date()
+            map.scenarios.append(copy)
+            map.selectedScenarioID = copy.id
         }
     }
 
-    public func selectElement(id: UUID?, inStep stepID: UUID) {
+    public func renameScenario(id: UUID, name: String) {
         updateCurrentSystemMap { map in
-            guard let idx = map.steps.firstIndex(where: { $0.id == stepID }) else { return }
-            map.steps[idx].selectedElementID = id
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == id }) else { return }
+            map.scenarios[idx].name = name
+            map.scenarios[idx].updatedAt = Date()
         }
     }
 
-    /// "Next Step" — duplicates the latest step forward and selects it,
-    /// mirroring `DuelStore.addStep`.
-    public func addStep(title: String = "") {
+    public func setScenarioDescription(id: UUID, description: String) {
         updateCurrentSystemMap { map in
-            let sorted = map.sortedSteps
-            guard let last = sorted.last else { return }
-            var next = last.duplicated(index: last.index + 1)
-            next.title = title
-            map.steps.append(next)
-            map.currentStepID = next.id
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == id }) else { return }
+            map.scenarios[idx].description = description
+            map.scenarios[idx].updatedAt = Date()
         }
     }
 
-    // MARK: - Diagram editing (always targets the latest step)
+    public func deleteScenario(id: UUID) {
+        updateCurrentSystemMap { map in
+            guard map.scenarios.count > 1 else { return }
+            let wasDefault = map.scenarios.first(where: { $0.id == id })?.isDefault ?? false
+            map.scenarios.removeAll { $0.id == id }
+            if wasDefault, let firstIdx = map.scenarios.indices.first {
+                map.scenarios[firstIdx].isDefault = true
+            }
+            if map.selectedScenarioID == id {
+                map.selectedScenarioID = map.scenarios.first(where: { $0.isDefault })?.id ?? map.scenarios.first?.id
+            }
+        }
+    }
+
+    public func setDefaultScenario(id: UUID) {
+        updateCurrentSystemMap { map in
+            for idx in map.scenarios.indices {
+                map.scenarios[idx].isDefault = (map.scenarios[idx].id == id)
+            }
+        }
+    }
+
+    public func selectScenario(id: UUID) {
+        updateCurrentSystemMap { map in
+            map.selectedScenarioID = id
+        }
+    }
+
+    /// Clears all overrides for a scenario, returning it to the shared base
+    /// workflow state, while keeping its name/description/position.
+    public func resetScenario(id: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == id }) else { return }
+            let existing = map.scenarios[idx]
+            map.scenarios[idx] = SystemScenario(
+                id: id,
+                name: existing.name,
+                description: existing.description,
+                isDefault: existing.isDefault,
+                order: existing.order
+            )
+        }
+    }
+
+    /// Moves a scenario earlier (-1) or later (+1) in display order.
+    public func moveScenario(id: UUID, direction: Int) {
+        updateCurrentSystemMap { map in
+            var sorted = map.sortedScenarios
+            guard let idx = sorted.firstIndex(where: { $0.id == id }) else { return }
+            let newIdx = idx + direction
+            guard sorted.indices.contains(newIdx) else { return }
+            sorted.swapAt(idx, newIdx)
+            for (order, scenario) in sorted.enumerated() {
+                if let mapIdx = map.scenarios.firstIndex(where: { $0.id == scenario.id }) {
+                    map.scenarios[mapIdx].order = order
+                }
+            }
+        }
+    }
+
+    /// Records which element is selected within the currently selected
+    /// scenario — each scenario remembers its own last selection.
+    public func selectElement(id: UUID?) {
+        updateCurrentSystemMap { map in
+            guard let scenarioID = map.selectedScenarioID,
+                  let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+            map.scenarios[idx].selectedElementID = id
+        }
+    }
+
+    // MARK: - Shared structure editing
+    //
+    // These edit the base workflow directly, so changes are visible in
+    // every scenario — "editing shared workflow structure," distinct from
+    // the scenario-scoped overrides below.
 
     public func addElement(_ element: SystemElement) {
-        mutateLatestStep { $0.elements.append(element) }
+        updateCurrentSystemMap { $0.elements.append(element) }
     }
 
     public func updateElement(_ element: SystemElement) {
-        mutateLatestStep { step in
-            if let idx = step.elements.firstIndex(where: { $0.id == element.id }) {
-                step.elements[idx] = element
+        updateCurrentSystemMap { map in
+            if let idx = map.elements.firstIndex(where: { $0.id == element.id }) {
+                map.elements[idx] = element
             }
         }
     }
 
     public func deleteElement(id: UUID) {
-        mutateLatestStep { step in
-            step.elements.removeAll { $0.id == id }
-            step.flows.removeAll { $0.sourceElementID == id || $0.targetElementID == id }
-            step.relationships.removeAll { $0.sourceElementID == id || $0.targetElementID == id }
-            if step.selectedElementID == id { step.selectedElementID = nil }
+        updateCurrentSystemMap { map in
+            map.elements.removeAll { $0.id == id }
+            map.flows.removeAll { $0.sourceElementID == id || $0.targetElementID == id }
+            map.relationships.removeAll { $0.sourceElementID == id || $0.targetElementID == id }
+            for idx in map.scenarios.indices {
+                map.scenarios[idx].elementOverrides.removeValue(forKey: id)
+                if map.scenarios[idx].selectedElementID == id {
+                    map.scenarios[idx].selectedElementID = nil
+                }
+            }
         }
     }
 
     public func addFlow(_ flow: SystemFlow) {
-        mutateLatestStep { $0.flows.append(flow) }
+        updateCurrentSystemMap { $0.flows.append(flow) }
     }
 
     public func updateFlow(_ flow: SystemFlow) {
-        mutateLatestStep { step in
-            if let idx = step.flows.firstIndex(where: { $0.id == flow.id }) {
-                step.flows[idx] = flow
+        updateCurrentSystemMap { map in
+            if let idx = map.flows.firstIndex(where: { $0.id == flow.id }) {
+                map.flows[idx] = flow
             }
         }
     }
 
     public func deleteFlow(id: UUID) {
-        mutateLatestStep { $0.flows.removeAll { $0.id == id } }
+        updateCurrentSystemMap { map in
+            map.flows.removeAll { $0.id == id }
+            for idx in map.scenarios.indices {
+                map.scenarios[idx].flowOverrides.removeValue(forKey: id)
+            }
+        }
     }
 
     public func addRelationship(_ relationship: SystemRelationship) {
-        mutateLatestStep { $0.relationships.append(relationship) }
+        updateCurrentSystemMap { $0.relationships.append(relationship) }
     }
 
     public func deleteRelationship(id: UUID) {
-        mutateLatestStep { $0.relationships.removeAll { $0.id == id } }
+        updateCurrentSystemMap { map in
+            map.relationships.removeAll { $0.id == id }
+            for idx in map.scenarios.indices {
+                map.scenarios[idx].relationshipStates.removeValue(forKey: id)
+            }
+        }
     }
 
-    /// Wholesale replace of the latest step's diagram — used by the canvas's
+    /// Wholesale replace of the shared diagram — used by the canvas's
     /// session-scoped undo/redo stack to restore a prior snapshot.
-    public func replaceLatestStepDiagram(elements: [SystemElement], flows: [SystemFlow], relationships: [SystemRelationship]) {
-        mutateLatestStep { step in
-            step.elements = elements
-            step.flows = flows
-            step.relationships = relationships
+    public func replaceDiagram(elements: [SystemElement], flows: [SystemFlow], relationships: [SystemRelationship]) {
+        updateCurrentSystemMap { map in
+            map.elements = elements
+            map.flows = flows
+            map.relationships = relationships
         }
     }
 
-    public func setKnownInformation(_ text: String) {
-        mutateLatestStep { $0.knownInformation = text }
-    }
+    // MARK: - Scenario-scoped overrides
+    //
+    // These edit only the selected scenario — "editing the currently
+    // selected scenario," distinct from the shared structure above.
 
-    public func setUnknownInformation(_ text: String) {
-        mutateLatestStep { $0.unknownInformation = text }
-    }
-
-    // MARK: - Card plays
-
-    /// Applies a card to a target, records the play in the latest step's
-    /// ledger, recalculates every other card's status before/after, and
-    /// records a "Changes This Step" summary. Reuses `SystemMapEvaluator`
-    /// (which itself reuses `PlayabilityEvaluator`) so this is the same rule
-    /// engine the Duel Board uses.
-    public func playCard(card: KnowledgeCard, targetElementID: UUID?, targetKind: SystemTargetKind, allCards: [KnowledgeCard], notes: String = "") {
-        guard let map = currentSystemMap, let latest = map.latestStep else { return }
-
-        let before = SystemMapEvaluator.evaluateAll(cards: allCards, step: latest, selectedTargetKind: nil)
-        let beforeByID = Dictionary(uniqueKeysWithValues: before.map { ($0.cardID, $0.status) })
-
-        mutateLatestStep { step in
-            let status: SystemCardPlayStatus = card.playabilityRules.exhaustsAfterUse ? .exhausted : .active
-            let play = SystemCardPlay(
-                cardID: card.id,
-                targetElementID: targetElementID,
-                targetKind: targetKind,
-                status: status,
-                playedAtStepIndex: step.index,
-                notes: notes
-            )
-            step.cardPlays.append(play)
-            step.changes.append(SystemChangeEntry(
-                kind: .cardPlayed,
-                label: "\(card.title) played",
-                relatedElementID: targetElementID,
-                relatedCardID: card.id
-            ))
-            step.changes.append(SystemChangeEntry(
-                kind: status == .exhausted ? .cardBecameExhausted : .cardBecameActive,
-                label: "\(card.title) is now \(status == .exhausted ? "exhausted" : "active")",
-                relatedCardID: card.id
-            ))
-        }
-
-        guard let updatedMap = currentSystemMap, let updatedLatest = updatedMap.latestStep else { return }
-        let after = SystemMapEvaluator.evaluateAll(cards: allCards, step: updatedLatest, selectedTargetKind: nil)
-
-        var unlocked = 0
-        var newlyDisabled = 0
-        var extraChanges: [SystemChangeEntry] = []
-        for evaluation in after {
-            guard let previous = beforeByID[evaluation.cardID], previous != evaluation.status else { continue }
-            let becameAvailable = (evaluation.status == .available || evaluation.status == .recommended)
-                && (previous == .locked || previous == .disabled)
-            let becameLockedOrDisabled = (evaluation.status == .locked || evaluation.status == .disabled)
-                && (previous == .available || previous == .recommended)
-            if becameAvailable {
-                unlocked += 1
-                if let unlockedCard = allCards.first(where: { $0.id == evaluation.cardID }) {
-                    extraChanges.append(SystemChangeEntry(
-                        kind: .cardBecameAvailable,
-                        label: "\(unlockedCard.title) unlocked",
-                        relatedCardID: unlockedCard.id
-                    ))
-                }
-            } else if becameLockedOrDisabled {
-                newlyDisabled += 1
-                if let blockedCard = allCards.first(where: { $0.id == evaluation.cardID }) {
-                    extraChanges.append(SystemChangeEntry(
-                        kind: evaluation.status == .disabled ? .cardBecameDisabled : .cardBecameLocked,
-                        label: "\(blockedCard.title) now \(evaluation.status.displayName.lowercased())",
-                        relatedCardID: blockedCard.id
-                    ))
-                }
-            }
-        }
-
-        if !extraChanges.isEmpty {
-            mutateLatestStep { step in
-                step.changes.append(contentsOf: extraChanges)
-            }
-        }
-        _ = (unlocked, newlyDisabled) // surfaced to the UI via step.changes
-    }
-
-    public func resolveCardPlay(playID: UUID, cardTitle: String) {
-        mutateLatestStep { step in
-            guard let idx = step.cardPlays.firstIndex(where: { $0.id == playID }) else { return }
-            step.cardPlays[idx].status = .resolved
-            step.changes.append(SystemChangeEntry(
-                kind: .cardResolved,
-                label: "\(cardTitle) resolved",
-                relatedCardID: step.cardPlays[idx].cardID
-            ))
+    public func setElementOverride(elementID: UUID, currentValue: Double?, state: SystemElementState?, notes: String?, inScenario scenarioID: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+            map.scenarios[idx].elementOverrides[elementID] = SystemElementOverride(currentValue: currentValue, state: state, notes: notes)
+            map.scenarios[idx].updatedAt = Date()
         }
     }
 
-    public func setManualOverride(cardID: UUID, status: SystemCardStatus?) {
-        mutateLatestStep { step in
-            if let status {
-                step.manualStatusOverrides[cardID] = status
+    public func setFlowOverride(flowID: UUID, rate: Double?, isEnabled: Bool?, state: SystemElementState?, inScenario scenarioID: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+            map.scenarios[idx].flowOverrides[flowID] = SystemFlowOverride(rate: rate, isEnabled: isEnabled, state: state)
+            map.scenarios[idx].updatedAt = Date()
+        }
+    }
+
+    public func setKnownInformation(_ text: String, inScenario scenarioID: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+            map.scenarios[idx].knownInformation = text
+            map.scenarios[idx].updatedAt = Date()
+        }
+    }
+
+    public func setUnknownInformation(_ text: String, inScenario scenarioID: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+            map.scenarios[idx].unknownInformation = text
+            map.scenarios[idx].updatedAt = Date()
+        }
+    }
+
+    // MARK: - Card status overrides
+    //
+    // The mechanism behind both "Change Status" (descriptive) and "Apply
+    // Intervention" (interventional) — both end up recording the same kind
+    // of override; only the reason text and default status differ.
+
+    /// Sets (replacing any existing override with the same card/scope/target)
+    /// a manual status override. Pass `scope: .workflowDefault` to apply it
+    /// across every scenario for this map.
+    public func setCardStatusOverride(
+        cardID: UUID,
+        targetElementID: UUID?,
+        scope: SystemOverrideScope,
+        status: SystemCardStatus,
+        reason: String,
+        scenarioID: UUID
+    ) {
+        let resolvedTargetID = scope == .thisElementOnly ? targetElementID : nil
+        let newOverride = SystemCardStatusOverride(
+            cardID: cardID,
+            targetElementID: resolvedTargetID,
+            scope: scope,
+            overriddenStatus: status,
+            reason: reason
+        )
+        updateCurrentSystemMap { map in
+            if scope == .workflowDefault {
+                map.workflowDefaultOverrides.removeAll { $0.cardID == cardID && $0.scope == .workflowDefault }
+                map.workflowDefaultOverrides.append(newOverride)
             } else {
-                step.manualStatusOverrides.removeValue(forKey: cardID)
+                guard let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+                map.scenarios[idx].cardStatusOverrides.removeAll {
+                    $0.cardID == cardID && $0.scope == scope && $0.targetElementID == resolvedTargetID
+                }
+                map.scenarios[idx].cardStatusOverrides.append(newOverride)
+                map.scenarios[idx].updatedAt = Date()
             }
         }
+    }
+
+    public func clearCardStatusOverride(cardID: UUID, scope: SystemOverrideScope, targetElementID: UUID?, scenarioID: UUID) {
+        updateCurrentSystemMap { map in
+            if scope == .workflowDefault {
+                map.workflowDefaultOverrides.removeAll { $0.cardID == cardID && $0.scope == .workflowDefault }
+            } else if let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) {
+                map.scenarios[idx].cardStatusOverrides.removeAll {
+                    $0.cardID == cardID && $0.scope == scope && $0.targetElementID == targetElementID
+                }
+                map.scenarios[idx].updatedAt = Date()
+            }
+        }
+    }
+
+    /// "Apply Intervention" — the interventional counterpart to manually
+    /// describing a card's status: records that the card has been applied
+    /// (Active, or Exhausted for single-use cards), scoped to the selected
+    /// element by default.
+    public func applyIntervention(card: KnowledgeCard, targetElementID: UUID?, scenarioID: UUID, notes: String = "") {
+        let status: SystemCardStatus = card.playabilityRules.exhaustsAfterUse ? .exhausted : .active
+        setCardStatusOverride(
+            cardID: card.id,
+            targetElementID: targetElementID,
+            scope: .thisElementOnly,
+            status: status,
+            reason: notes,
+            scenarioID: scenarioID
+        )
     }
 
     // MARK: - Private
-
-    private func mutateLatestStep(_ mutate: (inout SystemStep) -> Void) {
-        updateCurrentSystemMap { map in
-            guard let idx = map.steps.indices.max(by: { map.steps[$0].index < map.steps[$1].index }) else { return }
-            mutate(&map.steps[idx])
-        }
-    }
 
     private func persist() {
         do {

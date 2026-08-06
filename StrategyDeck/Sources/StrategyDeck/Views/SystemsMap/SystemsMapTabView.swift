@@ -39,7 +39,7 @@ private struct SystemsMapEmptyStateView: View {
                             .font(.system(size: 18, weight: .black, design: .monospaced))
                             .foregroundStyle(AC.cyan)
                             .kerning(2)
-                        Text("Build a Donella Meadows–style stock-and-flow diagram of the system you're working in, while seeing which strategy cards are active, available, locked, or disabled at every point. The diagram is the map of the system — the cards are the available interventions.")
+                        Text("Build a Donella Meadows–style stock-and-flow diagram of the system you're working in. Select a stock, flow, or relationship and a scenario to immediately see which strategy cards are active, available, locked, or disabled — and why. The diagram is the map of the system; the cards are the available interventions; the scenario sets the surrounding conditions.")
                             .font(.system(size: 12))
                             .foregroundStyle(AC.textSub)
                     }
@@ -84,7 +84,7 @@ private struct SystemsMapEmptyStateView: View {
                                         onDelete: {
                                             alertState = .destructive(
                                                 title: "Delete “\(map.title)”?",
-                                                message: "This will remove the saved system map and its full step history permanently.",
+                                                message: "This will remove the saved system map and all its scenarios permanently.",
                                                 confirmLabel: "Delete"
                                             ) { systemMapStore.deleteSystemMap(id: map.id) }
                                         }
@@ -137,8 +137,8 @@ private struct SystemMapSummaryRow: View {
                     Text(map.description).font(.system(size: 11)).foregroundStyle(AC.textSub).lineLimit(2)
                 }
                 HStack(spacing: 8) {
-                    Text("Steps: \(map.steps.count)").font(.system(size: 10, design: .monospaced)).foregroundStyle(AC.textDim)
-                    Text("Elements: \(map.latestStep?.elements.count ?? 0)").font(.system(size: 10, design: .monospaced)).foregroundStyle(AC.textDim)
+                    Text("Scenarios: \(map.scenarios.count)").font(.system(size: 10, design: .monospaced)).foregroundStyle(AC.textDim)
+                    Text("Elements: \(map.elements.count)").font(.system(size: 10, design: .monospaced)).foregroundStyle(AC.textDim)
                     Text("Updated: \(map.updatedAt, format: Date.FormatStyle(date: .numeric, time: .shortened))").font(.system(size: 10, design: .monospaced)).foregroundStyle(AC.textDim)
                 }
             }
@@ -192,6 +192,11 @@ private struct NewSystemMapSheet: View {
 }
 
 // MARK: - Editor
+//
+// The mental model: the selected diagram element determines the immediate
+// card context; the selected scenario determines the surrounding
+// conditions. There is no chronological "step" here — switching scenarios
+// or selection reevaluates the whole card library immediately.
 
 private struct SystemsMapEditorView: View {
     @EnvironmentObject var systemMapStore: SystemMapStore
@@ -201,9 +206,16 @@ private struct SystemsMapEditorView: View {
     @State private var selection: DiagramSelection?
     @State private var pendingConnectSourceID: UUID?
     @State private var showingInspector = true
-    @State private var showingPlaySheetFor: KnowledgeCard?
-    @State private var showingRenameSheet = false
-    @State private var renameText = ""
+    @State private var showingInterventionSheetFor: KnowledgeCard?
+    @State private var showingDetailsFor: KnowledgeCard?
+    @State private var showingRenameMapSheet = false
+    @State private var renameMapText = ""
+    @State private var showingNewScenarioSheet = false
+    @State private var newScenarioName = ""
+    @State private var newScenarioDescription = ""
+    @State private var showingRenameScenarioSheet = false
+    @State private var renameScenarioText = ""
+    @State private var showingCompareSheet = false
     @State private var alertState: AlertState?
     @State private var undoStack: [DiagramSnapshot] = []
     @State private var redoStack: [DiagramSnapshot] = []
@@ -215,13 +227,22 @@ private struct SystemsMapEditorView: View {
     }
 
     private var map: SystemMap { systemMapStore.currentSystemMap ?? SystemMap(title: "") }
-    private var step: SystemStep { map.currentStep ?? SystemStep(index: 0) }
-    private var isEditable: Bool { map.isViewingLatestStep }
+    private var scenario: SystemScenario { map.selectedScenario ?? SystemScenario(name: "Scenario") }
+
+    private var effectiveElements: [SystemElement] { map.effectiveElements(for: scenario) }
+    private var effectiveFlows: [SystemFlow] { map.effectiveFlows(for: scenario) }
+
+    private var elementStates: [UUID: SystemElementState] {
+        var result: [UUID: SystemElementState] = [:]
+        for (id, override) in scenario.elementOverrides { if let s = override.state { result[id] = s } }
+        for (id, override) in scenario.flowOverrides { if let s = override.state { result[id] = s } }
+        return result
+    }
 
     private var selectedTargetKind: SystemTargetKind? {
         switch selection {
         case .element(let id):
-            guard let el = step.elements.first(where: { $0.id == id }) else { return nil }
+            guard let el = map.elements.first(where: { $0.id == id }) else { return nil }
             return SystemMapEvaluator.targetKind(for: el.kind)
         case .flow: return .flow
         case .relationship: return .relationship
@@ -229,22 +250,28 @@ private struct SystemsMapEditorView: View {
         }
     }
 
-    private var selectedElementIDForPlay: UUID? {
+    private var selectedElementID: UUID? {
         if case .element(let id) = selection { return id }
         return nil
     }
 
     private var selectionLabel: String {
         switch selection {
-        case .element(let id): return step.elements.first(where: { $0.id == id })?.name ?? "Element"
-        case .flow(let id): return step.flows.first(where: { $0.id == id })?.name ?? "Flow"
+        case .element(let id): return map.elements.first(where: { $0.id == id })?.name ?? "Element"
+        case .flow(let id): return map.flows.first(where: { $0.id == id })?.name ?? "Flow"
         case .relationship: return "Relationship"
         case .none: return "Entire System"
         }
     }
 
     private var evaluations: [SystemCardEvaluation] {
-        SystemMapEvaluator.evaluateAll(cards: cardStore.cards, step: step, selectedTargetKind: selectedTargetKind)
+        SystemMapEvaluator.evaluateAll(
+            cards: cardStore.cards,
+            map: map,
+            scenario: scenario,
+            selectedTargetKind: selectedTargetKind,
+            selectedElementID: selectedElementID
+        )
     }
 
     var body: some View {
@@ -254,10 +281,10 @@ private struct SystemsMapEditorView: View {
 
             SystemDiagramToolbar(
                 tool: $tool,
-                isEditable: isEditable,
+                isEditable: true,
                 hasSelection: selection != nil,
-                canUndo: !undoStack.isEmpty && isEditable,
-                canRedo: !redoStack.isEmpty && isEditable,
+                canUndo: !undoStack.isEmpty,
+                canRedo: !redoStack.isEmpty,
                 onDelete: deleteSelection,
                 onUndo: undo,
                 onRedo: redo,
@@ -267,8 +294,11 @@ private struct SystemsMapEditorView: View {
 
             HStack(spacing: 0) {
                 SystemDiagramCanvasView(
-                    step: step,
-                    isEditable: isEditable,
+                    elements: effectiveElements,
+                    flows: effectiveFlows,
+                    relationships: map.relationships,
+                    elementStates: elementStates,
+                    isEditable: true,
                     selection: $selection,
                     tool: $tool,
                     pendingConnectSourceID: $pendingConnectSourceID,
@@ -280,7 +310,10 @@ private struct SystemsMapEditorView: View {
                 if showingInspector {
                     Rectangle().fill(AC.borderDim).frame(width: 1)
                     SystemElementInspectorView(
-                        step: step,
+                        elements: map.elements,
+                        flows: map.flows,
+                        relationships: map.relationships,
+                        scenario: scenario,
                         selection: selection,
                         onUpdateElement: { el in pushUndo(); systemMapStore.updateElement(el) },
                         onUpdateFlow: { flow in pushUndo(); systemMapStore.updateFlow(flow) },
@@ -289,24 +322,57 @@ private struct SystemsMapEditorView: View {
                             systemMapStore.deleteRelationship(id: rel.id)
                             systemMapStore.addRelationship(rel)
                         },
+                        onUpdateElementOverride: { id, override in
+                            systemMapStore.setElementOverride(
+                                elementID: id, currentValue: override.currentValue,
+                                state: override.state, notes: override.notes, inScenario: scenario.id
+                            )
+                        },
+                        onUpdateFlowOverride: { id, override in
+                            systemMapStore.setFlowOverride(
+                                flowID: id, rate: override.rate,
+                                isEnabled: override.isEnabled, state: override.state, inScenario: scenario.id
+                            )
+                        },
                         relatedCardCount: { kind in
-                            cardStore.cards.filter { $0.playabilityRules.systemTargetTypes.contains(kind) }.count
+                            cardStore.cards.filter { $0.playabilityRules.systemTargetTypes.isEmpty || $0.playabilityRules.systemTargetTypes.contains(kind) }.count
                         }
                     )
                 }
             }
             .frame(minHeight: 260, idealHeight: 340)
 
-            SystemStepTimelineView(
-                steps: map.steps,
-                currentStepID: map.currentStepID,
-                isViewingLatest: map.isViewingLatestStep,
-                onSelectStep: { systemMapStore.setCurrentStep(id: $0) },
-                onReturnToLatest: { systemMapStore.returnToLatestStep() },
-                onNextStep: { systemMapStore.addStep(); selection = nil },
-                onChangeSelected: { change in
-                    if let id = change.relatedElementID { selection = .element(id) }
-                }
+            SystemScenarioSelectorView(
+                scenarios: map.scenarios,
+                selectedScenarioID: map.selectedScenarioID,
+                selectedElementLabel: selection == nil ? nil : selectionLabel,
+                onSelectScenario: { systemMapStore.selectScenario(id: $0); selection = nil },
+                onNewScenario: {
+                    newScenarioName = ""
+                    newScenarioDescription = ""
+                    showingNewScenarioSheet = true
+                },
+                onDuplicateCurrentScenario: { systemMapStore.duplicateScenario(id: scenario.id) },
+                onRenameCurrentScenario: {
+                    renameScenarioText = scenario.name
+                    showingRenameScenarioSheet = true
+                },
+                onSetCurrentScenarioDefault: { systemMapStore.setDefaultScenario(id: scenario.id) },
+                onResetCurrentScenario: {
+                    alertState = .destructive(
+                        title: "Reset “\(scenario.name)”?",
+                        message: "Every override in this scenario will be cleared, returning it to the shared base workflow.",
+                        confirmLabel: "Reset"
+                    ) { systemMapStore.resetScenario(id: scenario.id) }
+                },
+                onDeleteCurrentScenario: {
+                    alertState = .destructive(
+                        title: "Delete “\(scenario.name)”?",
+                        message: "This scenario and its overrides will be removed permanently.",
+                        confirmLabel: "Delete"
+                    ) { systemMapStore.deleteScenario(id: scenario.id) }
+                },
+                onCompareScenarios: { showingCompareSheet = true }
             )
 
             SystemCardLibraryView(
@@ -314,41 +380,81 @@ private struct SystemsMapEditorView: View {
                 suits: cardStore.suits,
                 evaluations: evaluations,
                 selectionLabel: selectionLabel,
-                isEditable: isEditable,
-                onPlay: { showingPlaySheetFor = $0 },
-                onClearOverride: { systemMapStore.setManualOverride(cardID: $0.id, status: nil) }
+                isEditable: true,
+                onViewDetails: { showingDetailsFor = $0 },
+                onApplyIntervention: { showingInterventionSheetFor = $0 },
+                onChangeStatus: { card, status, scope in
+                    systemMapStore.setCardStatusOverride(
+                        cardID: card.id, targetElementID: selectedElementID,
+                        scope: scope, status: status, reason: "", scenarioID: scenario.id
+                    )
+                },
+                onResetToAutomatic: { card in clearOverrideMatchingSelection(for: card) }
             )
             .frame(maxHeight: .infinity)
         }
         .background(AC.bg)
         .colorScheme(.dark)
         .alertState($alertState)
-        .sheet(item: $showingPlaySheetFor) { card in
-            PlayCardSheet(
+        .sheet(item: $showingInterventionSheetFor) { card in
+            ApplyInterventionSheet(
                 card: card,
                 targetLabel: selectionLabel,
                 targetKind: selectedTargetKind ?? .system,
                 onConfirm: { notes in
-                    systemMapStore.playCard(
-                        card: card,
-                        targetElementID: selectedElementIDForPlay,
-                        targetKind: selectedTargetKind ?? .system,
-                        allCards: cardStore.cards,
-                        notes: notes
-                    )
-                    showingPlaySheetFor = nil
+                    systemMapStore.applyIntervention(card: card, targetElementID: selectedElementID, scenarioID: scenario.id, notes: notes)
+                    showingInterventionSheetFor = nil
                 },
-                onCancel: { showingPlaySheetFor = nil }
+                onCancel: { showingInterventionSheetFor = nil }
             )
             .frame(minWidth: 420, minHeight: 320)
         }
-        .sheet(isPresented: $showingRenameSheet) {
-            RenameSystemMapSheet(
-                title: $renameText,
-                isPresented: $showingRenameSheet,
-                onSave: { systemMapStore.renameSystemMap(id: map.id, title: renameText) }
+        .sheet(item: $showingDetailsFor) { card in
+            KnowledgeCardDetailView(
+                card: card,
+                suite: cardStore.suits.first(where: { card.suitIDs.contains($0.id) }),
+                allCards: cardStore.cards,
+                relationships: cardStore.relationships,
+                onEdit: {},
+                onAddToTray: {},
+                onDismiss: { showingDetailsFor = nil }
+            )
+            .frame(minWidth: 420, minHeight: 520)
+        }
+        .sheet(isPresented: $showingRenameMapSheet) {
+            RenameSheet(
+                title: "RENAME SYSTEM MAP",
+                name: $renameMapText,
+                isPresented: $showingRenameMapSheet,
+                onSave: { systemMapStore.renameSystemMap(id: map.id, title: renameMapText) }
             )
             .frame(minWidth: 360, minHeight: 160)
+        }
+        .sheet(isPresented: $showingNewScenarioSheet) {
+            NewScenarioSheet(
+                name: $newScenarioName,
+                description: $newScenarioDescription,
+                isPresented: $showingNewScenarioSheet,
+                onCreate: {
+                    guard !newScenarioName.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                    systemMapStore.createScenario(name: newScenarioName, description: newScenarioDescription)
+                    selection = nil
+                }
+            )
+            .frame(minWidth: 380, minHeight: 220)
+        }
+        .sheet(isPresented: $showingRenameScenarioSheet) {
+            RenameSheet(
+                title: "RENAME SCENARIO",
+                name: $renameScenarioText,
+                isPresented: $showingRenameScenarioSheet,
+                onSave: { systemMapStore.renameScenario(id: scenario.id, name: renameScenarioText) }
+            )
+            .frame(minWidth: 360, minHeight: 160)
+        }
+        .sheet(isPresented: $showingCompareSheet) {
+            ScenarioComparisonSheet(map: map, allCards: cardStore.cards, isPresented: $showingCompareSheet)
+                .frame(minWidth: 480, minHeight: 440)
         }
     }
 
@@ -361,7 +467,7 @@ private struct SystemsMapEditorView: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(AC.textSub)
 
-                Button(action: { renameText = map.title; showingRenameSheet = true }) {
+                Button(action: { renameMapText = map.title; showingRenameMapSheet = true }) {
                     Text(map.title.uppercased())
                         .font(.system(size: 14, weight: .black, design: .monospaced))
                         .foregroundStyle(AC.cyan)
@@ -399,13 +505,12 @@ private struct SystemsMapEditorView: View {
     // MARK: - Actions
 
     private func moveElement(id: UUID, to position: SystemPoint) {
-        guard var element = step.elements.first(where: { $0.id == id }) else { return }
+        guard var element = map.elements.first(where: { $0.id == id }) else { return }
         element.position = position
         systemMapStore.updateElement(element)
     }
 
     private func deleteSelection() {
-        guard isEditable else { return }
         pushUndo()
         switch selection {
         case .element(let id): systemMapStore.deleteElement(id: id)
@@ -417,20 +522,33 @@ private struct SystemsMapEditorView: View {
     }
 
     private func pushUndo() {
-        undoStack.append(DiagramSnapshot(elements: step.elements, flows: step.flows, relationships: step.relationships))
+        undoStack.append(DiagramSnapshot(elements: map.elements, flows: map.flows, relationships: map.relationships))
         redoStack.removeAll()
     }
 
     private func undo() {
         guard let last = undoStack.popLast() else { return }
-        redoStack.append(DiagramSnapshot(elements: step.elements, flows: step.flows, relationships: step.relationships))
-        systemMapStore.replaceLatestStepDiagram(elements: last.elements, flows: last.flows, relationships: last.relationships)
+        redoStack.append(DiagramSnapshot(elements: map.elements, flows: map.flows, relationships: map.relationships))
+        systemMapStore.replaceDiagram(elements: last.elements, flows: last.flows, relationships: last.relationships)
     }
 
     private func redo() {
         guard let next = redoStack.popLast() else { return }
-        undoStack.append(DiagramSnapshot(elements: step.elements, flows: step.flows, relationships: step.relationships))
-        systemMapStore.replaceLatestStepDiagram(elements: next.elements, flows: next.flows, relationships: next.relationships)
+        undoStack.append(DiagramSnapshot(elements: map.elements, flows: map.flows, relationships: map.relationships))
+        systemMapStore.replaceDiagram(elements: next.elements, flows: next.flows, relationships: next.relationships)
+    }
+
+    /// "Reset to Automatic" clears whichever override the evaluator actually
+    /// matched for the current selection — narrowest scope wins, so this
+    /// clears exactly the override that's currently in effect.
+    private func clearOverrideMatchingSelection(for card: KnowledgeCard) {
+        guard let eval = evaluations.first(where: { $0.cardID == card.id }), let scope = eval.overrideScope else { return }
+        systemMapStore.clearCardStatusOverride(
+            cardID: card.id,
+            scope: scope,
+            targetElementID: scope == .thisElementOnly ? selectedElementID : nil,
+            scenarioID: scenario.id
+        )
     }
 
     private func exportJSON() {
@@ -444,21 +562,25 @@ private struct SystemsMapEditorView: View {
     }
 }
 
-private struct RenameSystemMapSheet: View {
-    @Binding var title: String
+// MARK: - Small shared sheets
+
+private struct RenameSheet: View {
+    let title: String
+    @Binding var name: String
     @Binding var isPresented: Bool
     let onSave: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("RENAME SYSTEM MAP").font(.system(size: 14, weight: .black, design: .monospaced)).foregroundStyle(AC.cyan).kerning(1)
-            TextField("Title", text: $title).arenaFieldStyle()
+            Text(title).font(.system(size: 14, weight: .black, design: .monospaced)).foregroundStyle(AC.cyan).kerning(1)
+            TextField("Name", text: $name).arenaFieldStyle()
             HStack {
                 Button("Cancel") { isPresented = false }.buttonStyle(ArenaOutlineButtonStyle()).keyboardShortcut(.cancelAction)
                 Spacer()
                 Button("Save") { onSave(); isPresented = false }
-                    .buttonStyle(ArenaButtonStyle(isDisabled: title.trimmingCharacters(in: .whitespaces).isEmpty))
+                    .buttonStyle(ArenaButtonStyle(isDisabled: name.trimmingCharacters(in: .whitespaces).isEmpty))
                     .keyboardShortcut(.defaultAction)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
         .padding(20)
@@ -467,9 +589,48 @@ private struct RenameSystemMapSheet: View {
     }
 }
 
-// MARK: - Play card sheet
+private struct NewScenarioSheet: View {
+    @Binding var name: String
+    @Binding var description: String
+    @Binding var isPresented: Bool
+    let onCreate: () -> Void
 
-private struct PlayCardSheet: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("NEW SCENARIO").font(.system(size: 14, weight: .black, design: .monospaced)).foregroundStyle(AC.cyan).kerning(1)
+            Text("A scenario is a different configuration or condition of this same workflow — e.g. “Supplier Failure” or “High Demand” — not a step in a sequence.")
+                .font(.system(size: 10))
+                .foregroundStyle(AC.textSub)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("NAME").font(.system(size: 9, weight: .black, design: .monospaced)).foregroundStyle(AC.textDim).kerning(1)
+                TextField("e.g. Supplier Failure", text: $name).arenaFieldStyle()
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("DESCRIPTION").font(.system(size: 9, weight: .black, design: .monospaced)).foregroundStyle(AC.textDim).kerning(1)
+                TextField("What conditions define this scenario?", text: $description).arenaFieldStyle()
+            }
+            HStack {
+                Button("Cancel") { isPresented = false }.buttonStyle(ArenaOutlineButtonStyle()).keyboardShortcut(.cancelAction)
+                Spacer()
+                Button("Create") { onCreate(); isPresented = false }
+                    .buttonStyle(ArenaButtonStyle(isDisabled: name.trimmingCharacters(in: .whitespaces).isEmpty))
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(22)
+        .background(AC.bg)
+        .colorScheme(.dark)
+    }
+}
+
+// MARK: - Apply Intervention sheet
+//
+// One of several ways to change a card's status (see SystemCardLibraryView's
+// Change Status menu for the purely descriptive path) — this one also lets
+// the user attach a note describing the intervention's effect.
+
+private struct ApplyInterventionSheet: View {
     let card: KnowledgeCard
     let targetLabel: String
     let targetKind: SystemTargetKind
@@ -486,7 +647,7 @@ private struct PlayCardSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("PLAY CARD").font(.system(size: 14, weight: .black, design: .monospaced)).foregroundStyle(card.kind.arenaColor).kerning(1.5)
+                Text("APPLY INTERVENTION").font(.system(size: 14, weight: .black, design: .monospaced)).foregroundStyle(card.kind.arenaColor).kerning(1.5)
                 Spacer()
                 Button("Cancel", action: onCancel).buttonStyle(ArenaOutlineButtonStyle()).keyboardShortcut(.cancelAction)
             }
@@ -526,7 +687,7 @@ private struct PlayCardSheet: View {
             HStack {
                 Spacer()
                 Button(action: { onConfirm(notes) }) {
-                    Text(card.playabilityRules.exhaustsAfterUse ? "PLAY (WILL EXHAUST)" : "PLAY CARD")
+                    Text(card.playabilityRules.exhaustsAfterUse ? "APPLY (WILL EXHAUST)" : "APPLY INTERVENTION")
                 }
                 .buttonStyle(ArenaButtonStyle(color: card.kind.arenaColor))
             }
@@ -542,5 +703,160 @@ private struct PlayCardSheet: View {
             Text(label.uppercased()).font(.system(size: 8, weight: .black, design: .monospaced)).foregroundStyle(color.opacity(0.8)).kerning(1)
             Text(text).font(.system(size: 11)).foregroundStyle(AC.text)
         }
+    }
+}
+
+// MARK: - Scenario comparison sheet
+
+private struct ScenarioComparisonSheet: View {
+    let map: SystemMap
+    let allCards: [KnowledgeCard]
+    @Binding var isPresented: Bool
+
+    @State private var scenarioAID: UUID?
+    @State private var scenarioBID: UUID?
+
+    private var scenarioA: SystemScenario? {
+        map.scenarios.first(where: { $0.id == scenarioAID }) ?? map.sortedScenarios.first
+    }
+    private var scenarioB: SystemScenario? {
+        let fallback = map.sortedScenarios.dropFirst().first?.id ?? map.sortedScenarios.first?.id
+        return map.scenarios.first(where: { $0.id == scenarioBID }) ?? map.scenarios.first(where: { $0.id == fallback })
+    }
+
+    private struct CardDiff: Identifiable {
+        let id: UUID
+        let title: String
+        let statusA: SystemCardStatus
+        let statusB: SystemCardStatus
+    }
+
+    private struct StockDiff: Identifiable {
+        let id: UUID
+        let name: String
+        let valueA: Double?
+        let valueB: Double?
+        let unit: String
+    }
+
+    private var cardDiffs: [CardDiff] {
+        guard let scenarioA, let scenarioB, scenarioA.id != scenarioB.id else { return [] }
+        let evalA = SystemMapEvaluator.evaluateAll(cards: allCards, map: map, scenario: scenarioA, selectedTargetKind: nil, selectedElementID: nil)
+        let evalB = SystemMapEvaluator.evaluateAll(cards: allCards, map: map, scenario: scenarioB, selectedTargetKind: nil, selectedElementID: nil)
+        let byIDB = Dictionary(uniqueKeysWithValues: evalB.map { ($0.cardID, $0) })
+        return evalA.compactMap { a in
+            guard let b = byIDB[a.cardID], a.effectiveStatus != b.effectiveStatus else { return nil }
+            guard let card = allCards.first(where: { $0.id == a.cardID }) else { return nil }
+            return CardDiff(id: card.id, title: card.title, statusA: a.effectiveStatus, statusB: b.effectiveStatus)
+        }.sorted { $0.title < $1.title }
+    }
+
+    private var stockDiffs: [StockDiff] {
+        guard let scenarioA, let scenarioB, scenarioA.id != scenarioB.id else { return [] }
+        let effectiveA = map.effectiveElements(for: scenarioA)
+        let effectiveB = map.effectiveElements(for: scenarioB)
+        let byIDB = Dictionary(uniqueKeysWithValues: effectiveB.map { ($0.id, $0) })
+        return effectiveA.filter { $0.kind == .stock }.compactMap { a in
+            guard let b = byIDB[a.id], a.currentValue != b.currentValue else { return nil }
+            return StockDiff(id: a.id, name: a.name, valueA: a.currentValue, valueB: b.currentValue, unit: a.unit)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("COMPARE SCENARIOS").font(.system(size: 14, weight: .black, design: .monospaced)).foregroundStyle(AC.cyan).kerning(1.5)
+                Spacer()
+                Button("Done") { isPresented = false }.buttonStyle(ArenaOutlineButtonStyle()).keyboardShortcut(.defaultAction)
+            }
+            .padding(14)
+            .background(AC.surface)
+            Rectangle().fill(AC.borderDim).frame(height: 1)
+
+            HStack(spacing: 10) {
+                scenarioPicker("Scenario A", selection: Binding(get: { scenarioA?.id }, set: { scenarioAID = $0 }))
+                Image(systemName: "arrow.left.arrow.right").font(.system(size: 11)).foregroundStyle(AC.textDim)
+                scenarioPicker("Scenario B", selection: Binding(get: { scenarioB?.id }, set: { scenarioBID = $0 }))
+            }
+            .padding(14)
+
+            if scenarioA?.id == scenarioB?.id {
+                Text("Choose two different scenarios to compare.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(AC.textSub)
+                    .padding(.horizontal, 14)
+                Spacer()
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if !stockDiffs.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                ArenaSectionLabel(text: "Stock Value Differences", color: AC.cyan)
+                                ForEach(stockDiffs) { diff in
+                                    HStack {
+                                        Text(diff.name).font(.system(size: 11, weight: .semibold)).foregroundStyle(AC.text)
+                                        Spacer()
+                                        Text("\(formatted(diff.valueA)) \(diff.unit) → \(formatted(diff.valueB)) \(diff.unit)")
+                                            .font(.system(size: 10, design: .monospaced))
+                                            .foregroundStyle(AC.textSub)
+                                    }
+                                    .padding(8)
+                                    .background(AngularCardShape(cornerRadius: 6, cornerCut: 9).fill(AC.surface))
+                                }
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            ArenaSectionLabel(text: "Card Status Differences (\(cardDiffs.count))", color: AC.gold)
+                            if cardDiffs.isEmpty {
+                                Text("No card status differences between these two scenarios.")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(AC.textSub)
+                            }
+                            ForEach(cardDiffs) { diff in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(diff.title).font(.system(size: 11, weight: .semibold)).foregroundStyle(AC.text)
+                                    HStack(spacing: 6) {
+                                        statusChip(diff.statusA, label: scenarioA?.name ?? "A")
+                                        Image(systemName: "arrow.right").font(.system(size: 8)).foregroundStyle(AC.textDim)
+                                        statusChip(diff.statusB, label: scenarioB?.name ?? "B")
+                                    }
+                                }
+                                .padding(9)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(AngularCardShape(cornerRadius: 6, cornerCut: 9).fill(AC.surface))
+                            }
+                        }
+                    }
+                    .padding(14)
+                }
+            }
+        }
+        .background(AC.bg)
+        .colorScheme(.dark)
+    }
+
+    private func scenarioPicker(_ label: String, selection: Binding<UUID?>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label.uppercased()).font(.system(size: 8, weight: .black, design: .monospaced)).foregroundStyle(AC.textDim)
+            Picker(label, selection: selection) {
+                ForEach(map.sortedScenarios) { s in Text(s.name).tag(Optional(s.id)) }
+            }
+            .pickerStyle(.menu)
+            .tint(AC.cyan)
+            .labelsHidden()
+        }
+    }
+
+    private func statusChip(_ status: SystemCardStatus, label: String) -> some View {
+        VStack(spacing: 2) {
+            Text(label.uppercased()).font(.system(size: 7, weight: .bold, design: .monospaced)).foregroundStyle(AC.textDim)
+            Text(status.displayName.uppercased()).font(.system(size: 9, weight: .black, design: .monospaced)).foregroundStyle(status.arenaColor)
+        }
+    }
+
+    private func formatted(_ value: Double?) -> String {
+        guard let value else { return "—" }
+        return value.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(value)) : String(format: "%.1f", value)
     }
 }

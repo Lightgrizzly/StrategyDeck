@@ -1,13 +1,16 @@
 import Foundation
 
 /// Deterministic, UI-free rule evaluation for the Systems Map. Deliberately
-/// thin: it builds a ``PlayabilityContext`` from the map's own state and
-/// delegates the actual rule logic to ``PlayabilityEvaluator``, the same
-/// evaluator the Duel Board uses — so a card's prerequisites, blockers, and
-/// unlock relationships behave identically everywhere in the app. This file
-/// only adds the state → status mapping (active/pending/exhausted/resolved
-/// bookkeeping, target-kind relevance, and human-readable explanations) that
-/// is specific to the Systems Map's richer status vocabulary.
+/// thin: it builds a ``PlayabilityContext`` from the selected scenario's
+/// state and delegates the actual rule logic to ``PlayabilityEvaluator``,
+/// the same evaluator the Duel Board uses — so a card's prerequisites,
+/// blockers, and unlock relationships behave identically everywhere in the
+/// app.
+///
+/// Card status depends on the **selected element** and the **selected
+/// scenario** — never on a chronological step. Selecting a different
+/// element or switching scenarios immediately changes every card's status;
+/// nothing here depends on "having advanced far enough."
 public struct SystemMapEvaluator: Sendable {
 
     /// Maps a diagram element's kind to the broader target-kind vocabulary
@@ -22,14 +25,19 @@ public struct SystemMapEvaluator: Sendable {
         }
     }
 
-    /// Builds the shared evaluation context from a step's state — the
+    /// Builds the shared evaluation context from a scenario's state — the
     /// bridge between Systems Map state and the app-wide card rule engine.
-    public static func context(for step: SystemStep, allCards: [KnowledgeCard]) -> PlayabilityContext {
+    /// Scans every override in the scenario (regardless of scope) plus the
+    /// map's workflow-default overrides: whether a card counts as
+    /// active/resolved/played for *other* cards' prerequisite checks is a
+    /// scenario-wide fact, independent of which element is selected right now.
+    public static func context(for scenario: SystemScenario, map: SystemMap, allCards: [KnowledgeCard]) -> PlayabilityContext {
         let cardsByID = Dictionary(uniqueKeysWithValues: allCards.map { ($0.id, $0) })
+        let allOverrides = scenario.cardStatusOverrides + map.workflowDefaultOverrides
 
-        let activeTitles = Set(step.cardPlays.filter { $0.status == .active }.compactMap { cardsByID[$0.cardID]?.title })
-        let resolvedTitles = Set(step.cardPlays.filter { $0.status == .resolved }.compactMap { cardsByID[$0.cardID]?.title })
-        let playedTitles = Set(step.cardPlays.compactMap { cardsByID[$0.cardID]?.title })
+        let activeTitles = Set(allOverrides.filter { $0.overriddenStatus == .active }.compactMap { cardsByID[$0.cardID]?.title })
+        let resolvedTitles = Set(allOverrides.filter { $0.overriddenStatus == .resolved }.compactMap { cardsByID[$0.cardID]?.title })
+        let playedTitles = Set(allOverrides.compactMap { cardsByID[$0.cardID]?.title })
         let inPlayTitles = activeTitles.union(resolvedTitles).union(playedTitles)
 
         var reciprocalUnlocks: [String: Set<String>] = [:]
@@ -39,7 +47,7 @@ public struct SystemMapEvaluator: Sendable {
             }
         }
 
-        let constraintDescriptions = step.elements
+        let constraintDescriptions = map.effectiveElements(for: scenario)
             .filter { $0.kind == .constraint }
             .map { $0.description.isEmpty ? $0.name : $0.description }
             .joined(separator: ". ")
@@ -48,83 +56,122 @@ public struct SystemMapEvaluator: Sendable {
             activeCardTitles: activeTitles,
             resolvedCardTitles: resolvedTitles,
             playedCardTitles: playedTitles,
-            knownInformation: step.knownInformation,
+            knownInformation: scenario.knownInformation,
             constraints: constraintDescriptions,
             reciprocalUnlocks: reciprocalUnlocks
         )
     }
 
-    /// Evaluates a single card against a step, optionally scoped to a
-    /// selected diagram element, flow, or relationship. Pass `nil` for
-    /// "nothing selected" / "entire system".
+    /// Evaluates a single card against the selected scenario, optionally
+    /// scoped to a selected diagram element, flow, or relationship. Pass
+    /// `nil` for "nothing selected" / "entire system."
     public static func evaluate(
         card: KnowledgeCard,
-        step: SystemStep,
+        map: SystemMap,
+        scenario: SystemScenario,
         selectedTargetKind: SystemTargetKind?,
+        selectedElementID: UUID?,
         allCards: [KnowledgeCard]
     ) -> SystemCardEvaluation {
-        let context = context(for: step, allCards: allCards)
+        let context = context(for: scenario, map: map, allCards: allCards)
         let result = PlayabilityEvaluator.evaluate(card: card, context: context)
         let rules = card.playabilityRules
         let declaresTargets = !rules.systemTargetTypes.isEmpty
         let isRelevant = selectedTargetKind == nil || !declaresTargets || rules.systemTargetTypes.contains(selectedTargetKind!)
 
-        // Existing play record for this card takes priority — once played,
-        // a card's status is a fact about what happened, not a re-evaluated
-        // guess (matches how Duel snapshots hold their own strategicZone).
-        let existingPlay = step.cardPlays.last { $0.cardID == card.id }
-
-        let baseStatus: SystemCardStatus
-        if let existingPlay {
-            switch existingPlay.status {
-            case .active:    baseStatus = .active
-            case .pending:   baseStatus = .pending
-            case .exhausted: baseStatus = .exhausted
-            case .resolved:  baseStatus = .resolved
-            }
-        } else if !isRelevant {
-            baseStatus = .irrelevant
+        let automaticStatus: SystemCardStatus
+        if !isRelevant {
+            automaticStatus = .irrelevant
         } else if result.isPlayable {
             let isRecommended = selectedTargetKind != nil && declaresTargets && rules.systemTargetTypes.contains(selectedTargetKind!)
-            baseStatus = isRecommended ? .recommended : .available
+            automaticStatus = isRecommended ? .recommended : .available
         } else {
-            baseStatus = result.blockingCards.isEmpty ? .locked : .disabled
+            automaticStatus = result.blockingCards.isEmpty ? .locked : .disabled
         }
 
-        let overridden = step.manualStatusOverrides[card.id]
-        let finalStatus = overridden ?? baseStatus
+        let override = matchingOverride(
+            cardID: card.id,
+            scenario: scenario,
+            map: map,
+            selectedElementID: selectedElementID,
+            selectedTargetKind: selectedTargetKind,
+            validTargetKinds: rules.systemTargetTypes
+        )
+        let effectiveStatus = override?.overriddenStatus ?? automaticStatus
 
-        let explanation = explanationText(
-            status: baseStatus,
+        let automaticExplanation = explanationText(
+            status: automaticStatus,
             card: card,
             result: result,
-            isRelevant: isRelevant,
-            selectedTargetKind: selectedTargetKind,
-            existingPlay: existingPlay,
-            step: step
+            selectedTargetKind: selectedTargetKind
         )
 
         return SystemCardEvaluation(
             cardID: card.id,
-            status: finalStatus,
-            isPlayable: existingPlay == nil && isRelevant && result.isPlayable,
+            automaticStatus: automaticStatus,
+            effectiveStatus: effectiveStatus,
+            isOverridden: override != nil,
+            overrideReason: override?.reason,
+            overrideScope: override?.scope,
             relevance: isRelevant,
             validTargetKinds: rules.systemTargetTypes,
             satisfiedRequirements: result.availableReasons,
             missingRequirements: result.blockedReasons,
             blockingConditions: result.blockingCards,
             unlockSuggestions: result.unlockingCards,
-            isManuallyOverridden: overridden != nil,
-            explanation: explanation
+            automaticExplanation: automaticExplanation
         )
     }
 
     public static func evaluateAll(
         cards: [KnowledgeCard],
-        step: SystemStep,
-        selectedTargetKind: SystemTargetKind?
+        map: SystemMap,
+        scenario: SystemScenario,
+        selectedTargetKind: SystemTargetKind?,
+        selectedElementID: UUID?
     ) -> [SystemCardEvaluation] {
-        cards.map { evaluate(card: $0, step: step, selectedTargetKind: selectedTargetKind, allCards: cards) }
+        cards.map {
+            evaluate(
+                card: $0,
+                map: map,
+                scenario: scenario,
+                selectedTargetKind: selectedTargetKind,
+                selectedElementID: selectedElementID,
+                allCards: cards
+            )
+        }
+    }
+
+    // MARK: - Override resolution
+
+    /// Narrowest-scope-wins lookup: an element-specific override beats a
+    /// scenario-wide one, which beats a workflow-wide default.
+    private static func matchingOverride(
+        cardID: UUID,
+        scenario: SystemScenario,
+        map: SystemMap,
+        selectedElementID: UUID?,
+        selectedTargetKind: SystemTargetKind?,
+        validTargetKinds: [SystemTargetKind]
+    ) -> SystemCardStatusOverride? {
+        let candidates = scenario.cardStatusOverrides.filter { $0.cardID == cardID }
+
+        if let selectedElementID,
+           let match = candidates.first(where: { $0.scope == .thisElementOnly && $0.targetElementID == selectedElementID }) {
+            return match
+        }
+        if let selectedTargetKind,
+           validTargetKinds.isEmpty || validTargetKinds.contains(selectedTargetKind),
+           let match = candidates.first(where: { $0.scope == .allCompatibleElementsInScenario }) {
+            return match
+        }
+        if let match = candidates.first(where: { $0.scope == .entireScenario }) {
+            return match
+        }
+        if let match = map.workflowDefaultOverrides.first(where: { $0.cardID == cardID && $0.scope == .workflowDefault }) {
+            return match
+        }
+        return nil
     }
 
     // MARK: - Explanations
@@ -133,20 +180,9 @@ public struct SystemMapEvaluator: Sendable {
         status: SystemCardStatus,
         card: KnowledgeCard,
         result: PlayabilityResult,
-        isRelevant: Bool,
-        selectedTargetKind: SystemTargetKind?,
-        existingPlay: SystemCardPlay?,
-        step: SystemStep
+        selectedTargetKind: SystemTargetKind?
     ) -> String {
         switch status {
-        case .active:
-            return "Active because this card was played at Step \((existingPlay?.playedAtStepIndex ?? step.index) + 1) and its effect is still in force."
-        case .resolved:
-            return "Resolved — this card was played and its intended effect has completed."
-        case .exhausted:
-            return "Exhausted — this card has already been used and cannot be reused."
-        case .pending:
-            return "Pending — this card was played but its delayed result has not yet completed."
         case .irrelevant:
             let targetList = card.playabilityRules.systemTargetTypes.map(\.displayName).joined(separator: " or ")
             let selectionName = selectedTargetKind?.displayName ?? "the current selection"
@@ -163,6 +199,11 @@ public struct SystemMapEvaluator: Sendable {
             return "Locked because " + result.blockedReasons.joined(separator: "; ") + "."
         case .disabled:
             return "Disabled because " + result.blockedReasons.joined(separator: "; ") + "."
+        case .active, .exhausted, .resolved, .pending:
+            // The automatic (pure rule-engine) status never resolves to
+            // these on its own — they only ever appear as an override's
+            // effective status. Kept exhaustive for compiler safety.
+            return status.displayName
         }
     }
 }

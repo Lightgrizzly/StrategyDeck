@@ -3,9 +3,11 @@ import Foundation
 /// Example system maps shipped with the app to demonstrate the feature.
 public enum SystemMapTemplates {
 
-    /// The "Inventory Resilience" example from the feature spec: stocks for
-    /// inventory/cash/supplier capacity, restocking/sales/returns/waste
-    /// flows, and a couple of feedback relationships, plus a primary goal.
+    /// The "Inventory Resilience" example from the feature spec: a shared
+    /// stocks/flows/relationships workflow, viewed under two scenarios —
+    /// "Normal Operations" (the default) and "Supplier Failure," which
+    /// overrides supplier capacity and disables the restocking flow to show
+    /// the same diagram behaving differently under different conditions.
     public static func inventoryResilience() -> SystemMap {
         let inventory = SystemElement(
             kind: .stock,
@@ -117,20 +119,29 @@ public enum SystemMapTemplates {
             label: "Higher inventory increases carrying cost"
         )
 
-        var step = SystemStep(index: 0, title: "Initial State")
-        step.elements = [inventory, cash, supplierCapacity, goal, constraint]
-        step.flows = [restocking, sales, returns, waste]
-        step.relationships = [reorderLoop, restockLoop, carryingCost]
-        step.knownInformation = "Current inventory, cash, and supplier capacity levels are known."
-        step.unknownInformation = "Actual customer demand rate has not yet been measured."
-
-        return SystemMap(
+        var map = SystemMap(
             title: "Inventory Resilience",
             description: "Balance restocking against demand and carrying cost without running out of stock.",
             primaryGoal: "Prevent stockouts without excessive carrying cost",
-            failureCondition: "A stockout occurs, or cash runs out from over-ordering.",
-            steps: [step],
-            viewport: SystemViewport()
+            failureCondition: "A stockout occurs, or cash runs out from over-ordering."
         )
+        map.elements = [inventory, cash, supplierCapacity, goal, constraint]
+        map.flows = [restocking, sales, returns, waste]
+        map.relationships = [reorderLoop, restockLoop, carryingCost]
+
+        var normalOperations = SystemScenario(name: "Normal Operations", description: "Demand is stable and the supplier can fulfill orders.", isDefault: true, order: 0)
+        normalOperations.knownInformation = "Current inventory, cash, and supplier capacity levels are known."
+        normalOperations.unknownInformation = "Actual customer demand rate has not yet been measured."
+
+        var supplierFailure = SystemScenario(name: "Supplier Failure", description: "The primary supplier can no longer fulfill restocking orders.", isDefault: false, order: 1)
+        supplierFailure.knownInformation = "The primary supplier has failed to deliver for two consecutive orders."
+        supplierFailure.unknownInformation = "Whether the supplier will recover or needs to be replaced."
+        supplierFailure.elementOverrides[supplierCapacity.id] = SystemElementOverride(currentValue: 0, state: .atRisk)
+        supplierFailure.flowOverrides[restocking.id] = SystemFlowOverride(rate: 0, isEnabled: false, state: .disabled)
+
+        map.scenarios = [normalOperations, supplierFailure]
+        map.selectedScenarioID = normalOperations.id
+
+        return map
     }
 }

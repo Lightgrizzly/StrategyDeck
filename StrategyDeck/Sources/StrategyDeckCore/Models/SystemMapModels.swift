@@ -456,6 +456,11 @@ public struct SystemRelationship: Codable, Identifiable, Hashable, Sendable {
     }
 }
 
+// MARK: - Legacy step model (pre-scenario). Kept only so old save files can
+// be decoded and archived during migration — see `SystemMap.init(from:)`
+// and `SystemScenario.migrated(from:name:isDefault:)`. Not used by any live
+// code path; do not build new features on this.
+
 // MARK: - Card play (a card applied to a target within the system)
 
 public enum SystemCardPlayStatus: String, Codable, Hashable, Sendable, CaseIterable {
@@ -671,6 +676,13 @@ public struct SystemStep: Codable, Identifiable, Hashable, Sendable {
 }
 
 // MARK: - System Map
+//
+// A map is a shared base workflow (elements/flows/relationships — the
+// structural diagram) plus a set of scenarios. A scenario represents a
+// different configuration or condition of that same workflow (e.g. "Normal
+// Operations" vs "Supplier Failure"), not a moment in a timeline. Card
+// statuses are evaluated against the selected scenario + selected element,
+// never against a chronological step (see `SystemMapEvaluator`).
 
 public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
     public var id: UUID
@@ -680,9 +692,28 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
     public var failureCondition: String
     public var createdAt: Date
     public var updatedAt: Date
-    public var currentStepID: UUID?
-    public var steps: [SystemStep]
+
+    /// Shared structural workflow — applies to every scenario. Editing this
+    /// is "editing shared workflow structure," distinct from editing a
+    /// scenario's overrides.
+    public var elements: [SystemElement]
+    public var flows: [SystemFlow]
+    public var relationships: [SystemRelationship]
     public var viewport: SystemViewport
+
+    public var scenarios: [SystemScenario]
+    public var selectedScenarioID: UUID?
+
+    /// Card-status overrides that apply across every scenario for this map
+    /// (`SystemOverrideScope.workflowDefault`). Scenario-scoped overrides
+    /// live on `SystemScenario.cardStatusOverrides` instead.
+    public var workflowDefaultOverrides: [SystemCardStatusOverride]
+
+    /// Preserved verbatim from any pre-scenario save file so old step
+    /// history is never silently discarded, even though it's no longer part
+    /// of the live model. Populated only by the migration path in
+    /// `init(from:)`; never written to by current code.
+    public var legacyStepsArchive: [SystemStep]?
 
     public init(
         id: UUID = UUID(),
@@ -692,9 +723,14 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         failureCondition: String = "",
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
-        currentStepID: UUID? = nil,
-        steps: [SystemStep] = [],
-        viewport: SystemViewport = SystemViewport()
+        elements: [SystemElement] = [],
+        flows: [SystemFlow] = [],
+        relationships: [SystemRelationship] = [],
+        viewport: SystemViewport = SystemViewport(),
+        scenarios: [SystemScenario] = [],
+        selectedScenarioID: UUID? = nil,
+        workflowDefaultOverrides: [SystemCardStatusOverride] = [],
+        legacyStepsArchive: [SystemStep]? = nil
     ) {
         self.id = id
         self.title = title
@@ -703,9 +739,22 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         self.failureCondition = failureCondition
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-        self.currentStepID = currentStepID
-        self.steps = steps
+        self.elements = elements
+        self.flows = flows
+        self.relationships = relationships
         self.viewport = viewport
+        self.scenarios = scenarios
+        self.selectedScenarioID = selectedScenarioID
+        self.workflowDefaultOverrides = workflowDefaultOverrides
+        self.legacyStepsArchive = legacyStepsArchive
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, description, primaryGoal, failureCondition, createdAt, updatedAt
+        case elements, flows, relationships, viewport
+        case scenarios, selectedScenarioID, workflowDefaultOverrides
+        case legacyStepsArchive
+        case legacySteps = "steps"
     }
 
     public init(from decoder: Decoder) throws {
@@ -717,25 +766,114 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         failureCondition = try c.decodeIfPresent(String.self, forKey: .failureCondition) ?? ""
         createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
-        currentStepID = try c.decodeIfPresent(UUID.self, forKey: .currentStepID)
-        steps = try c.decodeIfPresent([SystemStep].self, forKey: .steps) ?? []
         viewport = try c.decodeIfPresent(SystemViewport.self, forKey: .viewport) ?? SystemViewport()
+
+        let decodedElements = try c.decodeIfPresent([SystemElement].self, forKey: .elements)
+        let decodedFlows = try c.decodeIfPresent([SystemFlow].self, forKey: .flows)
+        let decodedRelationships = try c.decodeIfPresent([SystemRelationship].self, forKey: .relationships)
+        let decodedScenarios = try c.decodeIfPresent([SystemScenario].self, forKey: .scenarios) ?? []
+        let legacySteps = try c.decodeIfPresent([SystemStep].self, forKey: .legacySteps)
+
+        if decodedElements != nil || decodedFlows != nil || decodedRelationships != nil || !decodedScenarios.isEmpty {
+            // Already in the scenario-based shape (current format, possibly
+            // with zero scenarios if this is a brand-new in-progress map).
+            elements = decodedElements ?? []
+            flows = decodedFlows ?? []
+            relationships = decodedRelationships ?? []
+            scenarios = decodedScenarios
+            selectedScenarioID = try c.decodeIfPresent(UUID.self, forKey: .selectedScenarioID)
+            workflowDefaultOverrides = try c.decodeIfPresent([SystemCardStatusOverride].self, forKey: .workflowDefaultOverrides) ?? []
+            legacyStepsArchive = try c.decodeIfPresent([SystemStep].self, forKey: .legacyStepsArchive)
+        } else if let legacySteps, !legacySteps.isEmpty {
+            // Pre-scenario save file. Migrate: latest step's structure
+            // becomes the shared base workflow; latest step becomes the
+            // default "Current State" scenario, and — if the map had more
+            // than one step — the first step becomes an "Initial State"
+            // scenario. The full original step history is preserved in
+            // `legacyStepsArchive` regardless, so nothing is discarded.
+            let sorted = legacySteps.sorted { $0.index < $1.index }
+            let latest = sorted[sorted.count - 1]
+            let first = sorted[0]
+
+            elements = latest.elements
+            flows = latest.flows
+            relationships = latest.relationships
+
+            let currentState = SystemScenario.migrated(from: latest, name: "Current State", isDefault: true, order: sorted.count > 1 ? 1 : 0)
+            if sorted.count > 1, first.id != latest.id {
+                let initialState = SystemScenario.migrated(from: first, name: "Initial State", isDefault: false, order: 0)
+                scenarios = [initialState, currentState]
+            } else {
+                scenarios = [currentState]
+            }
+            selectedScenarioID = currentState.id
+            workflowDefaultOverrides = []
+            legacyStepsArchive = sorted
+        } else {
+            // Brand-new map, nothing to migrate.
+            elements = []
+            flows = []
+            relationships = []
+            scenarios = []
+            selectedScenarioID = nil
+            workflowDefaultOverrides = []
+            legacyStepsArchive = nil
+        }
     }
 
-    public var sortedSteps: [SystemStep] {
-        steps.sorted { $0.index < $1.index }
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(title, forKey: .title)
+        try c.encode(description, forKey: .description)
+        try c.encode(primaryGoal, forKey: .primaryGoal)
+        try c.encode(failureCondition, forKey: .failureCondition)
+        try c.encode(createdAt, forKey: .createdAt)
+        try c.encode(updatedAt, forKey: .updatedAt)
+        try c.encode(elements, forKey: .elements)
+        try c.encode(flows, forKey: .flows)
+        try c.encode(relationships, forKey: .relationships)
+        try c.encode(viewport, forKey: .viewport)
+        try c.encode(scenarios, forKey: .scenarios)
+        try c.encodeIfPresent(selectedScenarioID, forKey: .selectedScenarioID)
+        try c.encode(workflowDefaultOverrides, forKey: .workflowDefaultOverrides)
+        try c.encodeIfPresent(legacyStepsArchive, forKey: .legacyStepsArchive)
     }
 
-    public var latestStep: SystemStep? {
-        sortedSteps.last
+    public var sortedScenarios: [SystemScenario] {
+        scenarios.sorted { $0.order != $1.order ? $0.order < $1.order : $0.createdAt < $1.createdAt }
     }
 
-    public var currentStep: SystemStep? {
-        guard let currentStepID else { return latestStep }
-        return steps.first(where: { $0.id == currentStepID }) ?? latestStep
+    /// The scenario that card evaluation and the diagram should currently
+    /// reflect: the explicitly selected one, falling back to the default,
+    /// falling back to the first available.
+    public var selectedScenario: SystemScenario? {
+        if let selectedScenarioID, let match = scenarios.first(where: { $0.id == selectedScenarioID }) {
+            return match
+        }
+        return scenarios.first(where: { $0.isDefault }) ?? sortedScenarios.first
     }
 
-    public var isViewingLatestStep: Bool {
-        currentStepID == nil || currentStepID == latestStep?.id
+    /// Base elements merged with a scenario's value overrides. Structural
+    /// fields (name/description/category/position) always come from the
+    /// shared base; only scenario-overridable fields (currentValue) differ.
+    public func effectiveElements(for scenario: SystemScenario) -> [SystemElement] {
+        elements.map { element in
+            guard let override = scenario.elementOverrides[element.id] else { return element }
+            var merged = element
+            if let currentValue = override.currentValue { merged.currentValue = currentValue }
+            if let notes = override.notes { merged.notes = notes }
+            return merged
+        }
+    }
+
+    public func effectiveFlows(for scenario: SystemScenario) -> [SystemFlow] {
+        flows.map { flow in
+            guard let override = scenario.flowOverrides[flow.id] else { return flow }
+            var merged = flow
+            if let rate = override.rate { merged.rate = rate }
+            if let isEnabled = override.isEnabled { merged.isEnabled = isEnabled }
+            return merged
+        }
     }
 }

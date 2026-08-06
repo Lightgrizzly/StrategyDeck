@@ -73,45 +73,64 @@ public enum SystemCardStatus: String, Codable, Hashable, Sendable, CaseIterable 
     }
 }
 
-/// The full evaluation of one card against one Systems Map step, mirroring
-/// the `CardEvaluation` shape from the feature spec while reusing
-/// ``PlayabilityResult`` internally for the actual rule logic.
+/// The full evaluation of one card against a selected element within a
+/// selected scenario, mirroring the `CardEvaluation` shape from the feature
+/// spec while reusing ``PlayabilityResult`` internally for the actual rule
+/// logic.
+///
+/// `automaticStatus` is always the pure rule-engine result (never persisted,
+/// always recomputed — so it can never go stale) and can only be one of
+/// irrelevant/disabled/locked/available/recommended: a status like Active
+/// or Resolved is a fact the user asserted, not something rules alone can
+/// deduce, so it only ever appears via `effectiveStatus` once an override
+/// exists. `effectiveStatus` is what should actually be displayed/used.
 public struct SystemCardEvaluation: Sendable {
     public let cardID: UUID
-    public let status: SystemCardStatus
-    public let isPlayable: Bool
+    public let automaticStatus: SystemCardStatus
+    public let effectiveStatus: SystemCardStatus
+    public let isOverridden: Bool
+    public let overrideReason: String?
+    public let overrideScope: SystemOverrideScope?
     public let relevance: Bool
     public let validTargetKinds: [SystemTargetKind]
     public let satisfiedRequirements: [String]
     public let missingRequirements: [String]
     public let blockingConditions: [String]
     public let unlockSuggestions: [String]
-    public let isManuallyOverridden: Bool
-    public let explanation: String
+    public let automaticExplanation: String
 
     public init(
         cardID: UUID,
-        status: SystemCardStatus,
-        isPlayable: Bool,
+        automaticStatus: SystemCardStatus,
+        effectiveStatus: SystemCardStatus,
+        isOverridden: Bool,
+        overrideReason: String?,
+        overrideScope: SystemOverrideScope?,
         relevance: Bool,
         validTargetKinds: [SystemTargetKind],
         satisfiedRequirements: [String],
         missingRequirements: [String],
         blockingConditions: [String],
         unlockSuggestions: [String],
-        isManuallyOverridden: Bool,
-        explanation: String
+        automaticExplanation: String
     ) {
         self.cardID = cardID
-        self.status = status
-        self.isPlayable = isPlayable
+        self.automaticStatus = automaticStatus
+        self.effectiveStatus = effectiveStatus
+        self.isOverridden = isOverridden
+        self.overrideReason = overrideReason
+        self.overrideScope = overrideScope
         self.relevance = relevance
         self.validTargetKinds = validTargetKinds
         self.satisfiedRequirements = satisfiedRequirements
         self.missingRequirements = missingRequirements
         self.blockingConditions = blockingConditions
         self.unlockSuggestions = unlockSuggestions
-        self.isManuallyOverridden = isManuallyOverridden
-        self.explanation = explanation
+        self.automaticExplanation = automaticExplanation
+    }
+
+    /// Convenience for UI gating — can this card be applied right now?
+    public var isPlayable: Bool {
+        effectiveStatus == .available || effectiveStatus == .recommended
     }
 }
