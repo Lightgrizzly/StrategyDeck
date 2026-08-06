@@ -386,3 +386,90 @@ extension View {
         modifier(ArenaFieldBackground(accent: accent))
     }
 }
+
+// MARK: - Comic panel components
+//
+// Used by the Duel Comic mode to read as an actual sequence of comic-book
+// panels (halftone screentone, ink borders, panel numbering, caption boxes)
+// rather than a plain list-and-form editor, while staying in the arena
+// palette.
+
+/// Halftone screentone dot texture — the classic comic-print shading trick,
+/// rendered in an arena accent color so it reads as "print comic" without
+/// breaking the holographic palette.
+struct ComicHalftone: View {
+    var color: Color = AC.cyan
+    var opacity: Double = 0.12
+    var dotSpacing: CGFloat = 7
+
+    var body: some View {
+        Canvas { ctx, size in
+            let dotRadius: CGFloat = 0.9
+            var row = 0
+            var y: CGFloat = dotSpacing / 2
+            while y <= size.height {
+                let rowOffset = (row % 2 == 0) ? dotSpacing / 2 : dotSpacing
+                var x: CGFloat = rowOffset
+                while x <= size.width {
+                    let rect = CGRect(x: x - dotRadius, y: y - dotRadius, width: dotRadius * 2, height: dotRadius * 2)
+                    ctx.fill(Path(ellipseIn: rect), with: .color(color.opacity(opacity)))
+                    x += dotSpacing
+                }
+                y += dotSpacing * 0.87
+                row += 1
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+/// Bold panel-number tag, styled after the little numbered corner caption on
+/// a physical comic-book panel.
+struct ComicPanelNumberTag: View {
+    let number: Int
+    var color: Color = AC.cyan
+
+    var body: some View {
+        Text("\(number)")
+            .font(.system(size: 11, weight: .black, design: .monospaced))
+            .foregroundStyle(AC.bg)
+            .frame(width: 22, height: 22)
+            .background(
+                AngularCardShape(cornerRadius: 3, cornerCut: 7)
+                    .fill(color)
+            )
+            .shadow(color: color.opacity(0.6), radius: 4)
+    }
+}
+
+/// Cream caption-box chrome for a TextField/TextEditor — the classic comic
+/// narration/dialogue box, deliberately breaking from the dark palette for
+/// contrast the same way a print caption box sits on top of panel art.
+struct ComicCaptionFieldBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(.system(size: 12, weight: .medium, design: .serif))
+            .italic()
+            .foregroundStyle(Color.black.opacity(0.85))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(
+                AngularCardShape(cornerRadius: 3, cornerCut: 10)
+                    .fill(Color(red: 0.96, green: 0.94, blue: 0.86))
+            )
+            .overlay(
+                AngularCardShape(cornerRadius: 3, cornerCut: 10)
+                    .stroke(Color.black.opacity(0.8), lineWidth: 1.5)
+            )
+            .textFieldStyle(.plain)
+            .colorScheme(.light)
+    }
+}
+
+extension View {
+    /// Applies comic caption-box chrome (cream background, black serif italic)
+    /// to a TextField/TextEditor used for narration or character captions.
+    func comicCaptionFieldStyle() -> some View {
+        modifier(ComicCaptionFieldBackground())
+    }
+}

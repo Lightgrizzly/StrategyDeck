@@ -830,25 +830,34 @@ private struct DuelPanelBrowser: View {
                 Button(action: {
                     onInsertAfter(duel.currentPanel?.id ?? duel.sortedPanels.last?.id ?? duel.sortedPanels.first!.id)
                 }) {
-                    Image(systemName: "plus")
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 18))
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(AC.cyan)
+                .shadow(color: AC.cyanGlow.opacity(0.5), radius: 4)
                 .help("Add step after current panel")
             }
             ScrollView {
-                LazyVStack(spacing: 8) {
-                    ForEach(duel.sortedPanels) { panel in
-                        DuelPanelBrowserRow(
-                            panel: panel,
-                            isSelected: panel.id == selectedPanelID,
-                            panelCount: duel.sortedPanels.count,
-                            onSelect: onSelect,
-                            onDuplicate: onDuplicate,
-                            onDelete: onDelete,
-                            onMoveUp: onMoveUp,
-                            onMoveDown: onMoveDown
-                        )
+                LazyVStack(spacing: 14) {
+                    ForEach(Array(duel.sortedPanels.enumerated()), id: \.element.id) { index, panel in
+                        VStack(spacing: 4) {
+                            DuelPanelBrowserRow(
+                                panel: panel,
+                                isSelected: panel.id == selectedPanelID,
+                                panelCount: duel.sortedPanels.count,
+                                onSelect: onSelect,
+                                onDuplicate: onDuplicate,
+                                onDelete: onDelete,
+                                onMoveUp: onMoveUp,
+                                onMoveDown: onMoveDown
+                            )
+                            if index < duel.sortedPanels.count - 1 {
+                                Image(systemName: "arrow.down")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(AC.cyan.opacity(0.35))
+                            }
+                        }
                     }
                 }
                 .padding(.vertical, 6)
@@ -868,34 +877,54 @@ private struct DuelPanelBrowserRow: View {
     let onMoveUp: (UUID) -> Void
     let onMoveDown: (UUID) -> Void
 
+    private func count(_ zone: DuelZone) -> Int {
+        panel.snapshots.filter { $0.zone == zone }.count
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 0) {
             Button(action: { onSelect(panel.id) }) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Step \(panel.order + 1): \(panel.title)")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(isSelected ? AC.cyan : AC.text)
+                ZStack(alignment: .topLeading) {
+                    ComicHalftone(color: isSelected ? AC.cyan : AC.textDim,
+                                  opacity: isSelected ? 0.16 : 0.07)
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 6) {
+                            Spacer().frame(width: 24)
+                            Text(panel.title.isEmpty ? "Untitled Panel" : panel.title)
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(isSelected ? AC.cyan : AC.text)
+                                .lineLimit(1)
+                        }
                         Text(panel.narration.isEmpty ? "No narration yet." : panel.narration)
-                            .font(.system(size: 10))
+                            .font(.system(size: 10, design: .serif))
+                            .italic()
                             .foregroundStyle(AC.textSub)
                             .lineLimit(2)
+                        HStack(spacing: 5) {
+                            zoneChip(count: count(.opponent), color: AC.threat, icon: "flame.fill")
+                            zoneChip(count: count(.battlefield), color: AC.gold, icon: "star.fill")
+                            zoneChip(count: count(.player), color: AC.cyan, icon: "shield.fill")
+                            Spacer()
+                            if !panel.reasoning.isEmpty {
+                                Image(systemName: "text.quote")
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(AC.textDim)
+                                    .help("Has move reasoning")
+                            }
+                        }
                     }
-                    Spacer()
-                    Button(action: { onDuplicate(panel.id) }) {
-                        Image(systemName: "doc.on.doc")
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(AC.textDim)
-                    Button(action: { onDelete(panel.id) }) {
-                        Image(systemName: "trash")
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(AC.threat.opacity(0.7))
+                    .padding(10)
                 }
             }
             .buttonStyle(.plain)
-            HStack(spacing: 8) {
+            .overlay(alignment: .topLeading) {
+                ComicPanelNumberTag(number: panel.order + 1, color: isSelected ? AC.cyan : AC.textDim)
+                    .padding(6)
+            }
+
+            Rectangle().fill(AC.borderDim).frame(height: 1)
+
+            HStack(spacing: 12) {
                 Button(action: { onMoveUp(panel.id) }) {
                     Image(systemName: "arrow.up")
                 }
@@ -907,24 +936,43 @@ private struct DuelPanelBrowserRow: View {
                 .buttonStyle(.plain)
                 .disabled(panel.order == panelCount - 1)
                 Spacer()
-                if !panel.reasoning.isEmpty {
-                    Image(systemName: "text.quote")
-                        .font(.system(size: 9))
-                        .foregroundStyle(AC.textDim)
-                        .help("Has move reasoning")
+                Button(action: { onDuplicate(panel.id) }) {
+                    Image(systemName: "doc.on.doc")
                 }
+                .buttonStyle(.plain)
+                Button(action: { onDelete(panel.id) }) {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(AC.threat.opacity(0.7))
             }
-            .foregroundStyle(AC.textSub)
+            .font(.system(size: 10))
+            .foregroundStyle(AC.textDim)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(AC.surface.opacity(0.7))
         }
-        .padding(10)
-        .background(
-            AngularCardShape(cornerRadius: 8, cornerCut: 12)
-                .fill(isSelected ? AC.cyanSoft : AC.surface)
-        )
+        .background(isSelected ? AC.cyanSoft : AC.surface)
+        .clipShape(AngularCardShape(cornerRadius: 9, cornerCut: 14))
         .overlay(
-            AngularCardShape(cornerRadius: 8, cornerCut: 12)
-                .stroke(isSelected ? AC.cyan.opacity(0.5) : AC.borderDim, lineWidth: isSelected ? 1 : 0.75)
+            AngularCardShape(cornerRadius: 9, cornerCut: 14)
+                .stroke(isSelected ? AC.cyan : AC.borderDim.opacity(0.9), lineWidth: isSelected ? 2 : 1.25)
         )
+        .shadow(color: isSelected ? AC.cyanGlow.opacity(0.4) : .black.opacity(0.3), radius: isSelected ? 8 : 4, y: 2)
+    }
+
+    @ViewBuilder
+    private func zoneChip(count: Int, color: Color, icon: String) -> some View {
+        if count > 0 {
+            HStack(spacing: 2) {
+                Image(systemName: icon).font(.system(size: 7))
+                Text("\(count)").font(.system(size: 8, weight: .bold, design: .monospaced))
+            }
+            .foregroundStyle(color)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(Capsule().fill(color.opacity(0.16)))
+        }
     }
 }
 
@@ -956,25 +1004,49 @@ private struct DuelPanelEditorView: View {
                     DuelTransitionSummaryView(transitions: transitions)
                 }
 
-                // Panel fields
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Text("Panel \(panel.order + 1)")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(AC.text)
-                        Spacer()
-                        if panel.order != 0 {
-                            Text("Snapshot mode")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(AC.textDim)
+                // Panel fields — styled as an actual comic panel: ink border,
+                // halftone screentone, corner panel number, cream caption
+                // boxes for the narration/dialogue-flavored fields.
+                ZStack(alignment: .topLeading) {
+                    ComicHalftone(color: AC.cyan, opacity: 0.09)
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Spacer().frame(width: 20)
+                            TextField("Panel title", text: $panel.title)
+                                .font(.system(size: 15, weight: .black, design: .rounded))
+                                .foregroundStyle(AC.text)
+                                .textFieldStyle(.plain)
+                            Spacer()
+                            if panel.order != 0 {
+                                Text("SNAPSHOT MODE")
+                                    .font(.system(size: 8, weight: .black, design: .monospaced))
+                                    .foregroundStyle(AC.textDim)
+                                    .kerning(1)
+                            }
                         }
+                        TextField("Narration or blurbs…", text: $panel.narration, axis: .vertical)
+                            .comicCaptionFieldStyle()
+                        HStack(spacing: 8) {
+                            TextField("Opponent caption…", text: $panel.opponentCaption, axis: .vertical)
+                                .comicCaptionFieldStyle()
+                            TextField("Player caption…", text: $panel.playerCaption, axis: .vertical)
+                                .comicCaptionFieldStyle()
+                        }
+                        TextField("Outcome text", text: $panel.outcome).arenaFieldStyle()
                     }
-                    TextField("Panel title", text: $panel.title).arenaFieldStyle()
-                    TextField("Narration or blurbs", text: $panel.narration).arenaFieldStyle()
-                    TextField("Opponent caption", text: $panel.opponentCaption).arenaFieldStyle()
-                    TextField("Player caption", text: $panel.playerCaption).arenaFieldStyle()
-                    TextField("Outcome text", text: $panel.outcome).arenaFieldStyle()
+                    .padding(14)
                 }
+                .background(AC.surface)
+                .clipShape(AngularCardShape(cornerRadius: 12, cornerCut: 20))
+                .overlay(
+                    AngularCardShape(cornerRadius: 12, cornerCut: 20)
+                        .stroke(AC.cyan.opacity(0.55), lineWidth: 2)
+                )
+                .overlay(alignment: .topLeading) {
+                    ComicPanelNumberTag(number: panel.order + 1)
+                        .padding(10)
+                }
+                .shadow(color: .black.opacity(0.35), radius: 10, y: 4)
 
                 // Zone editors
                 DuelZoneEditor(

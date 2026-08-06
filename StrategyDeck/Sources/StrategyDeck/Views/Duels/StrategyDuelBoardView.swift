@@ -179,7 +179,7 @@ struct StrategyDuelBoardView: View {
             onAddStep: onAddStep,
             onSelectPanel: onSelectPanel
         )
-        .frame(height: 52)
+        .frame(height: 56)
     }
 
     private func handSection(_ geo: GeometryProxy) -> some View {
@@ -363,11 +363,11 @@ private struct OpponentFieldZone: View {
 
             Button(action: onAdd) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 13))
+                    .font(.system(size: 17))
                     .foregroundStyle(AC.textDim)
             }
             .buttonStyle(.plain)
-            .padding(8)
+            .padding(6)
         }
     }
 
@@ -496,7 +496,7 @@ private struct SharedObjectiveZone: View {
 
                 Button(action: onAdd) {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 12))
+                        .font(.system(size: 16))
                         .foregroundStyle(AC.textDim)
                 }
                 .buttonStyle(.plain)
@@ -575,11 +575,11 @@ private struct PlayerFieldZone: View {
 
             Button(action: onAdd) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 13))
+                    .font(.system(size: 17))
                     .foregroundStyle(AC.textDim)
             }
             .buttonStyle(.plain)
-            .padding(8)
+            .padding(6)
         }
     }
 }
@@ -623,24 +623,24 @@ private struct ArenaTurnBar: View {
                             .lineLimit(1)
                     }
                     Button(action: onAddStep) {
-                        HStack(spacing: 5) {
+                        HStack(spacing: 6) {
                             Text("NEXT STEP")
-                                .font(.system(size: 9, weight: .black, design: .monospaced))
+                                .font(.system(size: 11, weight: .black, design: .monospaced))
                                 .kerning(1.5)
                             Image(systemName: "arrow.right.circle.fill")
-                                .font(.system(size: 11))
+                                .font(.system(size: 14))
                         }
                         .foregroundStyle(AC.bg)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, 13)
+                        .padding(.vertical, 7)
                         .background(AC.cyan)
-                        .clipShape(AngularCardShape(cornerRadius: 4, cornerCut: 6))
+                        .clipShape(AngularCardShape(cornerRadius: 5, cornerCut: 7))
                     }
                     .buttonStyle(.plain)
                     .shadow(color: AC.cyanGlow, radius: 6)
                 }
                 .padding(.horizontal, 14)
-                .frame(height: 32)
+                .frame(height: 36)
 
                 // Timeline strip
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -725,19 +725,19 @@ private struct ArenaHandRow: View {
                     }
                     Button(action: onAdd) {
                         Label("ADD", systemImage: "plus")
-                            .font(.system(size: 8, weight: .bold, design: .monospaced))
+                            .font(.system(size: 9.5, weight: .bold, design: .monospaced))
                             .foregroundStyle(AC.cyan)
-                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .padding(.horizontal, 10).padding(.vertical, 5.5)
                             .background(
-                                AngularCardShape(cornerRadius: 3, cornerCut: 5)
-                                    .stroke(AC.cyan.opacity(0.5), lineWidth: 1)
+                                AngularCardShape(cornerRadius: 4, cornerCut: 6)
+                                    .stroke(AC.cyan.opacity(0.5), lineWidth: 1.25)
                             )
                     }
                     .buttonStyle(.plain)
                     .padding(.trailing, 12)
                 }
                 .padding(.leading, 14)
-                .frame(height: 24)
+                .frame(height: 28)
 
                 // Cards
                 ScrollView(.horizontal, showsIndicators: false) {
