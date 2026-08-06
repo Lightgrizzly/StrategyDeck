@@ -10,7 +10,7 @@ struct PanelRootView: View {
     // Reference back to the controller so the header can toggle pin.
     let panelController: FloatingPanelController
 
-    private enum ActiveTab { case library, duel }
+    private enum ActiveTab { case library, duel, systemsMap }
 
     @State private var activeTab: ActiveTab = .library
     @State private var searchText = ""
@@ -31,6 +31,7 @@ struct PanelRootView: View {
             HStack(spacing: 2) {
                 tabButton(title: "Library", icon: "square.stack.3d.up", tab: .library)
                 tabButton(title: "Duel", icon: "flame", tab: .duel)
+                tabButton(title: "Systems Map", icon: "point.3.connected.trianglepath.dotted", tab: .systemsMap)
                 Spacer()
             }
             .padding(.horizontal, 10)
@@ -81,11 +82,16 @@ struct PanelRootView: View {
                         }
                     }
                 }
-            } else {
+            } else if activeTab == .duel {
                 DuelTabView()
                     .environmentObject(environment)
                     .environmentObject(cardStore)
                     .environmentObject(sequenceStore)
+            } else {
+                SystemsMapTabView()
+                    .environmentObject(environment)
+                    .environmentObject(cardStore)
+                    .environmentObject(environment.systemMapStore)
             }
         }
         .background(AC.bg)

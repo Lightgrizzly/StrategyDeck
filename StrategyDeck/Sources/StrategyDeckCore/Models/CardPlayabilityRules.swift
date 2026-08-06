@@ -11,6 +11,14 @@ public struct CardPlayabilityRules: Codable, Hashable, Sendable {
     public var disablesCardTitles: [String]
     public var canBeReused: Bool
     public var exhaustsAfterUse: Bool
+    /// Which Systems Map element kinds this card can be applied to. Empty
+    /// means "untargeted" — the card applies anywhere and is never marked
+    /// Irrelevant by selection, which keeps every pre-existing card fully
+    /// usable in the Systems Map without requiring authoring for each one.
+    public var systemTargetTypes: [SystemTargetKind]
+    /// Optional Donella Meadows–style leverage classification, used only for
+    /// Systems Map filtering/metadata. Nil means "not classified."
+    public var leverageLevel: LeverageLevel?
 
     public init(
         prerequisites: [String] = [],
@@ -22,7 +30,9 @@ public struct CardPlayabilityRules: Codable, Hashable, Sendable {
         unlocksCardTitles: [String] = [],
         disablesCardTitles: [String] = [],
         canBeReused: Bool = true,
-        exhaustsAfterUse: Bool = false
+        exhaustsAfterUse: Bool = false,
+        systemTargetTypes: [SystemTargetKind] = [],
+        leverageLevel: LeverageLevel? = nil
     ) {
         self.prerequisites = prerequisites
         self.requiredActiveCardTitles = requiredActiveCardTitles
@@ -34,6 +44,8 @@ public struct CardPlayabilityRules: Codable, Hashable, Sendable {
         self.disablesCardTitles = disablesCardTitles
         self.canBeReused = canBeReused
         self.exhaustsAfterUse = exhaustsAfterUse
+        self.systemTargetTypes = systemTargetTypes
+        self.leverageLevel = leverageLevel
     }
 
     public init(from decoder: Decoder) throws {
@@ -48,6 +60,8 @@ public struct CardPlayabilityRules: Codable, Hashable, Sendable {
         disablesCardTitles = try c.decodeIfPresent([String].self, forKey: .disablesCardTitles) ?? []
         canBeReused = try c.decodeIfPresent(Bool.self, forKey: .canBeReused) ?? true
         exhaustsAfterUse = try c.decodeIfPresent(Bool.self, forKey: .exhaustsAfterUse) ?? false
+        systemTargetTypes = try c.decodeIfPresent([SystemTargetKind].self, forKey: .systemTargetTypes) ?? []
+        leverageLevel = try c.decodeIfPresent(LeverageLevel.self, forKey: .leverageLevel)
     }
 
     public var isEmpty: Bool {
