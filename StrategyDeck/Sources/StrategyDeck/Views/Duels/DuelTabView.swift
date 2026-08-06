@@ -306,7 +306,8 @@ private struct DuelEditorView: View {
                                 pickerZone = zone
                                 showingCardPicker = true
                             },
-                            onAddStep: { duelStore.addStep(after: panel.id) }
+                            onAddStep: { duelStore.addStep(after: panel.id) },
+                            onSelectPanel: { duelStore.setCurrentPanel(id: $0) }
                         )
                     } else {
                         HStack(spacing: 0) {
