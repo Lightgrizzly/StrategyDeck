@@ -31,13 +31,19 @@ struct SuiteBadge: View {
     }
 
     var suiteColor: Color {
-        SuiteColors.color(for: suite.id)
+        SuiteColors.color(for: suite)
     }
 }
 
 /// Suite accent colors. Defined as stable named colors so they work in
 /// both light and dark mode.
 enum SuiteColors {
+    /// A suite's explicit `colorToken` always wins; otherwise falls back to
+    /// the automatic per-ID default below.
+    static func color(for suite: CardSuit) -> Color {
+        suite.colorToken?.color ?? color(for: suite.id)
+    }
+
     static func color(for suiteID: String) -> Color {
         switch suiteID {
         case "search":         return .blue

@@ -502,7 +502,7 @@ struct SystemCardLibraryView: View {
                         title: suit.name,
                         subtitle: "\(summary.total) cards • \(summary.available) available • \(summary.active) active",
                         isSelected: selectedSuitIDs.contains(suit.id),
-                        color: SuiteColors.color(for: suit.id)
+                        color: SuiteColors.color(for: suit)
                     ) {
                         toggleSuit(suit.id)
                     }

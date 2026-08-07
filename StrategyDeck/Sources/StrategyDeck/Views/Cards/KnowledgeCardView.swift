@@ -22,7 +22,7 @@ struct KnowledgeCardView: View {
     @State private var isHovered = false
 
     private var accentColor: Color {
-        suite.map { SuiteColors.color(for: $0.id) } ?? card.kind.arenaColor
+        suite.map { SuiteColors.color(for: $0) } ?? card.kind.arenaColor
     }
     private var kindColor: Color { card.kind.arenaColor }
 

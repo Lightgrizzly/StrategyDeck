@@ -116,10 +116,13 @@ private struct SuitRow: View {
     @Binding var selectedSuiteID: String?
     let depth: Int
 
+    @EnvironmentObject var cardStore: CardStore
     @State private var isExpanded = true
+    @State private var showingColorPicker = false
 
     private var children: [CardSuit] { allSuits.children(of: suit.id) }
     private var isSelected: Bool { selectedSuiteID == suit.id }
+    private var suiteColor: Color { SuiteColors.color(for: suit) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
@@ -145,6 +148,16 @@ private struct SuitRow: View {
                     Text(suit.name)
                         .font(.system(size: 10.5))
                     Spacer(minLength: 0)
+                    Button(action: { showingColorPicker = true }) {
+                        Circle().fill(suiteColor).frame(width: 9, height: 9)
+                            .overlay(Circle().stroke(AC.text.opacity(0.3), lineWidth: 0.5))
+                    }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $showingColorPicker) {
+                        SuiteColorPicker(selected: suit.colorToken) { token in
+                            cardStore.setSuitColor(id: suit.id, colorToken: token)
+                        }
+                    }
                 }
                 .foregroundStyle(isSelected ? AC.cyan : AC.textSub)
                 .padding(.vertical, 2.5)
@@ -170,5 +183,38 @@ private struct SuitRow: View {
                 }
             }
         }
+    }
+}
+
+/// Tap a swatch to pick a suite's accent color; "Default" clears it back to
+/// the automatic per-ID color in `SuiteColors`.
+private struct SuiteColorPicker: View {
+    let selected: StatusColorToken?
+    let onPick: (StatusColorToken?) -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button(action: { onPick(nil) }) {
+                Circle()
+                    .strokeBorder(AC.textDim, style: StrokeStyle(lineWidth: 1.5, dash: [2, 2]))
+                    .frame(width: 16, height: 16)
+                    .overlay(Circle().stroke(AC.text, lineWidth: selected == nil ? 1.5 : 0).padding(-2))
+            }
+            .buttonStyle(.plain)
+            .help("Default")
+
+            ForEach(StatusColorToken.allCases, id: \.self) { token in
+                Button(action: { onPick(token) }) {
+                    Circle()
+                        .fill(token.color)
+                        .frame(width: 16, height: 16)
+                        .overlay(Circle().stroke(AC.text, lineWidth: selected == token ? 1.5 : 0).padding(-2))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(10)
+        .background(AC.bg)
+        .colorScheme(.dark)
     }
 }

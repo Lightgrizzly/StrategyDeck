@@ -80,7 +80,7 @@ struct KnowledgeCardDetailView: View {
                                 if let suite {
                                     Text("·  \(suite.name)")
                                         .font(.system(size: 11))
-                                        .foregroundStyle(SuiteColors.color(for: suite.id))
+                                        .foregroundStyle(SuiteColors.color(for: suite))
                                 }
                             }
                         }

@@ -363,6 +363,13 @@ public final class CardStore: ObservableObject {
         save()
     }
 
+    /// Sets (or clears, with `nil`) a suit's accent color.
+    public func setSuitColor(id suitID: String, colorToken: StatusColorToken?) {
+        guard let idx = suits.firstIndex(where: { $0.id == suitID }) else { return }
+        suits[idx].colorToken = colorToken
+        save()
+    }
+
     // MARK: - Reset
 
     /// Replaces all cards with the bundled seed, discarding user edits to cards.
