@@ -12,6 +12,9 @@ struct DeckSuitTreeView: View {
 
     @EnvironmentObject var cardStore: CardStore
     @State private var isEndDropTargeted = false
+    @State private var renamingDeck: KnowledgeDeck?
+    @State private var renameText = ""
+    @State private var deletingDeck: KnowledgeDeck?
 
     var body: some View {
         ScrollView {
@@ -21,7 +24,9 @@ struct DeckSuitTreeView: View {
                         deck: deck,
                         suits: suits,
                         selectedDeckID: $selectedDeckID,
-                        selectedSuiteID: $selectedSuiteID
+                        selectedSuiteID: $selectedSuiteID,
+                        onRename: { renamingDeck = $0; renameText = $0.name },
+                        onDelete: { deletingDeck = $0 }
                     )
                 }
 
@@ -47,6 +52,40 @@ struct DeckSuitTreeView: View {
         }
         .background(AC.surface)
         .colorScheme(.dark)
+        .sheet(item: $renamingDeck) { deck in
+            VStack(alignment: .leading, spacing: 16) {
+                Text("RENAME DECK").font(.system(size: 14, weight: .black, design: .monospaced)).foregroundStyle(AC.cyan).kerning(1)
+                TextField("Name", text: $renameText).arenaFieldStyle()
+                HStack {
+                    Button("Cancel") { renamingDeck = nil }.buttonStyle(ArenaOutlineButtonStyle()).keyboardShortcut(.cancelAction)
+                    Spacer()
+                    Button("Save") {
+                        cardStore.renameDeck(id: deck.id, name: renameText)
+                        renamingDeck = nil
+                    }
+                    .buttonStyle(ArenaButtonStyle(isDisabled: renameText.trimmingCharacters(in: .whitespaces).isEmpty))
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(renameText.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .padding(20)
+            .frame(minWidth: 320)
+            .background(AC.bg)
+            .colorScheme(.dark)
+        }
+        .sheet(item: $deletingDeck) { deck in
+            TypedDeleteConfirmationSheet(
+                title: "Delete Deck",
+                itemName: deck.name,
+                message: "This removes the deck, its suites, and any cards that exist only in this deck's suites. Cards that also belong to other decks or suites are kept. This cannot be undone.",
+                onConfirm: {
+                    cardStore.deleteDeck(id: deck.id)
+                    if selectedDeckID == deck.id { selectedDeckID = nil; selectedSuiteID = nil }
+                    deletingDeck = nil
+                },
+                onCancel: { deletingDeck = nil }
+            )
+        }
     }
 }
 
@@ -55,6 +94,8 @@ private struct DeckRow: View {
     let suits: [CardSuit]
     @Binding var selectedDeckID: String?
     @Binding var selectedSuiteID: String?
+    let onRename: (KnowledgeDeck) -> Void
+    let onDelete: (KnowledgeDeck) -> Void
 
     @EnvironmentObject var cardStore: CardStore
     @State private var isExpanded = false
@@ -108,6 +149,11 @@ private struct DeckRow: View {
                 cardStore.moveDeck(id: draggedDeckID, before: deck.id)
                 return true
             }, isTargeted: { isDropTargeted = $0 })
+            .contextMenu {
+                Button("Rename") { onRename(deck) }
+                Divider()
+                Button("Delete", role: .destructive) { onDelete(deck) }
+            }
 
             if isExpanded {
                 ForEach(rootSuits) { suit in

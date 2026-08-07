@@ -174,7 +174,7 @@ private struct InternalGrid: View {
     @State private var isCreating = false
     @State private var newCard = InternalGrid.blankCard(suits: [], deckID: nil)
     @State private var alertState: AlertState?
-    @State private var pendingDeleteID: UUID?
+    @State private var deletingCard: KnowledgeCard?
 
     private var filteredCards: [KnowledgeCard] {
         filter.apply(to: cardStore.cards, suits: suits)
@@ -211,16 +211,7 @@ private struct InternalGrid: View {
                             onFavorite: { cardStore.toggleFavorite(id: card.id) },
                             onEdit: { selectedCardID = card.id; editingCard = card },
                             onDuplicate: { cardStore.duplicate(card) },
-                            onDelete: {
-                                pendingDeleteID = card.id
-                                alertState = .destructive(
-                                    title: "Delete \"\(card.title)\"?",
-                                    message: "This card will be permanently removed from your library.",
-                                    confirmLabel: "Delete"
-                                ) {
-                                    if let id = pendingDeleteID { cardStore.delete(id: id) }
-                                }
-                            },
+                            onDelete: { deletingCard = card },
                             availableSuits: suits,
                             onDuplicateIntoCurrentDeck: selectedDeckID.map { deckID in
                                 { cardStore.duplicateCard(card, intoDeckID: deckID) }
@@ -239,6 +230,18 @@ private struct InternalGrid: View {
         }
         .background(AC.bg)
         .alertState($alertState)
+        .sheet(item: $deletingCard) { card in
+            TypedDeleteConfirmationSheet(
+                title: "Delete Card",
+                itemName: card.title,
+                message: "This card will be permanently removed from your library. This cannot be undone.",
+                onConfirm: {
+                    cardStore.delete(id: card.id)
+                    deletingCard = nil
+                },
+                onCancel: { deletingCard = nil }
+            )
+        }
         // Wire the proxy so the header can trigger "new card" / open a
         // just-quick-created card in the full editor.
         .onAppear {
