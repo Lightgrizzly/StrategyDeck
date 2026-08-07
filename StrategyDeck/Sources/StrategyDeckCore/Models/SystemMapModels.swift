@@ -733,6 +733,14 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         StatusCatalog(customStatuses: customStatuses, labelOverrides: statusLabelOverrides)
     }
 
+    /// User-pinned Contextual Hand cards. Pinning never changes a card's
+    /// status — only its ranking within the Contextual Hand.
+    public var cardPins: [ContextualCardPin]
+
+    /// Bugs, blockers, issues, risks, constraints, assumptions, incidents,
+    /// unknowns, and warnings attached to this map's elements.
+    public var issues: [SystemIssue]
+
     public init(
         id: UUID = UUID(),
         title: String,
@@ -751,7 +759,9 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         workflowDefaultOverrides: [SystemCardStatusOverride] = [],
         legacyStepsArchive: [SystemStep]? = nil,
         customStatuses: [CustomCardStatus] = [],
-        statusLabelOverrides: [String: String] = [:]
+        statusLabelOverrides: [String: String] = [:],
+        cardPins: [ContextualCardPin] = [],
+        issues: [SystemIssue] = []
     ) {
         self.id = id
         self.title = title
@@ -771,6 +781,8 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         self.legacyStepsArchive = legacyStepsArchive
         self.customStatuses = customStatuses
         self.statusLabelOverrides = statusLabelOverrides
+        self.cardPins = cardPins
+        self.issues = issues
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -779,6 +791,8 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         case scenarios, selectedScenarioID, defaultDeckID, workflowDefaultOverrides
         case legacyStepsArchive
         case legacySteps = "steps"
+        case cardPins
+        case issues
         case customStatuses, statusLabelOverrides
     }
 
@@ -794,6 +808,8 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         viewport = try c.decodeIfPresent(SystemViewport.self, forKey: .viewport) ?? SystemViewport()
         customStatuses = try c.decodeIfPresent([CustomCardStatus].self, forKey: .customStatuses) ?? []
         statusLabelOverrides = try c.decodeIfPresent([String: String].self, forKey: .statusLabelOverrides) ?? [:]
+        cardPins = try c.decodeIfPresent([ContextualCardPin].self, forKey: .cardPins) ?? []
+        issues = try c.decodeIfPresent([SystemIssue].self, forKey: .issues) ?? []
 
         let decodedElements = try c.decodeIfPresent([SystemElement].self, forKey: .elements)
         let decodedFlows = try c.decodeIfPresent([SystemFlow].self, forKey: .flows)
@@ -871,6 +887,8 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         try c.encodeIfPresent(legacyStepsArchive, forKey: .legacyStepsArchive)
         try c.encode(customStatuses, forKey: .customStatuses)
         try c.encode(statusLabelOverrides, forKey: .statusLabelOverrides)
+        try c.encode(cardPins, forKey: .cardPins)
+        try c.encode(issues, forKey: .issues)
     }
 
     public var sortedScenarios: [SystemScenario] {

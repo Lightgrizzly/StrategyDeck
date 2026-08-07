@@ -52,13 +52,27 @@ public struct SystemMapEvaluator: Sendable {
             .map { $0.description.isEmpty ? $0.name : $0.description }
             .joined(separator: ". ")
 
+        // Issues participate in evaluation only while active (open through
+        // mitigated — not resolved/dismissed) and scoped to this scenario.
+        // Their produced conditions become active state/blocking facts;
+        // nothing here hardcodes a specific issue to a specific card.
+        let activeIssues = map.issues.filter { $0.status.isActive && $0.appliesTo(scenarioID: scenario.id) }
+        let issueKnownInformation = activeIssues.flatMap(\.knownInformationProduced).joined(separator: ". ")
+        let combinedKnownInformation = [scenario.knownInformation, issueKnownInformation]
+            .filter { !$0.isEmpty }
+            .joined(separator: ". ")
+        let activeStateConditions = Set(activeIssues.flatMap(\.knownInformationProduced))
+        let activeBlockingConditions = Set(activeIssues.flatMap(\.blockingConditionsProduced))
+
         return PlayabilityContext(
             activeCardTitles: activeTitles,
             resolvedCardTitles: resolvedTitles,
             playedCardTitles: playedTitles,
-            knownInformation: scenario.knownInformation,
+            knownInformation: combinedKnownInformation,
             constraints: constraintDescriptions,
-            reciprocalUnlocks: reciprocalUnlocks
+            reciprocalUnlocks: reciprocalUnlocks,
+            activeStateConditions: activeStateConditions,
+            activeBlockingConditions: activeBlockingConditions
         )
     }
 

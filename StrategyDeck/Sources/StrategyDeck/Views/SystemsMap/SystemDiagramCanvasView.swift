@@ -90,6 +90,11 @@ struct SystemDiagramCanvasView: View {
     /// indicator. Selecting the element already reveals which cards via the
     /// card library below, so this is display-only.
     let elementActiveCardCounts: [UUID: Int]
+    /// Total active issues/blockers/risks affecting each element, and how
+    /// many of those are critical or blocker-type — a compact "what's
+    /// wrong here" indicator. Full detail lives in the Issues panel.
+    var elementIssueCounts: [UUID: Int] = [:]
+    var elementCriticalBlockerCounts: [UUID: Int] = [:]
     let isEditable: Bool
     @Binding var selection: DiagramSelection?
     @Binding var tool: DiagramTool
@@ -102,6 +107,7 @@ struct SystemDiagramCanvasView: View {
     /// system). Dropping never changes state by itself — the caller decides
     /// what to do based on the card's effective status for this target.
     let onDropCard: (UUID, DiagramSelection?) -> Void
+    var onDropIssue: (UUID, DiagramSelection?) -> Void = { _, _ in }
 
     @State private var panOffset: CGSize = .zero
     @State private var zoom: CGFloat = 1.0
@@ -113,6 +119,10 @@ struct SystemDiagramCanvasView: View {
 
     private func cardID(from items: [String]) -> UUID? {
         items.first.flatMap { UUID(uuidString: $0) }
+    }
+
+    private func issueID(from items: [String]) -> UUID? {
+        items.first.flatMap { IssueDragPayload.decode($0) }
     }
 
     private var positionsByID: [UUID: CGPoint] {
@@ -154,9 +164,9 @@ struct SystemDiagramCanvasView: View {
                 .allowsHitTesting(false)
         )
         .dropDestination(for: String.self, action: { items, _ in
-            guard let cardID = cardID(from: items) else { return false }
-            onDropCard(cardID, nil)
-            return true
+            if let cardID = cardID(from: items) { onDropCard(cardID, nil); return true }
+            if let issueID = issueID(from: items) { onDropIssue(issueID, nil); return true }
+            return false
         }, isTargeted: { isBackgroundDropTargeted = $0 })
     }
 
@@ -173,9 +183,9 @@ struct SystemDiagramCanvasView: View {
                 .position(x: (from.x + to.x) / 2, y: (from.y + to.y) / 2)
                 .onTapGesture { selection = .flow(flow.id) }
                 .dropDestination(for: String.self, action: { items, _ in
-                    guard let cardID = cardID(from: items) else { return false }
-                    onDropCard(cardID, .flow(flow.id))
-                    return true
+                    if let cardID = cardID(from: items) { onDropCard(cardID, .flow(flow.id)); return true }
+                    if let issueID = issueID(from: items) { onDropIssue(issueID, .flow(flow.id)); return true }
+                    return false
                 }, isTargeted: { targeted in
                     dropTargetedSelection = targeted ? .flow(flow.id) : (dropTargetedSelection == .flow(flow.id) ? nil : dropTargetedSelection)
                 })
@@ -196,9 +206,9 @@ struct SystemDiagramCanvasView: View {
                 .position(x: (s.x + t.x) / 2, y: (s.y + t.y) / 2 - 16)
                 .onTapGesture { selection = .relationship(rel.id) }
                 .dropDestination(for: String.self, action: { items, _ in
-                    guard let cardID = cardID(from: items) else { return false }
-                    onDropCard(cardID, .relationship(rel.id))
-                    return true
+                    if let cardID = cardID(from: items) { onDropCard(cardID, .relationship(rel.id)); return true }
+                    if let issueID = issueID(from: items) { onDropIssue(issueID, .relationship(rel.id)); return true }
+                    return false
                 }, isTargeted: { targeted in
                     dropTargetedSelection = targeted ? .relationship(rel.id) : (dropTargetedSelection == .relationship(rel.id) ? nil : dropTargetedSelection)
                 })
@@ -214,7 +224,9 @@ struct SystemDiagramCanvasView: View {
                 isSelected: selection == .element(element.id),
                 isConnectSource: pendingConnectSourceID == element.id,
                 isDropTargeted: dropTargetedSelection == .element(element.id),
-                activeCardCount: elementActiveCardCounts[element.id] ?? 0
+                activeCardCount: elementActiveCardCounts[element.id] ?? 0,
+                issueCount: elementIssueCounts[element.id] ?? 0,
+                criticalBlockerCount: elementCriticalBlockerCounts[element.id] ?? 0
             )
             .position(
                 x: element.position.x + (draggingElementID == element.id ? dragTranslation.width : 0),
@@ -224,9 +236,9 @@ struct SystemDiagramCanvasView: View {
             .onTapGesture { handleTap(elementID: element.id) }
             .highPriorityGesture(TapGesture().onEnded { handleTap(elementID: element.id) })
             .dropDestination(for: String.self, action: { items, _ in
-                guard let cardID = cardID(from: items) else { return false }
-                onDropCard(cardID, .element(element.id))
-                return true
+                if let cardID = cardID(from: items) { onDropCard(cardID, .element(element.id)); return true }
+                if let issueID = issueID(from: items) { onDropIssue(issueID, .element(element.id)); return true }
+                return false
             }, isTargeted: { targeted in
                 dropTargetedSelection = targeted ? .element(element.id) : (dropTargetedSelection == .element(element.id) ? nil : dropTargetedSelection)
             })
@@ -389,6 +401,8 @@ struct SystemElementNodeView: View {
     let isConnectSource: Bool
     var isDropTargeted: Bool = false
     var activeCardCount: Int = 0
+    var issueCount: Int = 0
+    var criticalBlockerCount: Int = 0
 
     private var color: Color { element.kind.arenaColor }
     private var isDimmed: Bool { state == .hidden || state == .disabled }
@@ -416,7 +430,13 @@ struct SystemElementNodeView: View {
                 activeCardBadge
             }
         }
+        .overlay(alignment: .bottomTrailing) {
+            if issueCount > 0 {
+                issueBadge
+            }
+        }
         .shadow(color: isDropTargeted ? AC.gold.opacity(0.8) : (isSelected ? color.opacity(0.6) : .clear), radius: isDropTargeted ? 12 : 8)
+        .shadow(color: criticalBlockerCount > 0 ? AC.threat.opacity(0.5) : .clear, radius: 8)
         .opacity(isDimmed ? 0.5 : 1)
         .scaleEffect(isDropTargeted ? 1.06 : 1.0)
         .animation(.easeOut(duration: 0.12), value: isDropTargeted)
@@ -433,6 +453,19 @@ struct SystemElementNodeView: View {
         .shadow(color: AC.cyanGlow, radius: 3)
         .offset(x: -4, y: -4)
         .help("\(activeCardCount) card\(activeCardCount == 1 ? "" : "s") active on this element")
+    }
+
+    private var issueBadge: some View {
+        HStack(spacing: 2) {
+            Image(systemName: criticalBlockerCount > 0 ? "hand.raised.fill" : "exclamationmark.triangle.fill").font(.system(size: 6))
+            Text("\(issueCount)").font(.system(size: 7, weight: .black, design: .monospaced))
+        }
+        .foregroundStyle(AC.bg)
+        .padding(.horizontal, 4).padding(.vertical, 2)
+        .background(Capsule().fill(criticalBlockerCount > 0 ? AC.threat : .orange))
+        .shadow(color: criticalBlockerCount > 0 ? AC.threat.opacity(0.8) : .orange.opacity(0.5), radius: 3)
+        .offset(x: 4, y: 4)
+        .help("\(issueCount) issue\(issueCount == 1 ? "" : "s") affecting this element\(criticalBlockerCount > 0 ? ", \(criticalBlockerCount) critical/blocker" : "")")
     }
 
     private var stateBadge: some View {

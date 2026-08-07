@@ -1,6 +1,30 @@
 import SwiftUI
 import StrategyDeckCore
 
+/// How densely the Full Library renders cards. Compact List uses a single
+/// lightweight row per card instead of the full card treatment, so a
+/// deck with hundreds or thousands of cards doesn't construct that many
+/// full card views — combined with `LazyVGrid`/`LazyVStack`'s native
+/// viewport virtualization, only what's actually visible gets rendered.
+enum CardDisplayMode: String, CaseIterable {
+    case compactList
+    case detailed
+
+    var displayName: String {
+        switch self {
+        case .compactList: return "Compact List"
+        case .detailed: return "Detailed Cards"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .compactList: return "list.bullet"
+        case .detailed: return "rectangle.grid.2x2"
+        }
+    }
+}
+
 /// The complete card library, always shown in full beneath the diagram —
 /// every card, grouped by its dynamically computed ``SystemCardStatus``, so
 /// the user can see the whole action vocabulary and understand why each
@@ -31,6 +55,8 @@ struct SystemCardLibraryView: View {
     let onCreateSuiteInline: ((String) -> CardSuit)?
     let onBulkCreateCards: (([(title: String, suitID: String?)]) -> Void)?
     let onManageStatuses: (() -> Void)?
+    let onCollapseDrawer: (() -> Void)?
+    let onOpenContextualHand: (() -> Void)?
 
     init(
         cards: [KnowledgeCard],
@@ -53,7 +79,9 @@ struct SystemCardLibraryView: View {
         onQuickCreateAndEdit: ((String, String?, String) -> Void)? = nil,
         onCreateSuiteInline: ((String) -> CardSuit)? = nil,
         onBulkCreateCards: (([(title: String, suitID: String?)]) -> Void)? = nil,
-        onManageStatuses: (() -> Void)? = nil
+        onManageStatuses: (() -> Void)? = nil,
+        onCollapseDrawer: (() -> Void)? = nil,
+        onOpenContextualHand: (() -> Void)? = nil
     ) {
         self.cards = cards
         self.suits = suits
@@ -76,15 +104,46 @@ struct SystemCardLibraryView: View {
         self.onCreateSuiteInline = onCreateSuiteInline
         self.onBulkCreateCards = onBulkCreateCards
         self.onManageStatuses = onManageStatuses
+        self.onCollapseDrawer = onCollapseDrawer
+        self.onOpenContextualHand = onOpenContextualHand
     }
 
     @State private var searchText = ""
     @State private var statusFilter: SystemCardStatus?
     @State private var selectedSuitIDs: Set<String> = []
     @State private var favoritesOnly = false
+    @State private var manualDisplayMode: CardDisplayMode?
+
+    /// Above this many cards in the deck, Compact List becomes the default
+    /// so the Full Library doesn't construct hundreds of full card views
+    /// per render — the user can still switch back manually.
+    private static let compactModeThreshold = 200
+
+    private var displayMode: CardDisplayMode {
+        manualDisplayMode ?? (cards.count > Self.compactModeThreshold ? .compactList : .detailed)
+    }
     @State private var isDropTargetedGroup: StatusGroupKey?
     @State private var showingQuickCreate = false
     @State private var showingBulkAdd = false
+    /// Which group ranks the user has manually expanded/collapsed this
+    /// session, layered on top of the defaults in `isExpandedByDefault`.
+    @State private var manuallyToggledRanks: Set<Int> = []
+
+    /// Active (rank 0) and Available (rank 1) are expanded by default;
+    /// everything else — Locked/Disabled, Pending, Exhausted/Resolved,
+    /// Irrelevant — starts collapsed so a large deck doesn't render
+    /// hundreds of cards the moment a node is selected. A custom status
+    /// inherits its `behavesLike` rank, so it starts in the same state as
+    /// whatever built-in group it behaves like.
+    private func isExpandedByDefault(rank: Int) -> Bool { rank <= 1 }
+
+    private func isExpanded(rank: Int) -> Bool {
+        manuallyToggledRanks.contains(rank) ? !isExpandedByDefault(rank: rank) : isExpandedByDefault(rank: rank)
+    }
+
+    private func toggleExpanded(rank: Int) {
+        if manuallyToggledRanks.contains(rank) { manuallyToggledRanks.remove(rank) } else { manuallyToggledRanks.insert(rank) }
+    }
 
     private var evaluationByID: [UUID: SystemCardEvaluation] {
         Dictionary(uniqueKeysWithValues: evaluations.map { ($0.cardID, $0) })
@@ -126,27 +185,27 @@ struct SystemCardLibraryView: View {
         case custom(String)
     }
 
-    private var groupedCards: [(key: StatusGroupKey, title: String, color: Color, dropStatus: SystemCardStatus, dropCustomStatusID: String?, cards: [KnowledgeCard])] {
+    private var groupedCards: [(key: StatusGroupKey, title: String, color: Color, rank: Int, dropStatus: SystemCardStatus, dropCustomStatusID: String?, cards: [KnowledgeCard])] {
         let groups = Dictionary(grouping: filteredCards) { card -> StatusGroupKey in
             guard let eval = evaluationByID[card.id] else { return .builtIn(.available) }
             if let customID = eval.effectiveCustomStatusID { return .custom(customID) }
             return .builtIn(eval.effectiveStatus)
         }
-        var result: [(StatusGroupKey, String, Color, SystemCardStatus, String?, [KnowledgeCard])] = []
+        var result: [(StatusGroupKey, String, Color, Int, SystemCardStatus, String?, [KnowledgeCard])] = []
         for status in SystemCardStatus.allCases.sorted(by: { $0.groupRank < $1.groupRank }) {
             let key = StatusGroupKey.builtIn(status)
             guard let inGroup = groups[key], !inGroup.isEmpty else { continue }
             let title = statusCatalog.labelOverrides[status.rawValue] ?? status.groupTitle
             if let lastIdx = result.indices.last, result[lastIdx].1 == title {
-                result[lastIdx].5.append(contentsOf: inGroup)
+                result[lastIdx].6.append(contentsOf: inGroup)
             } else {
-                result.append((key, title, status.arenaColor, status, nil, inGroup))
+                result.append((key, title, status.arenaColor, status.groupRank, status, nil, inGroup))
             }
         }
         for custom in statusCatalog.customStatuses.sorted(by: { $0.displayOrder < $1.displayOrder }) {
             let key = StatusGroupKey.custom(custom.id)
             guard let inGroup = groups[key], !inGroup.isEmpty else { continue }
-            result.append((key, custom.name, custom.colorToken.color, custom.behavesLike, custom.id, inGroup))
+            result.append((key, custom.name, custom.colorToken.color, custom.behavesLike.groupRank, custom.behavesLike, custom.id, inGroup))
         }
         return result
     }
@@ -173,54 +232,85 @@ struct SystemCardLibraryView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(groupedCards, id: \.key) { group in
+                            let expanded = isExpanded(rank: group.rank)
                             VStack(alignment: .leading, spacing: 6) {
-                                HStack(spacing: 6) {
-                                    ArenaSectionLabel(text: "\(group.title) (\(group.cards.count))", color: group.color)
-                                    if isDropTargetedGroup == group.key {
-                                        Image(systemName: "arrow.down.circle.fill").font(.system(size: 9)).foregroundStyle(group.color)
+                                Button(action: { toggleExpanded(rank: group.rank) }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: expanded ? "chevron.down" : "chevron.right")
+                                            .font(.system(size: 8, weight: .semibold))
+                                            .foregroundStyle(group.color.opacity(0.75))
+                                        ArenaSectionLabel(text: "\(group.title) (\(group.cards.count))", color: group.color)
+                                        if isDropTargetedGroup == group.key {
+                                            Image(systemName: "arrow.down.circle.fill").font(.system(size: 9)).foregroundStyle(group.color)
+                                        }
+                                        Spacer()
                                     }
                                 }
-                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 200, maximum: 250), spacing: 8)], spacing: 8) {
-                                    ForEach(group.cards) { card in
-                                        SystemLibraryCardView(
-                                            card: card,
-                                            suite: suits.first(where: { card.suitIDs.contains($0.id) }),
-                                            evaluation: evaluationByID[card.id],
-                                            statusCatalog: statusCatalog,
-                                            isEditable: isEditable,
-                                            selectionLabel: selectionLabel,
-                                            onViewDetails: { onViewDetails(card) },
-                                            onEdit: onEditCard.map { edit in { edit(card) } },
-                                            onApplyIntervention: { onApplyIntervention(card) },
-                                            onChangeStatus: { status, customID, scope in onChangeStatus(card, status, customID, scope) },
-                                            onResetToAutomatic: { onResetToAutomatic(card) },
-                                            onAssignToSelectedElement: onAssignToSelectedElement.map { assign in { assign(card) } }
-                                        )
-                                    }
-                                }
-                                .padding(6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(isDropTargetedGroup == group.key ? group.color.opacity(0.12) : Color.clear)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(isDropTargetedGroup == group.key ? group.color.opacity(0.6) : Color.clear, lineWidth: 1.5)
-                                )
-                                .dropDestination(for: String.self, action: { items, _ in
-                                    guard let onDropCardToStatus else { return false }
-                                    var accepted = false
-                                    for item in items {
-                                        if let cardID = UUID(uuidString: item) {
-                                            onDropCardToStatus(cardID, group.dropStatus, group.dropCustomStatusID)
-                                            accepted = true
+                                .buttonStyle(.plain)
+
+                                if expanded {
+                                    switch displayMode {
+                                    case .detailed:
+                                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 200, maximum: 250), spacing: 8)], spacing: 8) {
+                                            ForEach(group.cards) { card in
+                                                SystemLibraryCardView(
+                                                    card: card,
+                                                    suite: suits.first(where: { card.suitIDs.contains($0.id) }),
+                                                    evaluation: evaluationByID[card.id],
+                                                    statusCatalog: statusCatalog,
+                                                    isEditable: isEditable,
+                                                    selectionLabel: selectionLabel,
+                                                    onViewDetails: { onViewDetails(card) },
+                                                    onEdit: onEditCard.map { edit in { edit(card) } },
+                                                    onApplyIntervention: { onApplyIntervention(card) },
+                                                    onChangeStatus: { status, customID, scope in onChangeStatus(card, status, customID, scope) },
+                                                    onResetToAutomatic: { onResetToAutomatic(card) },
+                                                    onAssignToSelectedElement: onAssignToSelectedElement.map { assign in { assign(card) } }
+                                                )
+                                            }
+                                        }
+                                    case .compactList:
+                                        LazyVStack(alignment: .leading, spacing: 3) {
+                                            ForEach(group.cards) { card in
+                                                CompactCardRow(
+                                                    card: card,
+                                                    suite: suits.first(where: { card.suitIDs.contains($0.id) }),
+                                                    evaluation: evaluationByID[card.id],
+                                                    statusCatalog: statusCatalog,
+                                                    isEditable: isEditable,
+                                                    onViewDetails: { onViewDetails(card) },
+                                                    onApplyIntervention: { onApplyIntervention(card) },
+                                                    onChangeStatus: { status, customID, scope in onChangeStatus(card, status, customID, scope) }
+                                                )
+                                            }
                                         }
                                     }
-                                    return accepted
-                                }, isTargeted: { targeted in
-                                    isDropTargetedGroup = targeted ? group.key : (isDropTargetedGroup == group.key ? nil : isDropTargetedGroup)
-                                })
+                                } else {
+                                    collapsedGroupSummary(group)
+                                }
                             }
+                            .padding(6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(isDropTargetedGroup == group.key ? group.color.opacity(0.12) : Color.clear)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(isDropTargetedGroup == group.key ? group.color.opacity(0.6) : Color.clear, lineWidth: 1.5)
+                            )
+                            .dropDestination(for: String.self, action: { items, _ in
+                                guard let onDropCardToStatus else { return false }
+                                var accepted = false
+                                for item in items {
+                                    if let cardID = UUID(uuidString: item) {
+                                        onDropCardToStatus(cardID, group.dropStatus, group.dropCustomStatusID)
+                                        accepted = true
+                                    }
+                                }
+                                return accepted
+                            }, isTargeted: { targeted in
+                                isDropTargetedGroup = targeted ? group.key : (isDropTargetedGroup == group.key ? nil : isDropTargetedGroup)
+                            })
                         }
                     }
                     .padding(12)
@@ -235,6 +325,27 @@ struct SystemCardLibraryView: View {
             let stillValid = selectedSuitIDs.intersection(Set(newIDs))
             if stillValid != selectedSuitIDs { selectedSuitIDs = stillValid }
         }
+    }
+
+    /// A cheap, structured summary shown instead of rendering every card in
+    /// a collapsed group — real counts from data already computed, not a
+    /// guess at the reasons' free text.
+    private func collapsedGroupSummary(_ group: (key: StatusGroupKey, title: String, color: Color, rank: Int, dropStatus: SystemCardStatus, dropCustomStatusID: String?, cards: [KnowledgeCard])) -> some View {
+        let overriddenCount = group.cards.filter { evaluationByID[$0.id]?.isOverridden == true }.count
+        let withMissing = group.cards.filter { !(evaluationByID[$0.id]?.missingRequirements.isEmpty ?? true) }.count
+        let withBlocking = group.cards.filter { !(evaluationByID[$0.id]?.blockingConditions.isEmpty ?? true) }.count
+        return HStack(spacing: 10) {
+            if withMissing > 0 {
+                Text("\(withMissing) missing prerequisites").font(.system(size: 9)).foregroundStyle(AC.textDim)
+            }
+            if withBlocking > 0 {
+                Text("\(withBlocking) blocked by active conditions").font(.system(size: 9)).foregroundStyle(AC.textDim)
+            }
+            if overriddenCount > 0 {
+                Text("\(overriddenCount) manually overridden").font(.system(size: 9)).foregroundStyle(AC.textDim)
+            }
+        }
+        .padding(.leading, 16)
     }
 
     private var emptyDeckState: some View {
@@ -266,8 +377,16 @@ struct SystemCardLibraryView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
-                ArenaSectionLabel(text: "Card Library — \(selectionLabel)", icon: "square.stack.3d.up")
+                ArenaSectionLabel(text: "Full Library — \(selectionLabel)", icon: "square.stack.3d.up")
                 Spacer()
+                if let onCollapseDrawer {
+                    Button(action: onCollapseDrawer) { Image(systemName: "chevron.down.circle") }
+                        .buttonStyle(.plain).foregroundStyle(AC.textDim).help("Collapse")
+                }
+                if let onOpenContextualHand {
+                    Button(action: onOpenContextualHand) { Image(systemName: "hand.raised") }
+                        .buttonStyle(.plain).foregroundStyle(AC.textDim).help("Back to Contextual Hand")
+                }
                 if onQuickCreateCard != nil {
                     Button(action: { showingQuickCreate = true }) {
                         Label("QUICK ADD", systemImage: "plus")
@@ -310,6 +429,18 @@ struct SystemCardLibraryView: View {
                         )
                     }
                 }
+                Menu {
+                    ForEach(CardDisplayMode.allCases, id: \.self) { mode in
+                        Button(action: { manualDisplayMode = mode }) {
+                            Label(mode.displayName, systemImage: mode.icon)
+                        }
+                    }
+                } label: {
+                    Image(systemName: displayMode.icon)
+                }
+                .buttonStyle(ArenaOutlineButtonStyle())
+                .menuStyle(.button)
+                .help("Display: \(displayMode.displayName)")
                 if let onManageStatuses {
                     Button(action: onManageStatuses) {
                         Image(systemName: "tag.circle")
@@ -627,5 +758,59 @@ private struct SystemLibraryCardView: View {
         .foregroundStyle(display.color)
         .padding(.horizontal, 6).padding(.vertical, 3)
         .background(Capsule().fill(display.color.opacity(0.15)))
+    }
+}
+
+// MARK: - Compact List row (large-deck display mode)
+//
+// A single lightweight line per card — no "Why?" panel, no drag preview
+// construction beyond the string payload itself. Keeps drag-and-drop,
+// status changes, and detail/apply actions available without the cost of
+// a full card view per row.
+
+private struct CompactCardRow: View {
+    let card: KnowledgeCard
+    let suite: CardSuit?
+    let evaluation: SystemCardEvaluation?
+    let statusCatalog: StatusCatalog
+    let isEditable: Bool
+    let onViewDetails: () -> Void
+    let onApplyIntervention: () -> Void
+    let onChangeStatus: (SystemCardStatus, String?, SystemOverrideScope) -> Void
+
+    private var status: SystemCardStatus { evaluation?.effectiveStatus ?? .available }
+    private var display: StatusDisplayInfo {
+        evaluation?.displayInfo(catalog: statusCatalog) ?? StatusDisplayInfo(name: status.displayName, icon: status.systemImage, color: status.arenaColor)
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if let suite { SuiteBadge(suite: suite, size: 12) }
+            Text(card.title).font(.system(size: 11)).foregroundStyle(AC.text).lineLimit(1)
+            Spacer(minLength: 8)
+            HStack(spacing: 3) {
+                Image(systemName: display.icon).font(.system(size: 7))
+                Text(display.name.uppercased()).font(.system(size: 7, weight: .black, design: .monospaced))
+            }
+            .foregroundStyle(display.color)
+            if isEditable, evaluation?.isPlayable == true {
+                Button("Apply", action: onApplyIntervention).buttonStyle(ArenaOutlineButtonStyle(color: AC.available.opacity(0.6)))
+            }
+        }
+        .padding(.horizontal, 6).padding(.vertical, 4)
+        .background(RoundedRectangle(cornerRadius: 4).fill(AC.surface))
+        .opacity(status == .irrelevant ? 0.55 : 1.0)
+        .draggable(card.id.uuidString)
+        .contextMenu {
+            Button("View Details", action: onViewDetails)
+            if isEditable, evaluation?.isPlayable == true {
+                Button("Apply Intervention", action: onApplyIntervention)
+            }
+            Menu("Change Status") {
+                ForEach(SystemCardStatus.allCases, id: \.self) { s in
+                    Button(s.displayName) { onChangeStatus(s, nil, .thisElementOnly) }
+                }
+            }
+        }
     }
 }

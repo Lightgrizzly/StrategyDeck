@@ -4,7 +4,14 @@ public struct CardPlayabilityRules: Codable, Hashable, Sendable {
     public var prerequisites: [String]
     public var requiredActiveCardTitles: [String]
     public var requiredKnownInfo: [String]
+    /// State conditions that must currently be true (present in the
+    /// evaluator's active-state-conditions set) for this card to be
+    /// available — e.g. produced by a mitigated/resolved issue.
     public var requiredStateConditions: [String]
+    /// Free-text conditions that, while currently active (e.g. produced by
+    /// an open issue), block this card. The inverse of
+    /// `requiredStateConditions`.
+    public var blockedByConditions: [String]
     public var unlockedByCardTitles: [String]
     public var blockedByCardTitles: [String]
     public var unlocksCardTitles: [String]
@@ -25,6 +32,7 @@ public struct CardPlayabilityRules: Codable, Hashable, Sendable {
         requiredActiveCardTitles: [String] = [],
         requiredKnownInfo: [String] = [],
         requiredStateConditions: [String] = [],
+        blockedByConditions: [String] = [],
         unlockedByCardTitles: [String] = [],
         blockedByCardTitles: [String] = [],
         unlocksCardTitles: [String] = [],
@@ -38,6 +46,7 @@ public struct CardPlayabilityRules: Codable, Hashable, Sendable {
         self.requiredActiveCardTitles = requiredActiveCardTitles
         self.requiredKnownInfo = requiredKnownInfo
         self.requiredStateConditions = requiredStateConditions
+        self.blockedByConditions = blockedByConditions
         self.unlockedByCardTitles = unlockedByCardTitles
         self.blockedByCardTitles = blockedByCardTitles
         self.unlocksCardTitles = unlocksCardTitles
@@ -54,6 +63,7 @@ public struct CardPlayabilityRules: Codable, Hashable, Sendable {
         requiredActiveCardTitles = try c.decodeIfPresent([String].self, forKey: .requiredActiveCardTitles) ?? []
         requiredKnownInfo = try c.decodeIfPresent([String].self, forKey: .requiredKnownInfo) ?? []
         requiredStateConditions = try c.decodeIfPresent([String].self, forKey: .requiredStateConditions) ?? []
+        blockedByConditions = try c.decodeIfPresent([String].self, forKey: .blockedByConditions) ?? []
         unlockedByCardTitles = try c.decodeIfPresent([String].self, forKey: .unlockedByCardTitles) ?? []
         blockedByCardTitles = try c.decodeIfPresent([String].self, forKey: .blockedByCardTitles) ?? []
         unlocksCardTitles = try c.decodeIfPresent([String].self, forKey: .unlocksCardTitles) ?? []
@@ -69,6 +79,7 @@ public struct CardPlayabilityRules: Codable, Hashable, Sendable {
         requiredActiveCardTitles.isEmpty &&
         requiredKnownInfo.isEmpty &&
         requiredStateConditions.isEmpty &&
+        blockedByConditions.isEmpty &&
         unlockedByCardTitles.isEmpty &&
         blockedByCardTitles.isEmpty &&
         unlocksCardTitles.isEmpty &&

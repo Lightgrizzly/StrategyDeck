@@ -11,6 +11,13 @@ public struct PlayabilityContext: Sendable {
     /// having to declare "unlockedBy: A" — the relationship works from
     /// either side.
     public let reciprocalUnlocks: [String: Set<String>]
+    /// Free-text conditions currently true — e.g. produced by an issue
+    /// while it's open. Checked against `CardPlayabilityRules
+    /// .requiredStateConditions`.
+    public let activeStateConditions: Set<String>
+    /// Free-text conditions currently blocking — e.g. produced by an open
+    /// issue. Checked against `CardPlayabilityRules.blockedByConditions`.
+    public let activeBlockingConditions: Set<String>
 
     public init(
         activeCardTitles: Set<String> = [],
@@ -18,7 +25,9 @@ public struct PlayabilityContext: Sendable {
         playedCardTitles: Set<String> = [],
         knownInformation: String = "",
         constraints: String = "",
-        reciprocalUnlocks: [String: Set<String>] = [:]
+        reciprocalUnlocks: [String: Set<String>] = [:],
+        activeStateConditions: Set<String> = [],
+        activeBlockingConditions: Set<String> = []
     ) {
         self.activeCardTitles = activeCardTitles
         self.resolvedCardTitles = resolvedCardTitles
@@ -26,6 +35,8 @@ public struct PlayabilityContext: Sendable {
         self.knownInformation = knownInformation
         self.constraints = constraints
         self.reciprocalUnlocks = reciprocalUnlocks
+        self.activeStateConditions = activeStateConditions
+        self.activeBlockingConditions = activeBlockingConditions
     }
 }
 
@@ -99,6 +110,22 @@ public struct PlayabilityEvaluator: Sendable {
             } else if !missing.isEmpty {
                 blockedReasons.append("Requires one of: \(missing.sorted().joined(separator: ", "))")
                 unlockingCards.append(contentsOf: missing)
+            }
+        }
+
+        // Check state conditions (e.g. produced by a mitigated/resolved issue)
+        for condition in rules.requiredStateConditions {
+            if context.activeStateConditions.contains(where: { $0.localizedCaseInsensitiveContains(condition) || condition.localizedCaseInsensitiveContains($0) }) {
+                availableReasons.append("State: \(condition)")
+            } else {
+                blockedReasons.append("State not met: \(condition)")
+            }
+        }
+
+        // Check blocking conditions (e.g. produced by an open issue)
+        for condition in rules.blockedByConditions {
+            if let match = context.activeBlockingConditions.first(where: { $0.localizedCaseInsensitiveContains(condition) || condition.localizedCaseInsensitiveContains($0) }) {
+                blockedReasons.append("Blocked while: \(match)")
             }
         }
 

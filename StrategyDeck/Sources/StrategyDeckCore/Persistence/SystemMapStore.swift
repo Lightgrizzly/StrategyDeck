@@ -401,6 +401,133 @@ public final class SystemMapStore: ObservableObject {
         }
     }
 
+    // MARK: - Contextual Hand pins
+    //
+    // Pinning never changes a card's status — it only affects Contextual
+    // Hand ranking (see `ContextualHandRanker`).
+
+    @discardableResult
+    public func pinCard(
+        cardID: UUID,
+        scope: PinScope,
+        elementID: UUID?,
+        targetKind: SystemTargetKind?,
+        scenarioID: UUID?,
+        note: String = ""
+    ) -> ContextualCardPin {
+        let pin = ContextualCardPin(
+            cardID: cardID, scope: scope, elementID: elementID,
+            targetKind: targetKind, scenarioID: scenarioID, note: note
+        )
+        updateCurrentSystemMap { map in
+            map.cardPins.append(pin)
+        }
+        return pin
+    }
+
+    public func unpinCard(id: UUID) {
+        updateCurrentSystemMap { map in
+            map.cardPins.removeAll { $0.id == id }
+        }
+    }
+
+    public func updatePinScope(id: UUID, scope: PinScope) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.cardPins.firstIndex(where: { $0.id == id }) else { return }
+            map.cardPins[idx].scope = scope
+        }
+    }
+
+    // MARK: - Issues, bugs, blockers, risks, constraints, assumptions, warnings
+    //
+    // Issues describe what's wrong or affecting an element; cards describe
+    // what can be done about it. Issues participate in card evaluation via
+    // `SystemMapEvaluator` (see `blockingConditionsProduced`/
+    // `knownInformationProduced`), never by hardcoding an issue to a card.
+
+    @discardableResult
+    public func createIssue(
+        title: String,
+        type: IssueType = .issue,
+        severity: IssueSeverity = .medium,
+        description: String = "",
+        affectedElementIDs: [UUID] = [],
+        scenarioIDs: [UUID] = []
+    ) -> SystemIssue {
+        let issue = SystemIssue(
+            title: title, type: type, description: description, severity: severity,
+            scenarioIDs: scenarioIDs, affectedElementIDs: affectedElementIDs
+        )
+        updateCurrentSystemMap { map in
+            map.issues.append(issue)
+        }
+        return issue
+    }
+
+    public func updateIssue(_ issue: SystemIssue) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.issues.firstIndex(where: { $0.id == issue.id }) else { return }
+            var updated = issue
+            updated.updatedAt = Date()
+            map.issues[idx] = updated
+        }
+    }
+
+    public func deleteIssue(id: UUID) {
+        updateCurrentSystemMap { map in
+            map.issues.removeAll { $0.id == id }
+        }
+    }
+
+    @discardableResult
+    public func duplicateIssue(id: UUID) -> SystemIssue? {
+        guard let original = currentSystemMap?.issues.first(where: { $0.id == id }) else { return nil }
+        var copy = original
+        copy.id = UUID()
+        copy.title = original.title + " (copy)"
+        copy.createdAt = Date()
+        copy.updatedAt = Date()
+        copy.resolvedAt = nil
+        updateCurrentSystemMap { map in map.issues.append(copy) }
+        return copy
+    }
+
+    /// Sets status/severity together so "resolve" also stamps
+    /// `resolvedAt` — and clears it if an issue is reopened.
+    public func setIssueStatus(id: UUID, status: IssueStatus) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.issues.firstIndex(where: { $0.id == id }) else { return }
+            map.issues[idx].status = status
+            map.issues[idx].updatedAt = Date()
+            map.issues[idx].resolvedAt = status == .resolved ? Date() : nil
+        }
+    }
+
+    public func setIssueSeverity(id: UUID, severity: IssueSeverity) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.issues.firstIndex(where: { $0.id == id }) else { return }
+            map.issues[idx].severity = severity
+            map.issues[idx].updatedAt = Date()
+        }
+    }
+
+    public func attachIssue(id: UUID, toElementID elementID: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.issues.firstIndex(where: { $0.id == id }),
+                  !map.issues[idx].affectedElementIDs.contains(elementID) else { return }
+            map.issues[idx].affectedElementIDs.append(elementID)
+            map.issues[idx].updatedAt = Date()
+        }
+    }
+
+    public func detachIssue(id: UUID, fromElementID elementID: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.issues.firstIndex(where: { $0.id == id }) else { return }
+            map.issues[idx].affectedElementIDs.removeAll { $0 == elementID }
+            map.issues[idx].updatedAt = Date()
+        }
+    }
+
     // MARK: - Status customization
     //
     // A custom status doesn't invent new behavior — it wears a custom
