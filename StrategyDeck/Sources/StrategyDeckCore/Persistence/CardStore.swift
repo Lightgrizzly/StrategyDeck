@@ -394,7 +394,58 @@ public final class CardStore: ObservableObject {
             if !library.suits.isEmpty { suits = library.suits }
             relationships = library.relationships
         }
+        reconcileMissingDeckAndSuitReferences()
         save()
+    }
+
+    /// Imported cards can reference deck/suit IDs that the import payload
+    /// never defines (e.g. a card-only `{"cards": [...]}` file pointing at
+    /// a brand-new deck) — without this, those cards would silently import
+    /// but be unreachable from any deck/suit filter in the UI. Synthesizes
+    /// a minimal stub deck/suit per unresolved ID instead, named from the
+    /// ID itself, so every imported card lands somewhere visible.
+    private func reconcileMissingDeckAndSuitReferences() {
+        var knownDeckIDs = Set(decks.map(\.id))
+
+        func displayName(fromID id: String) -> String {
+            id.replacingOccurrences(of: "-", with: " ")
+                .replacingOccurrences(of: "_", with: " ")
+                .capitalized
+        }
+
+        // A suit whose deckID is blank or doesn't resolve (e.g. an import
+        // file that omitted deckID entirely) is attributed to a deck
+        // inferred from a card that uses it, or the import's only deck if
+        // there's just one — rather than being left permanently orphaned.
+        for i in suits.indices where !knownDeckIDs.contains(suits[i].deckID) {
+            if let inferredDeckID = cards.first(where: { $0.suitIDs.contains(suits[i].id) })?.deckIDs.first {
+                suits[i].deckID = inferredDeckID
+            } else if decks.count == 1 {
+                suits[i].deckID = decks[0].id
+            }
+        }
+
+        knownDeckIDs = Set(decks.map(\.id))
+        var knownSuitIDs = Set(suits.map(\.id))
+
+        for card in cards {
+            for deckID in card.deckIDs where !knownDeckIDs.contains(deckID) {
+                knownDeckIDs.insert(deckID)
+                decks.append(KnowledgeDeck(id: deckID, name: displayName(fromID: deckID)))
+            }
+        }
+
+        for card in cards {
+            for suitID in card.suitIDs where !knownSuitIDs.contains(suitID) {
+                knownSuitIDs.insert(suitID)
+                let ownerDeckID = card.deckIDs.first ?? "imported"
+                if !knownDeckIDs.contains(ownerDeckID) {
+                    knownDeckIDs.insert(ownerDeckID)
+                    decks.append(KnowledgeDeck(id: ownerDeckID, name: displayName(fromID: ownerDeckID)))
+                }
+                suits.append(CardSuit(id: suitID, deckID: ownerDeckID, name: displayName(fromID: suitID)))
+            }
+        }
     }
 
     public func exportLibrary(sequences: [StrategySequence]) -> KnowledgeLibrary {

@@ -36,7 +36,10 @@ public struct CardSuit: Codable, Identifiable, Hashable, Sendable {
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)
-        deckID = try c.decode(String.self, forKey: .deckID)
+        // Not `decode` — some hand-authored import files omit this. A blank
+        // deckID is reconciled against a real deck by CardStore.importLibrary
+        // rather than failing the whole file's decode over one missing field.
+        deckID = try c.decodeIfPresent(String.self, forKey: .deckID) ?? ""
         parentSuitID = try c.decodeIfPresent(String.self, forKey: .parentSuitID)
         name = try c.decodeIfPresent(String.self, forKey: .name) ?? id.capitalized
         description = try c.decodeIfPresent(String.self, forKey: .description) ?? ""

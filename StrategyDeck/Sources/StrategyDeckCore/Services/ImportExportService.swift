@@ -25,8 +25,17 @@ public struct ImportExportService {
         }
     }
 
-    /// Decodes a KnowledgeLibrary from raw JSON bytes.
+    /// Decodes a KnowledgeLibrary from raw JSON bytes. Accepts either the
+    /// full `{"decks": [...], "suits": [...], "cards": [...], ...}` shape,
+    /// the card-only `{"cards": [...]}` shape (every other field defaults
+    /// to empty), or a bare `[...]` array of cards.
     public func `import`(from data: Data) throws -> KnowledgeLibrary {
+        if let library = try? JSONCoding.decoder.decode(KnowledgeLibrary.self, from: data) {
+            return library
+        }
+        if let cards = try? JSONCoding.decoder.decode([KnowledgeCard].self, from: data) {
+            return KnowledgeLibrary(cards: cards)
+        }
         do {
             return try JSONCoding.decoder.decode(KnowledgeLibrary.self, from: data)
         } catch {

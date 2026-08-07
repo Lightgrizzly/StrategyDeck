@@ -33,14 +33,12 @@ extension View {
             get: { state.wrappedValue != nil },
             set: { if !$0 { state.wrappedValue = nil } }
         )) {
-            if state.wrappedValue?.primaryButton == .destructive {
-                Button(state.wrappedValue?.primaryLabel ?? "OK", role: .destructive) {
-                    state.wrappedValue?.action?()
-                    state.wrappedValue = nil
-                }
+            Button(state.wrappedValue?.primaryLabel ?? "OK", role: state.wrappedValue?.primaryButton) {
+                state.wrappedValue?.action?()
+                state.wrappedValue = nil
+            }
+            if state.wrappedValue?.action != nil {
                 Button("Cancel", role: .cancel) { state.wrappedValue = nil }
-            } else {
-                Button(state.wrappedValue?.primaryLabel ?? "OK") { state.wrappedValue = nil }
             }
         } message: {
             Text(state.wrappedValue?.message ?? "")
