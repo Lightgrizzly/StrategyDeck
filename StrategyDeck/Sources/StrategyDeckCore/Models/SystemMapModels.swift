@@ -741,6 +741,15 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
     /// unknowns, and warnings attached to this map's elements.
     public var issues: [SystemIssue]
 
+    /// The folder this map lives in. `nil` means the root — every existing
+    /// map before this feature migrates here automatically.
+    public var folderID: UUID?
+    /// Manual ordering among sibling maps within the same folder.
+    public var sortOrder: Int
+    /// Stamped by `SystemMapStore.openSystemMap`, independent of
+    /// `updatedAt` — backs "Recently Opened" without a separate model.
+    public var lastOpenedAt: Date?
+
     public init(
         id: UUID = UUID(),
         title: String,
@@ -761,7 +770,10 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         customStatuses: [CustomCardStatus] = [],
         statusLabelOverrides: [String: String] = [:],
         cardPins: [ContextualCardPin] = [],
-        issues: [SystemIssue] = []
+        issues: [SystemIssue] = [],
+        folderID: UUID? = nil,
+        sortOrder: Int = 0,
+        lastOpenedAt: Date? = nil
     ) {
         self.id = id
         self.title = title
@@ -783,6 +795,9 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         self.statusLabelOverrides = statusLabelOverrides
         self.cardPins = cardPins
         self.issues = issues
+        self.folderID = folderID
+        self.sortOrder = sortOrder
+        self.lastOpenedAt = lastOpenedAt
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -793,6 +808,7 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         case legacySteps = "steps"
         case cardPins
         case issues
+        case folderID, sortOrder, lastOpenedAt
         case customStatuses, statusLabelOverrides
     }
 
@@ -810,6 +826,9 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         statusLabelOverrides = try c.decodeIfPresent([String: String].self, forKey: .statusLabelOverrides) ?? [:]
         cardPins = try c.decodeIfPresent([ContextualCardPin].self, forKey: .cardPins) ?? []
         issues = try c.decodeIfPresent([SystemIssue].self, forKey: .issues) ?? []
+        folderID = try c.decodeIfPresent(UUID.self, forKey: .folderID)
+        sortOrder = try c.decodeIfPresent(Int.self, forKey: .sortOrder) ?? 0
+        lastOpenedAt = try c.decodeIfPresent(Date.self, forKey: .lastOpenedAt)
 
         let decodedElements = try c.decodeIfPresent([SystemElement].self, forKey: .elements)
         let decodedFlows = try c.decodeIfPresent([SystemFlow].self, forKey: .flows)
@@ -889,6 +908,9 @@ public struct SystemMap: Codable, Identifiable, Hashable, Sendable {
         try c.encode(statusLabelOverrides, forKey: .statusLabelOverrides)
         try c.encode(cardPins, forKey: .cardPins)
         try c.encode(issues, forKey: .issues)
+        try c.encodeIfPresent(folderID, forKey: .folderID)
+        try c.encode(sortOrder, forKey: .sortOrder)
+        try c.encodeIfPresent(lastOpenedAt, forKey: .lastOpenedAt)
     }
 
     public var sortedScenarios: [SystemScenario] {

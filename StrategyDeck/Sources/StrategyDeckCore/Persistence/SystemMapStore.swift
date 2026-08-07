@@ -3,11 +3,15 @@ import Foundation
 @MainActor
 public final class SystemMapStore: ObservableObject {
     @Published public private(set) var systemMaps: [SystemMap] = []
+    @Published public private(set) var folders: [SystemMapFolder] = []
+    @Published public private(set) var favorites: [SystemMapFavorite] = []
     @Published public var currentSystemMap: SystemMap?
     @Published public var lastError: Error?
 
     private let persistence: PersistenceService
     private static let filename = "systemmaps.json"
+    private static let foldersFilename = "systemmapfolders.json"
+    private static let favoritesFilename = "systemmapfavorites.json"
 
     public init(persistence: PersistenceService) {
         self.persistence = persistence
@@ -20,15 +24,22 @@ public final class SystemMapStore: ObservableObject {
         } catch {
             lastError = error
         }
+        // Absent files (pre-folders saves) simply mean "no folders yet" —
+        // every existing map already defaults to `folderID == nil` (root),
+        // so there is nothing to migrate beyond leaving that field alone.
+        folders = (try? persistence.load([SystemMapFolder].self, from: Self.foldersFilename)) ?? []
+        favorites = (try? persistence.load([SystemMapFavorite].self, from: Self.favoritesFilename)) ?? []
     }
 
     // MARK: - Map lifecycle
 
-    public func createSystemMap(title: String, description: String = "", primaryGoal: String = "") {
+    public func createSystemMap(title: String, description: String = "", primaryGoal: String = "", folderID: UUID? = nil) {
         var map = SystemMap(title: title, description: description, primaryGoal: primaryGoal)
         let defaultScenario = SystemScenario(name: "Current State", isDefault: true)
         map.scenarios = [defaultScenario]
         map.selectedScenarioID = defaultScenario.id
+        map.folderID = folderID
+        map.sortOrder = nextSortOrder(inFolder: folderID)
         systemMaps.insert(map, at: 0)
         currentSystemMap = map
         persist()
@@ -42,8 +53,10 @@ public final class SystemMapStore: ObservableObject {
     }
 
     public func openSystemMap(id: UUID) {
-        guard let map = systemMaps.first(where: { $0.id == id }) else { return }
-        currentSystemMap = map
+        guard let idx = systemMaps.firstIndex(where: { $0.id == id }) else { return }
+        systemMaps[idx].lastOpenedAt = Date()
+        currentSystemMap = systemMaps[idx]
+        persist()
     }
 
     public func closeCurrentSystemMap() {
@@ -52,6 +65,7 @@ public final class SystemMapStore: ObservableObject {
 
     public func deleteSystemMap(id: UUID) {
         systemMaps.removeAll { $0.id == id }
+        favorites.removeAll { $0.systemMapID == id }
         if currentSystemMap?.id == id { currentSystemMap = nil }
         persist()
     }
@@ -63,7 +77,218 @@ public final class SystemMapStore: ObservableObject {
         copy.title = map.title + " Copy"
         copy.createdAt = Date()
         copy.updatedAt = Date()
+        copy.lastOpenedAt = nil
+        copy.sortOrder = nextSortOrder(inFolder: map.folderID)
         systemMaps.insert(copy, at: 0)
+        persist()
+    }
+
+    // MARK: - Folder organization
+    //
+    // Hierarchy lives entirely in stable ID references (`parentFolderID`,
+    // `folderID`) — never a path string — so renaming/moving a folder is a
+    // single-record update, never a rewrite of anything else.
+
+    @discardableResult
+    public func createFolder(name: String, parentFolderID: UUID? = nil) -> SystemMapFolder {
+        let siblingOrders = folders.filter { $0.parentFolderID == parentFolderID }.map(\.sortOrder)
+        let folder = SystemMapFolder(name: name, parentFolderID: parentFolderID, sortOrder: (siblingOrders.max() ?? -1) + 1)
+        folders.append(folder)
+        persist()
+        return folder
+    }
+
+    public func renameFolder(id: UUID, name: String) {
+        guard let idx = folders.firstIndex(where: { $0.id == id }) else { return }
+        folders[idx].name = name
+        folders[idx].updatedAt = Date()
+        persist()
+    }
+
+    public func setFolderExpanded(id: UUID, isExpanded: Bool) {
+        guard let idx = folders.firstIndex(where: { $0.id == id }) else { return }
+        folders[idx].isExpanded = isExpanded
+        persist()
+    }
+
+    /// Sets `isExpanded` for a folder and every folder nested under it.
+    public func setDescendantsExpanded(of folderID: UUID, isExpanded: Bool) {
+        let ids = descendantFolderIDs(of: folderID).union([folderID])
+        for i in folders.indices where ids.contains(folders[i].id) {
+            folders[i].isExpanded = isExpanded
+        }
+        persist()
+    }
+
+    public func setFolderStyle(id: UUID, iconName: String?, colorToken: StatusColorToken?) {
+        guard let idx = folders.firstIndex(where: { $0.id == id }) else { return }
+        folders[idx].iconName = iconName
+        folders[idx].colorToken = colorToken
+        folders[idx].updatedAt = Date()
+        persist()
+    }
+
+    /// `nil` destination means the root. Refuses moves that would create a
+    /// cycle (into itself or one of its own descendants) — see
+    /// `canMoveFolder`.
+    public func moveFolder(id: UUID, toParent parentFolderID: UUID?) {
+        guard canMoveFolder(id, into: parentFolderID), let idx = folders.firstIndex(where: { $0.id == id }) else { return }
+        let siblingOrders = folders.filter { $0.parentFolderID == parentFolderID && $0.id != id }.map(\.sortOrder)
+        folders[idx].parentFolderID = parentFolderID
+        folders[idx].sortOrder = (siblingOrders.max() ?? -1) + 1
+        folders[idx].updatedAt = Date()
+        persist()
+    }
+
+    public func reorderFolder(id: UUID, before targetID: UUID?) {
+        guard let folder = folders.first(where: { $0.id == id }) else { return }
+        reorderSiblings(parentFolderID: folder.parentFolderID, movingFolderID: id, before: targetID)
+    }
+
+    public func moveMap(id: UUID, toFolder folderID: UUID?) {
+        guard let idx = systemMaps.firstIndex(where: { $0.id == id }) else { return }
+        systemMaps[idx].folderID = folderID
+        systemMaps[idx].sortOrder = nextSortOrder(inFolder: folderID)
+        systemMaps[idx].updatedAt = Date()
+        if currentSystemMap?.id == id { currentSystemMap = systemMaps[idx] }
+        persist()
+    }
+
+    public func reorderMap(id: UUID, before targetID: UUID?) {
+        guard let map = systemMaps.first(where: { $0.id == id }) else { return }
+        reorderMapSiblings(folderID: map.folderID, movingMapID: id, before: targetID)
+    }
+
+    /// Deletes a folder. A non-empty folder must specify how to handle its
+    /// contents — there's no silent "delete everything" default.
+    public func deleteFolder(id: UUID, strategy: FolderDeleteStrategy) {
+        guard let folder = folders.first(where: { $0.id == id }) else { return }
+        switch strategy {
+        case .moveContentsToParent:
+            for i in folders.indices where folders[i].parentFolderID == id {
+                folders[i].parentFolderID = folder.parentFolderID
+            }
+            for i in systemMaps.indices where systemMaps[i].folderID == id {
+                systemMaps[i].folderID = folder.parentFolderID
+            }
+            folders.removeAll { $0.id == id }
+        case .deleteAllContents:
+            let toDelete = descendantFolderIDs(of: id).union([id])
+            let deletedMapIDs = Set(systemMaps.filter { $0.folderID.map(toDelete.contains) ?? false }.map(\.id))
+            systemMaps.removeAll { $0.folderID.map(toDelete.contains) ?? false }
+            favorites.removeAll { deletedMapIDs.contains($0.systemMapID) }
+            folders.removeAll { toDelete.contains($0.id) }
+            if let currentID = currentSystemMap?.id, deletedMapIDs.contains(currentID) {
+                currentSystemMap = nil
+            }
+        }
+        persist()
+    }
+
+    // MARK: - Folder tree utilities
+    //
+    // Kept here rather than in the view layer, per the rule that UI code
+    // should never contain recursive-parent validation logic directly.
+
+    public func childFolders(of parentFolderID: UUID?) -> [SystemMapFolder] {
+        folders.filter { $0.parentFolderID == parentFolderID }.sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    public func maps(inFolder folderID: UUID?, includeSubfolders: Bool = false) -> [SystemMap] {
+        if includeSubfolders {
+            let ids = descendantFolderIDs(of: folderID).union([folderID].compactMap { $0 })
+            return systemMaps.filter { $0.folderID.map(ids.contains) ?? (folderID == nil) }
+        }
+        return systemMaps.filter { $0.folderID == folderID }.sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    /// Every folder ID nested under `folderID`, at any depth. `nil` means
+    /// "under the root," i.e. every folder in the map.
+    public func descendantFolderIDs(of folderID: UUID?) -> Set<UUID> {
+        var result: Set<UUID> = []
+        var frontier = folders.filter { $0.parentFolderID == folderID }.map(\.id)
+        while !frontier.isEmpty {
+            result.formUnion(frontier)
+            frontier = folders.filter { folder in frontier.contains(where: { $0 == folder.parentFolderID }) }.map(\.id)
+        }
+        return result
+    }
+
+    /// The chain from the root down to (and including) `folderID`.
+    public func breadcrumbs(for folderID: UUID?) -> [SystemMapFolder] {
+        var chain: [SystemMapFolder] = []
+        var currentID = folderID
+        var guardCount = 0
+        while let id = currentID, guardCount < folders.count + 1 {
+            guard let folder = folders.first(where: { $0.id == id }) else { break }
+            chain.append(folder)
+            currentID = folder.parentFolderID
+            guardCount += 1
+        }
+        return chain.reversed()
+    }
+
+    /// A folder can never be moved into itself or into one of its own
+    /// descendants — that would create a cycle. Moving to the root (`nil`)
+    /// or into an unrelated folder is always allowed.
+    public func canMoveFolder(_ folderID: UUID, into destinationID: UUID?) -> Bool {
+        guard let destinationID else { return true }
+        if destinationID == folderID { return false }
+        return !descendantFolderIDs(of: folderID).contains(destinationID)
+    }
+
+    public func directMapCount(folderID: UUID?) -> Int {
+        systemMaps.filter { $0.folderID == folderID }.count
+    }
+
+    public func totalMapCount(folderID: UUID?) -> Int {
+        maps(inFolder: folderID, includeSubfolders: true).count
+    }
+
+    // MARK: - Favorites
+
+    public func isFavorite(_ mapID: UUID) -> Bool {
+        favorites.contains { $0.systemMapID == mapID }
+    }
+
+    public func toggleFavorite(_ mapID: UUID) {
+        if isFavorite(mapID) {
+            favorites.removeAll { $0.systemMapID == mapID }
+        } else {
+            favorites.append(SystemMapFavorite(systemMapID: mapID))
+        }
+        persist()
+    }
+
+    // MARK: - Sort order helpers
+
+    private func nextSortOrder(inFolder folderID: UUID?) -> Int {
+        (systemMaps.filter { $0.folderID == folderID }.map(\.sortOrder).max() ?? -1) + 1
+    }
+
+    private func reorderSiblings(parentFolderID: UUID?, movingFolderID: UUID, before targetID: UUID?) {
+        var siblings = folders.filter { $0.parentFolderID == parentFolderID }.sorted { $0.sortOrder < $1.sortOrder }
+        siblings.removeAll { $0.id == movingFolderID }
+        guard let moving = folders.first(where: { $0.id == movingFolderID }) else { return }
+        let insertIndex = targetID.flatMap { id in siblings.firstIndex(where: { $0.id == id }) } ?? siblings.count
+        siblings.insert(moving, at: insertIndex)
+        for (offset, sibling) in siblings.enumerated() {
+            guard let idx = folders.firstIndex(where: { $0.id == sibling.id }) else { continue }
+            folders[idx].sortOrder = offset
+        }
+        persist()
+    }
+
+    private func reorderMapSiblings(folderID: UUID?, movingMapID: UUID, before targetID: UUID?) {
+        var siblings = systemMaps.filter { $0.folderID == folderID }.sorted { $0.sortOrder < $1.sortOrder }
+        siblings.removeAll { $0.id == movingMapID }
+        guard let moving = systemMaps.first(where: { $0.id == movingMapID }) else { return }
+        let insertIndex = targetID.flatMap { id in siblings.firstIndex(where: { $0.id == id }) } ?? siblings.count
+        siblings.insert(moving, at: insertIndex)
+        for (offset, sibling) in siblings.enumerated() {
+            guard let idx = systemMaps.firstIndex(where: { $0.id == sibling.id }) else { continue }
+            systemMaps[idx].sortOrder = offset
+        }
         persist()
     }
 
@@ -610,6 +835,8 @@ public final class SystemMapStore: ObservableObject {
     private func persist() {
         do {
             try persistence.save(systemMaps, to: Self.filename)
+            try persistence.save(folders, to: Self.foldersFilename)
+            try persistence.save(favorites, to: Self.favoritesFilename)
         } catch {
             lastError = error
         }

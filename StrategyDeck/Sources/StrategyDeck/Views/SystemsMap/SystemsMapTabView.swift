@@ -5,13 +5,14 @@ import StrategyDeckCore
 struct SystemsMapTabView: View {
     @EnvironmentObject var systemMapStore: SystemMapStore
     @EnvironmentObject var cardStore: CardStore
+    @State private var selectedFolderID: UUID?
 
     var body: some View {
         Group {
             if systemMapStore.currentSystemMap != nil {
-                SystemsMapEditorView()
+                SystemsMapEditorView(selectedFolderID: $selectedFolderID)
             } else {
-                SystemsMapEmptyStateView()
+                SystemsMapEmptyStateView(selectedFolderID: $selectedFolderID)
             }
         }
         .background(AC.bg)
@@ -23,83 +24,46 @@ struct SystemsMapTabView: View {
 
 private struct SystemsMapEmptyStateView: View {
     @EnvironmentObject var systemMapStore: SystemMapStore
+    @Binding var selectedFolderID: UUID?
     @State private var showingNewSheet = false
     @State private var newTitle = ""
     @State private var newDescription = ""
     @State private var newGoal = ""
-    @State private var alertState: AlertState?
+    @State private var pendingCreateFolderID: UUID?
 
     var body: some View {
         ZStack {
             DigitalArenaBackground()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("SYSTEMS MAP")
-                            .font(.system(size: 18, weight: .black, design: .monospaced))
-                            .foregroundStyle(AC.cyan)
-                            .kerning(2)
-                        Text("Build a Donella Meadows–style stock-and-flow diagram of the system you're working in. Select a stock, flow, or relationship and a scenario to immediately see which strategy cards are active, available, locked, or disabled — and why. The diagram is the map of the system; the cards are the available interventions; the scenario sets the surrounding conditions.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(AC.textSub)
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("SYSTEMS MAP")
+                        .font(.system(size: 18, weight: .black, design: .monospaced))
+                        .foregroundStyle(AC.cyan)
+                        .kerning(2)
+                    Text("Build a Donella Meadows–style stock-and-flow diagram of the system you're working in. Select a stock, flow, or relationship and a scenario to immediately see which strategy cards are active, available, locked, or disabled — and why. The diagram is the map of the system; the cards are the available interventions; the scenario sets the surrounding conditions.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(AC.textSub)
+                    Button(action: loadExample) {
+                        Label("LOAD EXAMPLE: INVENTORY RESILIENCE", systemImage: "shippingbox")
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.top, 18)
-
-                    HStack(spacing: 10) {
-                        Button(action: { showingNewSheet = true }) {
-                            Label("CREATE SYSTEM MAP", systemImage: "point.3.connected.trianglepath.dotted")
-                        }
-                        .buttonStyle(ArenaButtonStyle())
-
-                        Button(action: loadExample) {
-                            Label("LOAD EXAMPLE: INVENTORY RESILIENCE", systemImage: "shippingbox")
-                        }
-                        .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.55)))
-                    }
-                    .padding(.horizontal, 18)
-
-                    Group {
-                        ArenaSectionLabel(text: "Saved System Maps").padding(.horizontal, 18)
-
-                        if systemMapStore.systemMaps.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("No system maps yet.")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(AC.text)
-                                Text("Create one, or load the example to see how it works.")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(AC.textSub)
-                            }
-                            .padding(18)
-                            .background(AngularCardShape(cornerRadius: 10, cornerCut: 16).fill(AC.surface))
-                            .padding(.horizontal, 18)
-                        } else {
-                            VStack(spacing: 10) {
-                                ForEach(systemMapStore.systemMaps.sorted { $0.updatedAt > $1.updatedAt }) { map in
-                                    SystemMapSummaryRow(
-                                        map: map,
-                                        onOpen: { systemMapStore.openSystemMap(id: map.id) },
-                                        onDuplicate: { systemMapStore.duplicateSystemMap(id: map.id) },
-                                        onDelete: {
-                                            alertState = .destructive(
-                                                title: "Delete “\(map.title)”?",
-                                                message: "This will remove the saved system map and all its scenarios permanently.",
-                                                confirmLabel: "Delete"
-                                            ) { systemMapStore.deleteSystemMap(id: map.id) }
-                                        }
-                                    )
-                                }
-                            }
-                            .padding(.horizontal, 18)
-                        }
-                    }
-                    Spacer()
+                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.55)))
                 }
-                .padding(.bottom, 24)
+                .padding(.horizontal, 18)
+                .padding(.top, 18)
+
+                SystemMapExplorerView(
+                    selectedFolderID: $selectedFolderID,
+                    onCreateMap: { folderID in
+                        pendingCreateFolderID = folderID
+                        showingNewSheet = true
+                    },
+                    onOpenMap: { id in systemMapStore.openSystemMap(id: id) }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 18)
+                .padding(.bottom, 18)
             }
         }
-        .alertState($alertState)
         .sheet(isPresented: $showingNewSheet) {
             NewSystemMapSheet(
                 title: $newTitle,
@@ -108,7 +72,7 @@ private struct SystemsMapEmptyStateView: View {
                 isPresented: $showingNewSheet,
                 onCreate: {
                     guard !newTitle.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                    systemMapStore.createSystemMap(title: newTitle, description: newDescription, primaryGoal: newGoal)
+                    systemMapStore.createSystemMap(title: newTitle, description: newDescription, primaryGoal: newGoal, folderID: pendingCreateFolderID)
                     newTitle = ""; newDescription = ""; newGoal = ""
                 }
             )
@@ -121,14 +85,28 @@ private struct SystemsMapEmptyStateView: View {
     }
 }
 
-private struct SystemMapSummaryRow: View {
+struct SystemMapSummaryRow: View {
+    @EnvironmentObject var systemMapStore: SystemMapStore
     let map: SystemMap
+    var isFavorite: Bool = false
     let onOpen: () -> Void
     let onDuplicate: () -> Void
+    var onToggleFavorite: (() -> Void)? = nil
+    var onMoveTo: ((UUID?) -> Void)? = nil
+    var onExport: (() -> Void)? = nil
     let onDelete: () -> Void
 
     var body: some View {
         HStack(alignment: .top) {
+            if let onToggleFavorite {
+                Button(action: onToggleFavorite) {
+                    Image(systemName: isFavorite ? "star.fill" : "star")
+                        .font(.system(size: 12))
+                        .foregroundStyle(isFavorite ? AC.gold : AC.textGhost)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 2)
+            }
             VStack(alignment: .leading, spacing: 4) {
                 Text(map.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(AC.text)
                 if !map.primaryGoal.isEmpty {
@@ -145,6 +123,22 @@ private struct SystemMapSummaryRow: View {
             Spacer()
             Button(action: onOpen) { Text("OPEN") }.buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.6)))
             Button(action: onDuplicate) { Image(systemName: "doc.on.doc") }.buttonStyle(.plain).foregroundStyle(AC.textDim)
+            if let onExport {
+                Button(action: onExport) { Image(systemName: "square.and.arrow.up") }.buttonStyle(.plain).foregroundStyle(AC.textDim)
+            }
+            if let onMoveTo {
+                Menu {
+                    Button("Root") { onMoveTo(nil) }
+                    ForEach(systemMapStore.folders.filter { $0.id != map.folderID }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }) { folder in
+                        Button(folder.name) { onMoveTo(folder.id) }
+                    }
+                } label: {
+                    Image(systemName: "folder")
+                }
+                .menuStyle(.borderlessButton)
+                .frame(width: 16)
+                .foregroundStyle(AC.textDim)
+            }
             Button(role: .destructive, action: onDelete) { Image(systemName: "trash") }.buttonStyle(.plain).foregroundStyle(AC.threat.opacity(0.75))
         }
         .padding(12)
@@ -201,6 +195,7 @@ private struct NewSystemMapSheet: View {
 private struct SystemsMapEditorView: View {
     @EnvironmentObject var systemMapStore: SystemMapStore
     @EnvironmentObject var cardStore: CardStore
+    @Binding var selectedFolderID: UUID?
 
     @State private var tool: DiagramTool = .select
     @State private var selection: DiagramSelection?
@@ -861,13 +856,19 @@ private struct SystemsMapEditorView: View {
 
     private var headerBar: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 10) {
+            HStack(spacing: 6) {
                 Button(action: { systemMapStore.closeCurrentSystemMap() }) {
                     Image(systemName: "chevron.left").font(.system(size: 12, weight: .semibold))
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(AC.textSub)
 
+                SystemMapBreadcrumbView(folderID: map.folderID, onNavigate: { folderID in
+                    selectedFolderID = folderID
+                    systemMapStore.closeCurrentSystemMap()
+                })
+            }
+            HStack(spacing: 10) {
                 Button(action: { renameMapText = map.title; showingRenameMapSheet = true }) {
                     Text(map.title.uppercased())
                         .font(.system(size: 14, weight: .black, design: .monospaced))
