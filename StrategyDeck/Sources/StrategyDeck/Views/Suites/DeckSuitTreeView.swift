@@ -11,6 +11,7 @@ struct DeckSuitTreeView: View {
     @Binding var selectedSuiteID: String?
 
     @EnvironmentObject var cardStore: CardStore
+    @State private var isEndDropTargeted = false
 
     var body: some View {
         ScrollView {
@@ -23,6 +24,16 @@ struct DeckSuitTreeView: View {
                         selectedSuiteID: $selectedSuiteID
                     )
                 }
+
+                // Drop here to move a dragged deck to the end of the order.
+                Rectangle()
+                    .fill(isEndDropTargeted ? AC.goldSoft : Color.clear)
+                    .frame(height: 8)
+                    .dropDestination(for: String.self, action: { items, _ in
+                        guard let draggedDeckID = items.first else { return false }
+                        cardStore.moveDeck(id: draggedDeckID, before: nil)
+                        return true
+                    }, isTargeted: { isEndDropTargeted = $0 })
 
                 Rectangle().fill(AC.borderDim).frame(height: 1).padding(.vertical, 2)
 
@@ -46,41 +57,57 @@ private struct DeckRow: View {
     @Binding var selectedSuiteID: String?
 
     @EnvironmentObject var cardStore: CardStore
-    @State private var isExpanded = true
+    @State private var isExpanded = false
+    @State private var isDropTargeted = false
 
     private var rootSuits: [CardSuit] { suits.rootSuits(deckID: deck.id) }
     private var isSelected: Bool { selectedDeckID == deck.id && selectedSuiteID == nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Button {
-                selectedDeckID = deck.id
-                selectedSuiteID = nil
-            } label: {
-                HStack(spacing: 4) {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.12)) { isExpanded.toggle() }
-                    } label: {
-                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                            .font(.system(size: 8, weight: .semibold))
-                            .frame(width: 10)
-                    }
-                    .buttonStyle(.plain)
-                    Image(systemName: deck.iconName)
-                        .font(.system(size: 10, weight: .semibold))
-                    Text(deck.name)
-                        .font(.system(size: 11, weight: .semibold))
-                    Spacer(minLength: 0)
+            HStack(spacing: 4) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.12)) { isExpanded.toggle() }
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 8, weight: .semibold))
+                        .frame(width: 10)
                 }
-                .foregroundStyle(isSelected ? AC.cyan : AC.text)
-                .padding(.vertical, 3)
-                .padding(.horizontal, 4)
-                .background(
-                    AngularCardShape(cornerRadius: 5, cornerCut: 8)
-                        .fill(isSelected ? AC.cyanSoft : Color.clear)
-                )
+                .buttonStyle(.plain)
+                Button {
+                    selectedDeckID = deck.id
+                    selectedSuiteID = nil
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: deck.iconName)
+                            .font(.system(size: 10, weight: .semibold))
+                        Text(deck.name)
+                            .font(.system(size: 11, weight: .semibold))
+                        Spacer(minLength: 0)
+                        Image(systemName: "line.3.horizontal")
+                            .font(.system(size: 8))
+                            .foregroundStyle(AC.textGhost)
+                    }
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+            .foregroundStyle(isSelected ? AC.cyan : AC.text)
+            .padding(.vertical, 3)
+            .padding(.horizontal, 4)
+            .background(
+                AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                    .fill(isDropTargeted ? AC.goldSoft : (isSelected ? AC.cyanSoft : Color.clear))
+            )
+            .overlay(
+                AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                    .stroke(isDropTargeted ? AC.gold.opacity(0.6) : Color.clear, lineWidth: 1)
+            )
+            .draggable(deck.id)
+            .dropDestination(for: String.self, action: { items, _ in
+                guard let draggedDeckID = items.first, draggedDeckID != deck.id else { return false }
+                cardStore.moveDeck(id: draggedDeckID, before: deck.id)
+                return true
+            }, isTargeted: { isDropTargeted = $0 })
 
             if isExpanded {
                 ForEach(rootSuits) { suit in

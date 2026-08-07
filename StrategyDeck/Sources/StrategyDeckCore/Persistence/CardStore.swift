@@ -225,6 +225,21 @@ public final class CardStore: ObservableObject {
         save()
     }
 
+    /// Reorders a deck among its siblings, inserting it immediately before
+    /// `targetID` (or at the end when `targetID` is `nil`).
+    public func moveDeck(id deckID: String, before targetID: String?) {
+        var ordered = decks.sorted { $0.displayOrder < $1.displayOrder }
+        guard let moving = ordered.first(where: { $0.id == deckID }) else { return }
+        ordered.removeAll { $0.id == deckID }
+        let insertIndex = targetID.flatMap { id in ordered.firstIndex(where: { $0.id == id }) } ?? ordered.count
+        ordered.insert(moving, at: insertIndex)
+        for (offset, deck) in ordered.enumerated() {
+            guard let idx = decks.firstIndex(where: { $0.id == deck.id }) else { continue }
+            decks[idx].displayOrder = offset
+        }
+        save()
+    }
+
     /// Duplicates a deck's structure (the deck row and its suit tree) as a
     /// new, empty deck — card membership is intentionally not copied, since
     /// a card can belong to multiple decks and silently multiplying that
