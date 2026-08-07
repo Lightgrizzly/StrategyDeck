@@ -432,7 +432,8 @@ private struct SystemsMapEditorView: View {
             )
             Rectangle().fill(AC.borderDim).frame(height: 1)
 
-            HStack(spacing: 0) {
+            VSplitView {
+            HSplitView {
                 SystemDiagramCanvasView(
                     elements: effectiveElements,
                     flows: effectiveFlows,
@@ -456,8 +457,8 @@ private struct SystemsMapEditorView: View {
                         systemMapStore.attachIssue(id: issueID, toElementID: targetID)
                     }
                 )
+                .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
                 if showingInspector {
-                    Rectangle().fill(AC.borderDim).frame(width: 1)
                     SystemElementInspectorView(
                         elements: map.elements,
                         flows: map.flows,
@@ -489,8 +490,9 @@ private struct SystemsMapEditorView: View {
                     )
                 }
             }
-            .frame(minHeight: 260, idealHeight: 340)
+            .frame(minHeight: 180, maxHeight: .infinity)
 
+            VStack(spacing: 0) {
             SystemScenarioSelectorView(
                 scenarios: map.scenarios,
                 selectedScenarioID: map.selectedScenarioID,
@@ -642,6 +644,9 @@ private struct SystemsMapEditorView: View {
                 }
             }
             .frame(maxHeight: .infinity)
+            }
+            .frame(minHeight: 150, maxHeight: .infinity)
+            }
         }
         .background(AC.bg)
         .colorScheme(.dark)

@@ -34,7 +34,7 @@ struct SystemElementInspectorView: View {
                     .padding(12)
             }
         }
-        .frame(width: 240)
+        .frame(minWidth: 200, idealWidth: 240, maxWidth: 420, maxHeight: .infinity)
         .background(AC.glassPanel)
     }
 
