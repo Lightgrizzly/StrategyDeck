@@ -584,7 +584,6 @@ private struct SystemsMapEditorView: View {
                         onTogglePin: { card in togglePin(for: card) },
                         onSetPinScope: { card, scope in setPinScope(for: card, scope: scope) },
                         onAssignToSelectedElement: { card in handleCardDrop(cardID: card.id, onto: selection) },
-                        onCollapse: { drawerState = .collapsed },
                         onOpenFullLibrary: { drawerState = .fullLibrary }
                     )
                 case .fullLibrary:

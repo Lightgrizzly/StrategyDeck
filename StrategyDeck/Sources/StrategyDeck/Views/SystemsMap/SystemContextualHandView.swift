@@ -5,6 +5,11 @@ import StrategyDeckCore
 /// Selecting a node no longer renders the whole deck by default — the
 /// Contextual Hand is the everyday view; the Full Library is opened
 /// intentionally.
+///
+/// NOTE: still referenced by `SystemsMapTabView`'s `.collapsed` drawer case
+/// until Task 10 deletes that whole `switch drawerState` block wholesale —
+/// see plan Task 5 Step 4's note that `drawerState` remains
+/// `SystemCardDrawerState`-typed at this point in the sequence.
 enum SystemCardDrawerState: Equatable {
     case collapsed
     case contextualHand
@@ -12,6 +17,7 @@ enum SystemCardDrawerState: Equatable {
 }
 
 /// The always-cheap-to-compute summary shown when the drawer is collapsed.
+/// Still used by `SystemsMapTabView`'s `.collapsed` case until Task 10.
 struct SystemDrawerCollapsedSummaryView: View {
     let selectionLabel: String
     let statusCounts: [(status: SystemCardStatus, count: Int)]
@@ -44,7 +50,8 @@ struct SystemDrawerCollapsedSummaryView: View {
 }
 
 /// The compact, ranked subset of the selected deck — the everyday view for
-/// acting on the current selection without the whole deck rendering.
+/// acting on the current selection without the whole deck rendering. Lives
+/// permanently as the context panel's CARDS tab.
 struct SystemContextualHandView: View {
     let entries: [ContextualHandEntry]
     let totalRelevantCount: Int
@@ -59,7 +66,6 @@ struct SystemContextualHandView: View {
     let onTogglePin: (KnowledgeCard) -> Void
     let onSetPinScope: ((KnowledgeCard, PinScope) -> Void)?
     let onAssignToSelectedElement: ((KnowledgeCard) -> Void)?
-    let onCollapse: () -> Void
     let onOpenFullLibrary: () -> Void
 
     init(
@@ -76,7 +82,6 @@ struct SystemContextualHandView: View {
         onTogglePin: @escaping (KnowledgeCard) -> Void,
         onSetPinScope: ((KnowledgeCard, PinScope) -> Void)? = nil,
         onAssignToSelectedElement: ((KnowledgeCard) -> Void)? = nil,
-        onCollapse: @escaping () -> Void,
         onOpenFullLibrary: @escaping () -> Void
     ) {
         self.entries = entries
@@ -92,7 +97,6 @@ struct SystemContextualHandView: View {
         self.onTogglePin = onTogglePin
         self.onSetPinScope = onSetPinScope
         self.onAssignToSelectedElement = onAssignToSelectedElement
-        self.onCollapse = onCollapse
         self.onOpenFullLibrary = onOpenFullLibrary
     }
 
@@ -106,16 +110,6 @@ struct SystemContextualHandView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                ArenaSectionLabel(text: "Contextual Hand — \(selectionLabel)", icon: "hand.raised")
-                Spacer()
-                Button(action: onCollapse) { Image(systemName: "chevron.down.circle") }
-                    .buttonStyle(.plain).foregroundStyle(AC.textDim).help("Collapse")
-            }
-            .padding(10)
-            .background(AC.surface)
-            Rectangle().fill(AC.borderDim).frame(height: 1)
-
             if entries.isEmpty {
                 emptyState
             } else {
