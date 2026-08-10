@@ -108,6 +108,10 @@ struct SystemDiagramCanvasView: View {
     /// what to do based on the card's effective status for this target.
     let onDropCard: (UUID, DiagramSelection?) -> Void
     var onDropIssue: (UUID, DiagramSelection?) -> Void = { _, _ in }
+    /// Tapping a node's active-card or issue badge selects that element and
+    /// asks the caller to switch the context panel to the relevant tab.
+    var onTapActiveCardBadge: (UUID) -> Void = { _ in }
+    var onTapIssueBadge: (UUID) -> Void = { _ in }
 
     @State private var panOffset: CGSize = .zero
     @State private var zoom: CGFloat = 1.0
@@ -226,7 +230,9 @@ struct SystemDiagramCanvasView: View {
                 isDropTargeted: dropTargetedSelection == .element(element.id),
                 activeCardCount: elementActiveCardCounts[element.id] ?? 0,
                 issueCount: elementIssueCounts[element.id] ?? 0,
-                criticalBlockerCount: elementCriticalBlockerCounts[element.id] ?? 0
+                criticalBlockerCount: elementCriticalBlockerCounts[element.id] ?? 0,
+                onTapActiveCardBadge: { onTapActiveCardBadge(element.id) },
+                onTapIssueBadge: { onTapIssueBadge(element.id) }
             )
             .position(
                 x: element.position.x + (draggingElementID == element.id ? dragTranslation.width : 0),
@@ -403,6 +409,12 @@ struct SystemElementNodeView: View {
     var activeCardCount: Int = 0
     var issueCount: Int = 0
     var criticalBlockerCount: Int = 0
+    /// Compact badges double as shortcuts into the context panel — tapping
+    /// the active-card badge opens the CARDS tab, tapping the issue badge
+    /// opens DETAILS (where issues live). `nil` disables the tap (badge
+    /// stays purely informational).
+    var onTapActiveCardBadge: (() -> Void)? = nil
+    var onTapIssueBadge: (() -> Void)? = nil
 
     private var color: Color { element.kind.arenaColor }
     private var isDimmed: Bool { state == .hidden || state == .disabled }
@@ -453,6 +465,7 @@ struct SystemElementNodeView: View {
         .shadow(color: AC.cyanGlow, radius: 3)
         .offset(x: -4, y: -4)
         .help("\(activeCardCount) card\(activeCardCount == 1 ? "" : "s") active on this element")
+        .onTapGesture { onTapActiveCardBadge?() }
     }
 
     private var issueBadge: some View {
@@ -466,6 +479,7 @@ struct SystemElementNodeView: View {
         .shadow(color: criticalBlockerCount > 0 ? AC.threat.opacity(0.8) : .orange.opacity(0.5), radius: 3)
         .offset(x: 4, y: 4)
         .help("\(issueCount) issue\(issueCount == 1 ? "" : "s") affecting this element\(criticalBlockerCount > 0 ? ", \(criticalBlockerCount) critical/blocker" : "")")
+        .onTapGesture { onTapIssueBadge?() }
     }
 
     private var stateBadge: some View {
