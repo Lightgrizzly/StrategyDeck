@@ -411,6 +411,8 @@ private struct SystemsMapEditorView: View {
     }
 
     var body: some View {
+        GeometryReader { geo in
+        let isCompactWidth = geo.size.width < 900
         VStack(spacing: 0) {
             SystemsMapCompactHeaderView(
                 mapTitle: map.title,
@@ -557,11 +559,18 @@ private struct SystemsMapEditorView: View {
                 )
                 .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
                 .layoutPriority(1)
-                if !isFocusMode {
+                .overlay(alignment: .trailing) {
+                    if !isFocusMode && isCompactWidth {
+                        contextPanel
+                            .transition(.move(edge: .trailing))
+                    }
+                }
+                if !isFocusMode && !isCompactWidth {
                     contextPanel
                 }
             }
             .frame(minHeight: 180, maxHeight: .infinity)
+            .animation(.easeInOut(duration: 0.15), value: isCompactWidth)
 
             if !isFocusMode {
                 libraryDrawer
@@ -761,6 +770,7 @@ private struct SystemsMapEditorView: View {
                 },
                 onClose: { showingCommandPalette = false }
             )
+        }
         }
     }
 
