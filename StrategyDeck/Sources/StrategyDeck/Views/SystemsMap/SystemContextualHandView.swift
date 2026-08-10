@@ -52,12 +52,34 @@ struct SystemContextualHandView: View {
         self.onOpenFullLibrary = onOpenFullLibrary
     }
 
-    private var activeEntries: [ContextualHandEntry] { entries.filter { $0.evaluation.effectiveStatus == .active } }
-    private var availableEntries: [ContextualHandEntry] {
-        Array(entries.filter { $0.evaluation.isPlayable }.prefix(10))
+    /// Which individual status (or custom status) a card group sorts
+    /// into — mirrors `SystemCardLibraryView`'s grouping, but every status
+    /// gets its own section here: unlike the Full Library, adjacent
+    /// built-ins that share a `groupTitle` (Locked/Disabled,
+    /// Exhausted/Resolved) are never merged, and there's no per-group cap.
+    private enum StatusGroupKey: Hashable {
+        case builtIn(SystemCardStatus)
+        case custom(String)
     }
-    private var blockedEntries: [ContextualHandEntry] {
-        Array(entries.filter { [.locked, .disabled].contains($0.evaluation.effectiveStatus) }.prefix(5))
+
+    private var groupedEntries: [(key: StatusGroupKey, title: String, color: Color, entries: [ContextualHandEntry])] {
+        let groups = Dictionary(grouping: entries) { entry -> StatusGroupKey in
+            if let customID = entry.evaluation.effectiveCustomStatusID { return .custom(customID) }
+            return .builtIn(entry.evaluation.effectiveStatus)
+        }
+        var result: [(StatusGroupKey, String, Color, [ContextualHandEntry])] = []
+        for status in SystemCardStatus.allCases.sorted(by: { $0.groupRank < $1.groupRank }) {
+            let key = StatusGroupKey.builtIn(status)
+            guard let inGroup = groups[key], !inGroup.isEmpty else { continue }
+            let title = statusCatalog.labelOverrides[status.rawValue] ?? status.displayName
+            result.append((key, title, status.arenaColor, inGroup))
+        }
+        for custom in statusCatalog.customStatuses.sorted(by: { $0.displayOrder < $1.displayOrder }) {
+            let key = StatusGroupKey.custom(custom.id)
+            guard let inGroup = groups[key], !inGroup.isEmpty else { continue }
+            result.append((key, custom.name, custom.colorToken.color, inGroup))
+        }
+        return result
     }
 
     var body: some View {
@@ -67,14 +89,8 @@ struct SystemContextualHandView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
-                        if !activeEntries.isEmpty {
-                            group("Active", color: AC.cyan, entries: activeEntries)
-                        }
-                        if !availableEntries.isEmpty {
-                            group("Available", color: AC.available, entries: availableEntries)
-                        }
-                        if !blockedEntries.isEmpty {
-                            group("Blocked", color: AC.threat, entries: blockedEntries)
+                        ForEach(groupedEntries, id: \.key) { entryGroup in
+                            group("\(entryGroup.title) (\(entryGroup.entries.count))", color: entryGroup.color, entries: entryGroup.entries)
                         }
                     }
                     .padding(10)
