@@ -56,7 +56,6 @@ struct SystemCardLibraryView: View {
     let onBulkCreateCards: (([(title: String, suitID: String?)]) -> Void)?
     let onManageStatuses: (() -> Void)?
     let onCollapseDrawer: (() -> Void)?
-    let onOpenContextualHand: (() -> Void)?
 
     init(
         cards: [KnowledgeCard],
@@ -66,6 +65,9 @@ struct SystemCardLibraryView: View {
         statusCatalog: StatusCatalog = .empty,
         selectionLabel: String,
         isEditable: Bool,
+        initialSearchText: String = "",
+        initialStatusFilter: SystemCardStatus? = nil,
+        initialSuitIDs: Set<String> = [],
         onViewDetails: @escaping (KnowledgeCard) -> Void,
         onEditCard: ((KnowledgeCard) -> Void)? = nil,
         onApplyIntervention: @escaping (KnowledgeCard) -> Void,
@@ -80,8 +82,7 @@ struct SystemCardLibraryView: View {
         onCreateSuiteInline: ((String) -> CardSuit)? = nil,
         onBulkCreateCards: (([(title: String, suitID: String?)]) -> Void)? = nil,
         onManageStatuses: (() -> Void)? = nil,
-        onCollapseDrawer: (() -> Void)? = nil,
-        onOpenContextualHand: (() -> Void)? = nil
+        onCollapseDrawer: (() -> Void)? = nil
     ) {
         self.cards = cards
         self.suits = suits
@@ -105,12 +106,14 @@ struct SystemCardLibraryView: View {
         self.onBulkCreateCards = onBulkCreateCards
         self.onManageStatuses = onManageStatuses
         self.onCollapseDrawer = onCollapseDrawer
-        self.onOpenContextualHand = onOpenContextualHand
+        _searchText = State(initialValue: initialSearchText)
+        _statusFilter = State(initialValue: initialStatusFilter)
+        _selectedSuitIDs = State(initialValue: initialSuitIDs)
     }
 
-    @State private var searchText = ""
+    @State private var searchText: String
     @State private var statusFilter: SystemCardStatus?
-    @State private var selectedSuitIDs: Set<String> = []
+    @State private var selectedSuitIDs: Set<String>
     @State private var favoritesOnly = false
     @State private var manualDisplayMode: CardDisplayMode?
 
@@ -382,10 +385,6 @@ struct SystemCardLibraryView: View {
                 if let onCollapseDrawer {
                     Button(action: onCollapseDrawer) { Image(systemName: "chevron.down.circle") }
                         .buttonStyle(.plain).foregroundStyle(AC.textDim).help("Collapse")
-                }
-                if let onOpenContextualHand {
-                    Button(action: onOpenContextualHand) { Image(systemName: "hand.raised") }
-                        .buttonStyle(.plain).foregroundStyle(AC.textDim).help("Back to Contextual Hand")
                 }
                 if onQuickCreateCard != nil {
                     Button(action: { showingQuickCreate = true }) {

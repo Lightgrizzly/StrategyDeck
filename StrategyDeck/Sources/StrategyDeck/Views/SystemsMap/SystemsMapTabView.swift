@@ -632,8 +632,7 @@ private struct SystemsMapEditorView: View {
                             cardStore.bulkCreateCards(entries, deckID: effectiveDeckID)
                         },
                         onManageStatuses: { showingManageStatuses = true },
-                        onCollapseDrawer: { drawerState = .collapsed },
-                        onOpenContextualHand: { drawerState = .contextualHand }
+                        onCollapseDrawer: { drawerState = .collapsed }
                     )
                 }
             }
