@@ -22,20 +22,10 @@ struct SystemElementInspectorView: View {
     let relatedCardCount: (SystemTargetKind) -> Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ArenaSectionLabel(text: "Inspector", icon: "sidebar.right")
-                .padding(.horizontal, 12)
-                .padding(.top, 10)
-                .padding(.bottom, 8)
-            Rectangle().fill(AC.borderDim).frame(height: 1)
-
-            ScrollView {
-                content
-                    .padding(12)
-            }
+        ScrollView {
+            content
+                .padding(12)
         }
-        .frame(minWidth: 200, idealWidth: 240, maxWidth: 420, maxHeight: .infinity)
-        .background(AC.glassPanel)
     }
 
     @ViewBuilder
@@ -50,6 +40,14 @@ struct SystemElementInspectorView: View {
                     onUpdate: onUpdateElement,
                     onUpdateOverride: { onUpdateElementOverride(id, $0) }
                 )
+                HStack(spacing: 5) {
+                    Image(systemName: "link").font(.system(size: 9)).foregroundStyle(AC.cyan)
+                    let connected = connectedElementCount(forElementID: id)
+                    Text("\(connected) connected element\(connected == 1 ? "" : "s")")
+                        .font(.system(size: 9))
+                        .foregroundStyle(AC.textDim)
+                }
+                .padding(.top, 4)
                 relatedCardsFooter(SystemMapEvaluator.targetKind(for: element.kind))
             } else {
                 emptyState
@@ -99,6 +97,15 @@ struct SystemElementInspectorView: View {
                 .foregroundStyle(AC.textDim)
         }
         .padding(.top, 8)
+    }
+
+    /// Flows and relationships touching an element — the "N connected
+    /// elements" line in the DETAILS tab. Pure count over data already
+    /// passed to this view; no new model or store method.
+    private func connectedElementCount(forElementID id: UUID) -> Int {
+        let flowCount = flows.filter { $0.sourceElementID == id || $0.targetElementID == id }.count
+        let relationshipCount = relationships.filter { $0.sourceElementID == id || $0.targetElementID == id }.count
+        return flowCount + relationshipCount
     }
 }
 
