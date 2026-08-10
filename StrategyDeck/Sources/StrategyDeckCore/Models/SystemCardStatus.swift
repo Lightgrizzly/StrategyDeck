@@ -25,7 +25,7 @@ public enum SystemCardStatus: String, Codable, Hashable, Sendable, CaseIterable 
         case .disabled: return "Disabled"
         case .exhausted: return "Exhausted"
         case .resolved: return "Resolved"
-        case .pending: return "Pending"
+        case .pending: return "Unapplied"
         case .irrelevant: return "Irrelevant"
         }
     }
@@ -66,7 +66,7 @@ public enum SystemCardStatus: String, Codable, Hashable, Sendable, CaseIterable 
         case 0: return "Active"
         case 1: return "Available"
         case 2: return "Locked / Disabled"
-        case 3: return "Pending"
+        case 3: return "Unapplied"
         case 4: return "Exhausted / Resolved"
         default: return "Irrelevant"
         }

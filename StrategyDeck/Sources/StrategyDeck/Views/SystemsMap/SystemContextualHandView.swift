@@ -52,6 +52,20 @@ struct SystemContextualHandView: View {
         self.onOpenFullLibrary = onOpenFullLibrary
     }
 
+    /// "Unapplied" cards — the automatic engine landed on `.pending` (no
+    /// rule strongly recommends this card and nothing marks it playable in
+    /// a way that means anything yet) and nothing has ever set an explicit
+    /// status for it. They deliberately don't appear here at all — the
+    /// Contextual Hand only shows cards that either the rules actively flag
+    /// (Recommended/Locked/Disabled) or the user has explicitly touched.
+    /// The Full Library still lists them (collapsed by default, like
+    /// Irrelevant) so there's always a way to find and apply one.
+    private var visibleEntries: [ContextualHandEntry] {
+        entries.filter { !($0.evaluation.effectiveStatus == .pending && !$0.evaluation.isOverridden) }
+    }
+
+    private var unappliedCount: Int { entries.count - visibleEntries.count }
+
     /// Which individual status (or custom status) a card group sorts
     /// into — mirrors `SystemCardLibraryView`'s grouping, but every status
     /// gets its own section here: unlike the Full Library, adjacent
@@ -63,7 +77,7 @@ struct SystemContextualHandView: View {
     }
 
     private var groupedEntries: [(key: StatusGroupKey, title: String, color: Color, entries: [ContextualHandEntry])] {
-        let groups = Dictionary(grouping: entries) { entry -> StatusGroupKey in
+        let groups = Dictionary(grouping: visibleEntries) { entry -> StatusGroupKey in
             if let customID = entry.evaluation.effectiveCustomStatusID { return .custom(customID) }
             return .builtIn(entry.evaluation.effectiveStatus)
         }
@@ -84,13 +98,16 @@ struct SystemContextualHandView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if entries.isEmpty {
+            if visibleEntries.isEmpty {
                 emptyState
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         ForEach(groupedEntries, id: \.key) { entryGroup in
                             group("\(entryGroup.title) (\(entryGroup.entries.count))", color: entryGroup.color, entries: entryGroup.entries)
+                        }
+                        if unappliedCount > 0 {
+                            unappliedHint
                         }
                     }
                     .padding(10)
@@ -115,12 +132,25 @@ struct SystemContextualHandView: View {
         VStack(spacing: 8) {
             Image(systemName: "hand.raised").font(.system(size: 22)).foregroundStyle(AC.textGhost)
             Text("No contextual cards found").font(.system(size: 12, weight: .semibold)).foregroundStyle(AC.textSub)
-            Text("No cards in the selected deck currently target \(selectionLabel).")
-                .font(.system(size: 10)).foregroundStyle(AC.textDim)
+            if unappliedCount > 0 {
+                Text("\(unappliedCount) unapplied card\(unappliedCount == 1 ? "" : "s") for \(selectionLabel) — not yet added to the game.")
+                    .font(.system(size: 10)).foregroundStyle(AC.textDim)
+            } else {
+                Text("No cards in the selected deck currently target \(selectionLabel).")
+                    .font(.system(size: 10)).foregroundStyle(AC.textDim)
+            }
             Button("Browse Full Deck", action: onOpenFullLibrary).buttonStyle(ArenaOutlineButtonStyle())
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 24)
+    }
+
+    private var unappliedHint: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "circle.dashed").font(.system(size: 9)).foregroundStyle(AC.textGhost)
+            Text("\(unappliedCount) unapplied card\(unappliedCount == 1 ? "" : "s") hidden — visible in the Full Library.")
+                .font(.system(size: 9)).foregroundStyle(AC.textDim)
+        }
     }
 
     private func group(_ title: String, color: Color, entries: [ContextualHandEntry]) -> some View {
