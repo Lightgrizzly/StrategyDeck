@@ -60,7 +60,7 @@ struct SystemIssuesPanelView: View {
     let onRemoveFromElement: (SystemIssue) -> Void
     let onDelete: (SystemIssue) -> Void
 
-    @State private var isExpanded = true
+    @State private var showingQuickAdd = false
     @State private var newTitle = ""
     @State private var newType: IssueType = .issue
     @State private var newSeverity: IssueSeverity = .medium
@@ -73,91 +73,88 @@ struct SystemIssuesPanelView: View {
     private var blockerCount: Int { issues.filter { $0.type == .blocker && $0.status.isActive }.count }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Button(action: { withAnimation(.easeInOut(duration: 0.12)) { isExpanded.toggle() } }) {
-                HStack(spacing: 6) {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right").font(.system(size: 8, weight: .semibold))
-                    ArenaSectionLabel(text: "Issues & Conditions — \(selectionLabel)", color: issues.isEmpty ? AC.textDim : AC.threat, icon: "exclamationmark.triangle")
-                    if criticalCount > 0 {
-                        Text("\(criticalCount) CRITICAL").font(.system(size: 8, weight: .black, design: .monospaced))
-                            .foregroundStyle(AC.threat).padding(.horizontal, 5).padding(.vertical, 2)
-                            .background(Capsule().fill(AC.threatSoft))
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                ArenaSectionLabel(text: "Issues", color: issues.isEmpty ? AC.textDim : AC.threat, icon: "exclamationmark.triangle")
+                if criticalCount > 0 {
+                    Text("\(criticalCount) CRITICAL").font(.system(size: 8, weight: .black, design: .monospaced))
+                        .foregroundStyle(AC.threat).padding(.horizontal, 5).padding(.vertical, 2)
+                        .background(Capsule().fill(AC.threatSoft))
+                }
+                if blockerCount > 0 {
+                    Text("\(blockerCount) BLOCKER\(blockerCount == 1 ? "" : "S")").font(.system(size: 8, weight: .black, design: .monospaced))
+                        .foregroundStyle(AC.gold).padding(.horizontal, 5).padding(.vertical, 2)
+                        .background(Capsule().fill(AC.goldSoft))
+                }
+                Spacer()
+            }
+
+            if issues.isEmpty {
+                Text("No issues, blockers, or risks attached to \(selectionLabel) in this scenario.")
+                    .font(.system(size: 10)).foregroundStyle(AC.textDim)
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(sortedIssues) { issue in
+                        IssueRow(
+                            issue: issue,
+                            onEdit: { onEdit(issue) },
+                            onSetStatus: { onSetStatus(issue, $0) },
+                            onSetSeverity: { onSetSeverity(issue, $0) },
+                            onDuplicate: { onDuplicate(issue) },
+                            onRemoveFromElement: { onRemoveFromElement(issue) },
+                            onDelete: { onDelete(issue) }
+                        )
                     }
-                    if blockerCount > 0 {
-                        Text("\(blockerCount) BLOCKER\(blockerCount == 1 ? "" : "S")").font(.system(size: 8, weight: .black, design: .monospaced))
-                            .foregroundStyle(AC.gold).padding(.horizontal, 5).padding(.vertical, 2)
-                            .background(Capsule().fill(AC.goldSoft))
-                    }
-                    Spacer()
                 }
             }
-            .buttonStyle(.plain)
-            .padding(10)
 
-            if isExpanded {
-                Rectangle().fill(AC.borderDim).frame(height: 1)
-                if issues.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("No issues attached").font(.system(size: 11, weight: .semibold)).foregroundStyle(AC.textSub)
-                        Text("\(selectionLabel) currently has no issues, blockers, or risks in this scenario.")
-                            .font(.system(size: 10)).foregroundStyle(AC.textDim)
-                    }
-                    .padding(10)
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 4) {
-                            ForEach(sortedIssues) { issue in
-                                IssueRow(
-                                    issue: issue,
-                                    onEdit: { onEdit(issue) },
-                                    onSetStatus: { onSetStatus(issue, $0) },
-                                    onSetSeverity: { onSetSeverity(issue, $0) },
-                                    onDuplicate: { onDuplicate(issue) },
-                                    onRemoveFromElement: { onRemoveFromElement(issue) },
-                                    onDelete: { onDelete(issue) }
-                                )
-                            }
-                        }
-                        .padding(10)
-                    }
-                    .frame(maxHeight: 160)
-                }
-
-                Rectangle().fill(AC.borderDim).frame(height: 1)
-                HStack(spacing: 6) {
+            if showingQuickAdd {
+                VStack(alignment: .leading, spacing: 6) {
                     TextField("New issue title…", text: $newTitle).arenaFieldStyle()
-                    Picker("Type", selection: $newType) {
-                        ForEach(IssueType.allCases, id: \.self) { Text($0.displayName).tag($0) }
-                    }
-                    .labelsHidden().pickerStyle(.menu).tint(AC.cyan).frame(width: 110)
-                    Picker("Severity", selection: $newSeverity) {
-                        ForEach(IssueSeverity.allCases, id: \.self) { Text($0.displayName).tag($0) }
-                    }
-                    .labelsHidden().pickerStyle(.menu).tint(AC.cyan).frame(width: 110)
-                    Button("Add Issue") {
-                        let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !trimmed.isEmpty else { return }
-                        onCreateIssue(trimmed, newType, newSeverity)
-                        newTitle = ""
-                    }
-                    .buttonStyle(ArenaButtonStyle(color: AC.threat, isDisabled: newTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
-                    .disabled(newTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    if !attachableIssues.isEmpty {
-                        Menu {
-                            ForEach(attachableIssues) { issue in
-                                Button(issue.title) { onAttachExisting(issue) }
-                            }
-                        } label: {
-                            Label("Attach Existing", systemImage: "link")
+                    HStack(spacing: 6) {
+                        Picker("Type", selection: $newType) {
+                            ForEach(IssueType.allCases, id: \.self) { Text($0.displayName).tag($0) }
                         }
-                        .menuStyle(.button)
-                        .buttonStyle(ArenaOutlineButtonStyle())
+                        .labelsHidden().pickerStyle(.menu).tint(AC.cyan)
+                        Picker("Severity", selection: $newSeverity) {
+                            ForEach(IssueSeverity.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                        }
+                        .labelsHidden().pickerStyle(.menu).tint(AC.cyan)
+                    }
+                    HStack(spacing: 6) {
+                        Button("Add") {
+                            let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !trimmed.isEmpty else { return }
+                            onCreateIssue(trimmed, newType, newSeverity)
+                            newTitle = ""
+                            showingQuickAdd = false
+                        }
+                        .buttonStyle(ArenaButtonStyle(color: AC.threat, isDisabled: newTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
+                        .disabled(newTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        Button("Cancel") { showingQuickAdd = false; newTitle = "" }
+                            .buttonStyle(ArenaOutlineButtonStyle())
+                        if !attachableIssues.isEmpty {
+                            Menu {
+                                ForEach(attachableIssues) { issue in
+                                    Button(issue.title) { onAttachExisting(issue) }
+                                }
+                            } label: {
+                                Label("Attach Existing", systemImage: "link")
+                            }
+                            .menuStyle(.button)
+                            .buttonStyle(ArenaOutlineButtonStyle())
+                        }
                     }
                 }
-                .padding(10)
+                .padding(8)
+                .background(RoundedRectangle(cornerRadius: 6).fill(AC.surfaceHi))
+            } else {
+                Button(action: { showingQuickAdd = true }) {
+                    Label("Add Issue", systemImage: "plus")
+                }
+                .buttonStyle(ArenaOutlineButtonStyle())
             }
         }
-        .background(AC.surface)
     }
 }
 
