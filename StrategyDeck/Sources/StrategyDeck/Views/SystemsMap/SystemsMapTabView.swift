@@ -200,7 +200,9 @@ private struct SystemsMapEditorView: View {
     @State private var tool: DiagramTool = .select
     @State private var selection: DiagramSelection?
     @State private var pendingConnectSourceID: UUID?
-    @State private var showingInspector = true
+    @State private var contextPanelTab: ContextPanelTab = .details
+    @State private var libraryDrawerState: LibraryDrawerState = .closed
+    @State private var isFocusMode = false
     @State private var showingInterventionSheetFor: KnowledgeCard?
     @State private var showingDetailsFor: KnowledgeCard?
     @State private var showingRenameMapSheet = false
@@ -217,7 +219,6 @@ private struct SystemsMapEditorView: View {
     @State private var newCard = KnowledgeCard(deckIDs: [], suitIDs: [], kind: .action, metadata: .softwareStrategy(SoftwareStrategyFields()), title: "")
     @State private var editingCardFromTray: KnowledgeCard?
     @State private var showingManageStatuses = false
-    @State private var drawerState: SystemCardDrawerState = .contextualHand
     @State private var editingIssue: SystemIssue?
     @State private var showingCommandPalette = false
     @State private var alertState: AlertState?
@@ -255,6 +256,14 @@ private struct SystemsMapEditorView: View {
     private var activeIssuesInScenario: [SystemIssue] {
         map.issues.filter { $0.status.isActive && $0.appliesTo(scenarioID: scenario.id) }
     }
+
+    /// Issue/blocker counts for the SELECTED header — scoped to the current
+    /// selection when something's selected, otherwise map-wide (matches
+    /// `issuesForSelection`'s own nil-selection fallback below).
+    private var selectionIssueCount: Int { issuesForSelection.filter { $0.status.isActive }.count }
+    private var selectionBlockerCount: Int { issuesForSelection.filter { $0.status.isActive && ($0.severity == .critical || $0.type == .blocker) }.count }
+    private var selectionActiveCardCount: Int { relevantEvaluations.filter { $0.effectiveStatus == .active }.count }
+    private var selectionAvailableCardCount: Int { relevantEvaluations.filter { $0.isPlayable }.count }
 
     private var elementIssueCounts: [UUID: Int] {
         var counts: [UUID: Int] = [:]
@@ -403,95 +412,29 @@ private struct SystemsMapEditorView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            headerBar
-            Rectangle().fill(AC.cyan.opacity(0.2)).frame(height: 1)
-
-            // Space opens the node command palette when something's
-            // selected — invisible, doesn't compete with any visible
-            // control's own Space activation.
-            Button("") { if selection != nil { showingCommandPalette = true } }
-                .keyboardShortcut(.space, modifiers: [])
-                .hidden()
-                .frame(width: 0, height: 0)
-
-            SystemDiagramToolbar(
-                tool: $tool,
-                isEditable: true,
-                hasSelection: selection != nil,
-                canUndo: !undoStack.isEmpty,
-                canRedo: !redoStack.isEmpty,
-                onDelete: deleteSelection,
-                onUndo: undo,
-                onRedo: redo,
-                onZoomIn: {}, onZoomOut: {}, onFit: {}, onCenterSelection: {}
-            )
-            Rectangle().fill(AC.borderDim).frame(height: 1)
-
-            VSplitView {
-            HSplitView {
-                SystemDiagramCanvasView(
-                    elements: effectiveElements,
-                    flows: effectiveFlows,
-                    relationships: map.relationships,
-                    elementStates: elementStates,
-                    elementActiveCardCounts: elementActiveCardCounts,
-                    elementIssueCounts: elementIssueCounts,
-                    elementCriticalBlockerCounts: elementCriticalBlockerCounts,
-                    isEditable: true,
-                    selection: $selection,
-                    tool: $tool,
-                    pendingConnectSourceID: $pendingConnectSourceID,
-                    onAddElement: { element in pushUndo(); systemMapStore.addElement(element) },
-                    onMoveElement: { id, pos in pushUndo(); moveElement(id: id, to: pos) },
-                    onAddFlow: { flow in pushUndo(); systemMapStore.addFlow(flow) },
-                    onAddRelationship: { rel in pushUndo(); systemMapStore.addRelationship(rel) },
-                    onDropCard: { cardID, targetSelection in handleCardDrop(cardID: cardID, onto: targetSelection) },
-                    onDropIssue: { issueID, targetSelection in
-                        guard let targetID = elementID(for: targetSelection) else { return }
-                        pushOverrideUndo()
-                        systemMapStore.attachIssue(id: issueID, toElementID: targetID)
-                    }
-                )
-                .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
-                if showingInspector {
-                    SystemElementInspectorView(
-                        elements: map.elements,
-                        flows: map.flows,
-                        relationships: map.relationships,
-                        scenario: scenario,
-                        selection: selection,
-                        onUpdateElement: { el in pushUndo(); systemMapStore.updateElement(el) },
-                        onUpdateFlow: { flow in pushUndo(); systemMapStore.updateFlow(flow) },
-                        onUpdateRelationship: { rel in
-                            pushUndo()
-                            systemMapStore.deleteRelationship(id: rel.id)
-                            systemMapStore.addRelationship(rel)
-                        },
-                        onUpdateElementOverride: { id, override in
-                            systemMapStore.setElementOverride(
-                                elementID: id, currentValue: override.currentValue,
-                                state: override.state, notes: override.notes, inScenario: scenario.id
-                            )
-                        },
-                        onUpdateFlowOverride: { id, override in
-                            systemMapStore.setFlowOverride(
-                                flowID: id, rate: override.rate,
-                                isEnabled: override.isEnabled, state: override.state, inScenario: scenario.id
-                            )
-                        },
-                        relatedCardCount: { kind in
-                            cardStore.cards.filter { $0.playabilityRules.systemTargetTypes.isEmpty || $0.playabilityRules.systemTargetTypes.contains(kind) }.count
-                        }
-                    )
-                }
-            }
-            .frame(minHeight: 180, maxHeight: .infinity)
-
-            VStack(spacing: 0) {
-            SystemScenarioSelectorView(
+            SystemsMapCompactHeaderView(
+                mapTitle: map.title,
+                folderID: map.folderID,
+                primaryGoal: map.primaryGoal,
+                deckName: deckName,
+                isUsingScenarioDeckOverride: isUsingScenarioDeckOverride,
+                isFocusMode: isFocusMode,
                 scenarios: map.scenarios,
                 selectedScenarioID: map.selectedScenarioID,
-                selectedElementLabel: selection == nil ? nil : selectionLabel,
+                onNavigateFolder: { folderID in
+                    selectedFolderID = folderID
+                    systemMapStore.closeCurrentSystemMap()
+                },
+                onClose: { systemMapStore.closeCurrentSystemMap() },
+                onRenameMap: { renameMapText = map.title; showingRenameMapSheet = true },
+                onToggleFocusMode: { isFocusMode.toggle() },
+                onExport: exportJSON,
+                onOpenDeckPicker: { showingDeckPicker = true },
+                onOverrideDeckForScenario: {
+                    systemMapStore.setScenarioDeckOverride(scenarioID: scenario.id, deckID: map.defaultDeckID)
+                    showingDeckPicker = true
+                },
+                onResetDeckOverride: { systemMapStore.setScenarioDeckOverride(scenarioID: scenario.id, deckID: nil) },
                 onSelectScenario: { systemMapStore.selectScenario(id: $0); selection = nil },
                 onNewScenario: {
                     newScenarioName = ""
@@ -520,125 +463,113 @@ private struct SystemsMapEditorView: View {
                 },
                 onCompareScenarios: { showingCompareSheet = true }
             )
+            Rectangle().fill(AC.cyan.opacity(0.2)).frame(height: 1)
 
+            // Space opens the node command palette when something's
+            // selected — invisible, doesn't compete with any visible
+            // control's own Space activation.
+            Button("") { if selection != nil { showingCommandPalette = true } }
+                .keyboardShortcut(.space, modifiers: [])
+                .hidden()
+                .frame(width: 0, height: 0)
+
+            HStack(spacing: 0) {
+                SystemDiagramToolbar(
+                    tool: $tool,
+                    isEditable: true,
+                    hasSelection: selection != nil,
+                    canUndo: !undoStack.isEmpty,
+                    canRedo: !redoStack.isEmpty,
+                    onDelete: deleteSelection,
+                    onUndo: undo,
+                    onRedo: redo,
+                    onZoomIn: {}, onZoomOut: {}, onFit: {}, onCenterSelection: {}
+                )
+                Button(action: { isFocusMode.toggle() }) {
+                    Image(systemName: isFocusMode ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 12))
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(isFocusMode ? AC.cyan : AC.textSub)
+                .help(isFocusMode ? "Exit Focus Mode (⌘⇧F)" : "Focus Mode (⌘⇧F)")
+                .padding(.trailing, 10)
+            }
+            .background(AC.surface)
             Rectangle().fill(AC.borderDim).frame(height: 1)
-            SystemIssuesPanelView(
-                issues: issuesForSelection,
-                attachableIssues: selectedAnyID == nil ? [] : activeIssuesInScenario.filter { !$0.affects(elementID: selectedAnyID!) },
-                selectionLabel: selectionLabel,
-                onCreateIssue: { title, type, severity in
-                    systemMapStore.createIssue(
-                        title: title, type: type, severity: severity,
-                        affectedElementIDs: selectedAnyID.map { [$0] } ?? [],
-                        scenarioIDs: [scenario.id]
-                    )
-                },
-                onAttachExisting: { issue in
-                    if let selectedAnyID { systemMapStore.attachIssue(id: issue.id, toElementID: selectedAnyID) }
-                },
-                onEdit: { editingIssue = $0 },
-                onSetStatus: { issue, status in systemMapStore.setIssueStatus(id: issue.id, status: status) },
-                onSetSeverity: { issue, severity in systemMapStore.setIssueSeverity(id: issue.id, severity: severity) },
-                onDuplicate: { systemMapStore.duplicateIssue(id: $0.id) },
-                onRemoveFromElement: { issue in
-                    if let selectedAnyID { systemMapStore.detachIssue(id: issue.id, fromElementID: selectedAnyID) }
-                },
-                onDelete: { issue in
-                    alertState = .destructive(
-                        title: "Delete “\(issue.title)”?",
-                        message: "This issue will be removed permanently from the map.",
-                        confirmLabel: "Delete"
-                    ) { systemMapStore.deleteIssue(id: issue.id) }
-                }
-            )
 
-            Group {
-                switch drawerState {
-                case .collapsed:
-                    SystemDrawerCollapsedSummaryView(
-                        selectionLabel: selectionLabel,
-                        statusCounts: SystemCardStatus.allCases.map { status in
-                            (status, evaluations.filter { $0.effectiveStatus == status }.count)
-                        },
-                        statusCatalog: map.statusCatalog,
-                        onOpenHand: { drawerState = .contextualHand },
-                        onBrowseFullDeck: { drawerState = .fullLibrary }
-                    )
-                case .contextualHand:
-                    SystemContextualHandView(
-                        entries: contextualHandEntries,
-                        totalRelevantCount: relevantEvaluations.count,
-                        selectionLabel: selectionLabel,
-                        statusCatalog: map.statusCatalog,
-                        isEditable: true,
-                        onViewDetails: { showingDetailsFor = $0 },
-                        onEditCard: { editingCardFromTray = $0 },
-                        onApplyIntervention: { showingInterventionSheetFor = $0 },
-                        onChangeStatus: { card, status, customStatusID, scope in
-                            systemMapStore.setCardStatusOverride(
-                                cardID: card.id, targetElementID: selectedElementID,
-                                scope: scope, status: status, customStatusID: customStatusID, reason: "", scenarioID: scenario.id
-                            )
-                        },
-                        onResetToAutomatic: { card in clearOverrideMatchingSelection(for: card) },
-                        onTogglePin: { card in togglePin(for: card) },
-                        onSetPinScope: { card, scope in setPinScope(for: card, scope: scope) },
-                        onAssignToSelectedElement: { card in handleCardDrop(cardID: card.id, onto: selection) },
-                        onOpenFullLibrary: { drawerState = .fullLibrary }
-                    )
-                case .fullLibrary:
-                    SystemCardLibraryView(
-                        cards: deckScopedCards,
-                        suits: cardStore.suits,
-                        deckSuits: suitsForSelectedDeck(),
-                        evaluations: evaluations,
-                        statusCatalog: map.statusCatalog,
-                        selectionLabel: selectionLabel,
-                        isEditable: true,
-                        onViewDetails: { showingDetailsFor = $0 },
-                        onEditCard: { editingCardFromTray = $0 },
-                        onApplyIntervention: { showingInterventionSheetFor = $0 },
-                        onChangeStatus: { card, status, customStatusID, scope in
-                            systemMapStore.setCardStatusOverride(
-                                cardID: card.id, targetElementID: selectedElementID,
-                                scope: scope, status: status, customStatusID: customStatusID, reason: "", scenarioID: scenario.id
-                            )
-                        },
-                        onResetToAutomatic: { card in clearOverrideMatchingSelection(for: card) },
-                        onChooseAnotherDeck: { showingDeckPicker = true },
-                        onCreateCard: {
-                            newCard = blankCard()
-                            showingCreateCardSheet = true
-                        },
-                        onAssignToSelectedElement: { card in handleCardDrop(cardID: card.id, onto: selection) },
-                        onDropCardToStatus: { cardID, status, customStatusID in
-                            guard let card = cardStore.cards.first(where: { $0.id == cardID }) else { return }
-                            pushOverrideUndo()
-                            systemMapStore.setCardStatusOverride(
-                                cardID: card.id, targetElementID: selectedElementID,
-                                scope: .thisElementOnly, status: status, customStatusID: customStatusID, reason: "", scenarioID: scenario.id
-                            )
-                        },
-                        onQuickCreateCard: { title, suitID, description in
-                            cardStore.quickCreateCard(title: title, deckID: effectiveDeckID, suitID: suitID, shortDescription: description)
-                        },
-                        onQuickCreateAndEdit: { title, suitID, description in
-                            editingCardFromTray = cardStore.quickCreateCard(title: title, deckID: effectiveDeckID, suitID: suitID, shortDescription: description)
-                        },
-                        onCreateSuiteInline: effectiveDeckID.map { deckID in
-                            { name in cardStore.createSuit(deckID: deckID, name: name) }
-                        },
-                        onBulkCreateCards: { entries in
-                            cardStore.bulkCreateCards(entries, deckID: effectiveDeckID)
-                        },
-                        onManageStatuses: { showingManageStatuses = true },
-                        onCollapseDrawer: { drawerState = .collapsed }
-                    )
+            Button("") { isFocusMode.toggle() }
+                .keyboardShortcut("f", modifiers: [.command, .shift])
+                .hidden().frame(width: 0, height: 0)
+            Button("") { contextPanelTab = .details }
+                .keyboardShortcut("1", modifiers: .command)
+                .hidden().frame(width: 0, height: 0)
+            Button("") { contextPanelTab = .cards }
+                .keyboardShortcut("2", modifiers: .command)
+                .hidden().frame(width: 0, height: 0)
+            Button("") {
+                switch libraryDrawerState {
+                case .closed: libraryDrawerState = .expanded
+                case .peek, .expanded: libraryDrawerState = .closed
                 }
             }
-            .frame(maxHeight: .infinity)
+            .keyboardShortcut("l", modifiers: .command)
+            .hidden().frame(width: 0, height: 0)
+            Button("") {
+                if libraryDrawerState != .closed { libraryDrawerState = .closed }
+                else if showingCommandPalette { showingCommandPalette = false }
             }
-            .frame(minHeight: 150, maxHeight: .infinity)
+            .keyboardShortcut(.escape, modifiers: [])
+            .hidden().frame(width: 0, height: 0)
+
+            VSplitView {
+            HSplitView {
+                SystemDiagramCanvasView(
+                    elements: effectiveElements,
+                    flows: effectiveFlows,
+                    relationships: map.relationships,
+                    elementStates: elementStates,
+                    elementActiveCardCounts: elementActiveCardCounts,
+                    elementIssueCounts: elementIssueCounts,
+                    elementCriticalBlockerCounts: elementCriticalBlockerCounts,
+                    isEditable: true,
+                    selection: $selection,
+                    tool: $tool,
+                    pendingConnectSourceID: $pendingConnectSourceID,
+                    onAddElement: { element in pushUndo(); systemMapStore.addElement(element) },
+                    onMoveElement: { id, pos in pushUndo(); moveElement(id: id, to: pos) },
+                    onAddFlow: { flow in pushUndo(); systemMapStore.addFlow(flow) },
+                    onAddRelationship: { rel in pushUndo(); systemMapStore.addRelationship(rel) },
+                    onDropCard: { cardID, targetSelection in handleCardDrop(cardID: cardID, onto: targetSelection) },
+                    onDropIssue: { issueID, targetSelection in
+                        guard let targetID = elementID(for: targetSelection) else { return }
+                        pushOverrideUndo()
+                        systemMapStore.attachIssue(id: issueID, toElementID: targetID)
+                    },
+                    onTapActiveCardBadge: { elementID in
+                        selection = .element(elementID)
+                        contextPanelTab = .cards
+                    },
+                    onTapIssueBadge: { elementID in
+                        selection = .element(elementID)
+                        contextPanelTab = .details
+                    }
+                )
+                .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
+                .layoutPriority(1)
+                if !isFocusMode {
+                    contextPanel
+                }
+            }
+            .frame(minHeight: 180, maxHeight: .infinity)
+
+            if !isFocusMode {
+                libraryDrawer
+                    .frame(
+                        minHeight: libraryDrawerState == .expanded ? 150 : nil,
+                        maxHeight: libraryDrawerState == .expanded ? .infinity : nil
+                    )
+            }
             }
         }
         .background(AC.bg)
@@ -852,84 +783,166 @@ private struct SystemsMapEditorView: View {
 
     private struct EditingDeckTarget: Identifiable { let id: String }
 
-    private var headerBar: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                Button(action: { systemMapStore.closeCurrentSystemMap() }) {
-                    Image(systemName: "chevron.left").font(.system(size: 12, weight: .semibold))
+    private var contextPanel: some View {
+        SystemContextPanelView(
+            selectionLabel: selectionLabel,
+            selectionKindLabel: selectedTargetKind?.displayName,
+            scenarioName: scenario.name,
+            issueCount: selectionIssueCount,
+            blockerCount: selectionBlockerCount,
+            activeCardCount: selectionActiveCardCount,
+            availableCardCount: selectionAvailableCardCount,
+            tab: $contextPanelTab,
+            hasSelection: selection != nil,
+            inspector: SystemElementInspectorView(
+                elements: map.elements,
+                flows: map.flows,
+                relationships: map.relationships,
+                scenario: scenario,
+                selection: selection,
+                onUpdateElement: { el in pushUndo(); systemMapStore.updateElement(el) },
+                onUpdateFlow: { flow in pushUndo(); systemMapStore.updateFlow(flow) },
+                onUpdateRelationship: { rel in
+                    pushUndo()
+                    systemMapStore.deleteRelationship(id: rel.id)
+                    systemMapStore.addRelationship(rel)
+                },
+                onUpdateElementOverride: { id, override in
+                    systemMapStore.setElementOverride(
+                        elementID: id, currentValue: override.currentValue,
+                        state: override.state, notes: override.notes, inScenario: scenario.id
+                    )
+                },
+                onUpdateFlowOverride: { id, override in
+                    systemMapStore.setFlowOverride(
+                        flowID: id, rate: override.rate,
+                        isEnabled: override.isEnabled, state: override.state, inScenario: scenario.id
+                    )
+                },
+                relatedCardCount: { kind in
+                    cardStore.cards.filter { $0.playabilityRules.systemTargetTypes.isEmpty || $0.playabilityRules.systemTargetTypes.contains(kind) }.count
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(AC.textSub)
+            ),
+            issuesPanel: SystemIssuesPanelView(
+                issues: issuesForSelection,
+                attachableIssues: selectedAnyID == nil ? [] : activeIssuesInScenario.filter { !$0.affects(elementID: selectedAnyID!) },
+                selectionLabel: selectionLabel,
+                onCreateIssue: { title, type, severity in
+                    systemMapStore.createIssue(
+                        title: title, type: type, severity: severity,
+                        affectedElementIDs: selectedAnyID.map { [$0] } ?? [],
+                        scenarioIDs: [scenario.id]
+                    )
+                },
+                onAttachExisting: { issue in
+                    if let selectedAnyID { systemMapStore.attachIssue(id: issue.id, toElementID: selectedAnyID) }
+                },
+                onEdit: { editingIssue = $0 },
+                onSetStatus: { issue, status in systemMapStore.setIssueStatus(id: issue.id, status: status) },
+                onSetSeverity: { issue, severity in systemMapStore.setIssueSeverity(id: issue.id, severity: severity) },
+                onDuplicate: { systemMapStore.duplicateIssue(id: $0.id) },
+                onRemoveFromElement: { issue in
+                    if let selectedAnyID { systemMapStore.detachIssue(id: issue.id, fromElementID: selectedAnyID) }
+                },
+                onDelete: { issue in
+                    alertState = .destructive(
+                        title: "Delete “\(issue.title)”?",
+                        message: "This issue will be removed permanently from the map.",
+                        confirmLabel: "Delete"
+                    ) { systemMapStore.deleteIssue(id: issue.id) }
+                }
+            ),
+            systemOverview: SystemOverviewContent(
+                stockCount: map.elements.filter { $0.kind == .stock }.count,
+                flowCount: map.flows.count,
+                constraintCount: map.elements.filter { $0.kind == .constraint }.count,
+                activeIssueCount: activeIssuesInScenario.count,
+                onViewCards: { contextPanelTab = .cards }
+            ),
+            contextualHand: SystemContextualHandView(
+                entries: contextualHandEntries,
+                totalRelevantCount: relevantEvaluations.count,
+                selectionLabel: selectionLabel,
+                statusCatalog: map.statusCatalog,
+                isEditable: true,
+                onViewDetails: { showingDetailsFor = $0 },
+                onEditCard: { editingCardFromTray = $0 },
+                onApplyIntervention: { showingInterventionSheetFor = $0 },
+                onChangeStatus: { card, status, customStatusID, scope in
+                    systemMapStore.setCardStatusOverride(
+                        cardID: card.id, targetElementID: selectedElementID,
+                        scope: scope, status: status, customStatusID: customStatusID, reason: "", scenarioID: scenario.id
+                    )
+                },
+                onResetToAutomatic: { card in clearOverrideMatchingSelection(for: card) },
+                onTogglePin: { card in togglePin(for: card) },
+                onSetPinScope: { card, scope in setPinScope(for: card, scope: scope) },
+                onAssignToSelectedElement: { card in handleCardDrop(cardID: card.id, onto: selection) },
+                onOpenFullLibrary: { libraryDrawerState = .expanded }
+            )
+        )
+    }
 
-                SystemMapBreadcrumbView(folderID: map.folderID, onNavigate: { folderID in
-                    selectedFolderID = folderID
-                    systemMapStore.closeCurrentSystemMap()
-                })
-            }
-            HStack(spacing: 10) {
-                Button(action: { renameMapText = map.title; showingRenameMapSheet = true }) {
-                    Text(map.title.uppercased())
-                        .font(.system(size: 14, weight: .black, design: .monospaced))
-                        .foregroundStyle(AC.cyan)
-                        .kerning(1)
+    private var libraryDrawer: some View {
+        SystemCardDrawerView(
+            state: libraryDrawerState,
+            onCycleState: {
+                switch libraryDrawerState {
+                case .closed: libraryDrawerState = .peek
+                case .peek: libraryDrawerState = .expanded
+                case .expanded: libraryDrawerState = .expanded
                 }
-                .buttonStyle(.plain)
-
-                Spacer()
-
-                Button(action: { withAnimation { showingInspector.toggle() } }) {
-                    Image(systemName: "sidebar.right").font(.system(size: 11))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(showingInspector ? AC.cyan : AC.textDim)
-                .help("Toggle inspector")
-
-                Button(action: exportJSON) {
-                    Label("EXPORT JSON", systemImage: "square.and.arrow.up")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
-                }
-                .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.5)))
-            }
-            HStack(spacing: 6) {
-                Image(systemName: "square.stack.3d.up").font(.system(size: 9)).foregroundStyle(AC.cyan.opacity(0.7))
-                Text("DECK:").font(.system(size: 9, weight: .black, design: .monospaced)).foregroundStyle(AC.textDim).kerning(0.5)
-                Button(action: { showingDeckPicker = true }) {
-                    HStack(spacing: 3) {
-                        Text(deckName).font(.system(size: 11, weight: .semibold))
-                        Image(systemName: "chevron.down").font(.system(size: 7))
-                    }
-                    .foregroundStyle(AC.cyan)
-                }
-                .buttonStyle(.plain)
-                if isUsingScenarioDeckOverride {
-                    Text("SCENARIO OVERRIDE")
-                        .font(.system(size: 7, weight: .black, design: .monospaced))
-                        .foregroundStyle(AC.gold)
-                        .kerning(0.5)
-                        .padding(.horizontal, 5).padding(.vertical, 2)
-                        .background(Capsule().fill(AC.goldSoft))
-                    Button("Reset to Map Deck") {
-                        systemMapStore.setScenarioDeckOverride(scenarioID: scenario.id, deckID: nil)
-                    }
-                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.gold.opacity(0.5)))
-                } else {
-                    Button("Override for This Scenario") {
-                        systemMapStore.setScenarioDeckOverride(scenarioID: scenario.id, deckID: map.defaultDeckID)
-                        showingDeckPicker = true
-                    }
-                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.textDim))
-                }
-            }
-            if !map.primaryGoal.isEmpty {
-                HStack(spacing: 6) {
-                    Image(systemName: "flag.checkered").font(.system(size: 9)).foregroundStyle(AC.gold)
-                    Text("Goal: \(map.primaryGoal)").font(.system(size: 11)).foregroundStyle(AC.textSub).lineLimit(1)
-                }
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(AC.surface)
+            },
+            onClose: { libraryDrawerState = .closed },
+            deckName: deckName,
+            statusCounts: SystemCardStatus.allCases.map { status in
+                (status, evaluations.filter { $0.effectiveStatus == status }.count)
+            },
+            statusCatalog: map.statusCatalog,
+            cards: deckScopedCards,
+            suits: cardStore.suits,
+            deckSuits: suitsForSelectedDeck(),
+            evaluations: evaluations,
+            selectionLabel: selectionLabel,
+            isEditable: true,
+            onViewDetails: { showingDetailsFor = $0 },
+            onEditCard: { editingCardFromTray = $0 },
+            onApplyIntervention: { showingInterventionSheetFor = $0 },
+            onChangeStatus: { card, status, customStatusID, scope in
+                systemMapStore.setCardStatusOverride(
+                    cardID: card.id, targetElementID: selectedElementID,
+                    scope: scope, status: status, customStatusID: customStatusID, reason: "", scenarioID: scenario.id
+                )
+            },
+            onResetToAutomatic: { card in clearOverrideMatchingSelection(for: card) },
+            onChooseAnotherDeck: { showingDeckPicker = true },
+            onCreateCard: {
+                newCard = blankCard()
+                showingCreateCardSheet = true
+            },
+            onAssignToSelectedElement: { card in handleCardDrop(cardID: card.id, onto: selection) },
+            onDropCardToStatus: { cardID, status, customStatusID in
+                guard let card = cardStore.cards.first(where: { $0.id == cardID }) else { return }
+                pushOverrideUndo()
+                systemMapStore.setCardStatusOverride(
+                    cardID: card.id, targetElementID: selectedElementID,
+                    scope: .thisElementOnly, status: status, customStatusID: customStatusID, reason: "", scenarioID: scenario.id
+                )
+            },
+            onQuickCreateCard: { title, suitID, description in
+                cardStore.quickCreateCard(title: title, deckID: effectiveDeckID, suitID: suitID, shortDescription: description)
+            },
+            onQuickCreateAndEdit: { title, suitID, description in
+                editingCardFromTray = cardStore.quickCreateCard(title: title, deckID: effectiveDeckID, suitID: suitID, shortDescription: description)
+            },
+            onCreateSuiteInline: effectiveDeckID.map { deckID in
+                { name in cardStore.createSuit(deckID: deckID, name: name) }
+            },
+            onBulkCreateCards: { entries in
+                cardStore.bulkCreateCards(entries, deckID: effectiveDeckID)
+            },
+            onManageStatuses: { showingManageStatuses = true }
+        )
     }
 
     // MARK: - Actions

@@ -1,54 +1,6 @@
 import SwiftUI
 import StrategyDeckCore
 
-/// The three display levels the card area beneath the diagram can be in.
-/// Selecting a node no longer renders the whole deck by default — the
-/// Contextual Hand is the everyday view; the Full Library is opened
-/// intentionally.
-///
-/// NOTE: still referenced by `SystemsMapTabView`'s `.collapsed` drawer case
-/// until Task 10 deletes that whole `switch drawerState` block wholesale —
-/// see plan Task 5 Step 4's note that `drawerState` remains
-/// `SystemCardDrawerState`-typed at this point in the sequence.
-enum SystemCardDrawerState: Equatable {
-    case collapsed
-    case contextualHand
-    case fullLibrary
-}
-
-/// The always-cheap-to-compute summary shown when the drawer is collapsed.
-/// Still used by `SystemsMapTabView`'s `.collapsed` case until Task 10.
-struct SystemDrawerCollapsedSummaryView: View {
-    let selectionLabel: String
-    let statusCounts: [(status: SystemCardStatus, count: Int)]
-    let statusCatalog: StatusCatalog
-    let onOpenHand: () -> Void
-    let onBrowseFullDeck: () -> Void
-
-    var body: some View {
-        HStack(spacing: 14) {
-            ArenaSectionLabel(text: "Cards for \(selectionLabel)", icon: "square.stack.3d.up")
-            HStack(spacing: 10) {
-                ForEach(statusCounts.filter { $0.count > 0 }, id: \.status) { entry in
-                    HStack(spacing: 3) {
-                        Text("\(entry.count)").font(.system(size: 10, weight: .black, design: .monospaced))
-                        Text(statusCatalog.labelOverrides[entry.status.rawValue] ?? entry.status.displayName)
-                            .font(.system(size: 9, weight: .semibold))
-                    }
-                    .foregroundStyle(entry.status.arenaColor)
-                }
-            }
-            Spacer()
-            Button("Open Contextual Hand", action: onOpenHand)
-                .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.55)))
-            Button("Browse Full Deck", action: onBrowseFullDeck)
-                .buttonStyle(ArenaOutlineButtonStyle())
-        }
-        .padding(10)
-        .background(AC.surface)
-    }
-}
-
 /// The compact, ranked subset of the selected deck — the everyday view for
 /// acting on the current selection without the whole deck rendering. Lives
 /// permanently as the context panel's CARDS tab.
