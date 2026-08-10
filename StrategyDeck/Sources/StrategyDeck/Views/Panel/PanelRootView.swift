@@ -10,6 +10,9 @@ struct PanelRootView: View {
     // Reference back to the controller so the header can toggle pin.
     let panelController: FloatingPanelController
 
+    private enum ActiveTab { case library, duel, systemsMap }
+
+    @State private var activeTab: ActiveTab = .library
     @State private var searchText = ""
     @State private var selectedDeckID: String?
     @State private var selectedSuiteID: String?
@@ -25,47 +28,76 @@ struct PanelRootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HeaderView(
-                searchText: $searchText,
-                favoritesOnly: $favoritesOnly,
-                isPinned: panelController.isPinned,
-                isSidebarVisible: $isSidebarVisible,
-                onTogglePin: { panelController.setPin(!panelController.isPinned) },
-                onAddCard: { cardGridRef.presentCreate?() },
-                onShowSettings: { showingSettings = true },
-                onResetSeed: {
-                    alertState = .destructive(
-                        title: "Reset to Default Cards?",
-                        message: "Your custom cards will be permanently replaced with the built-in defaults. Saved sequences are not affected.",
-                        confirmLabel: "Reset"
-                    ) { cardStore.resetToSeed() }
-                }
-            )
+            HStack(spacing: 2) {
+                tabButton(title: "Library", icon: "square.stack.3d.up", tab: .library)
+                tabButton(title: "Duel", icon: "flame", tab: .duel)
+                tabButton(title: "Systems Map", icon: "point.3.connected.trianglepath.dotted", tab: .systemsMap)
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.top, 10)
+            .padding(.bottom, 6)
+            .background(AC.surface)
+            .background(WindowDragHandle())
 
-            Divider()
+            Rectangle().fill(AC.cyan.opacity(0.2)).frame(height: 1)
 
-            HStack(spacing: 0) {
-                if isSidebarVisible {
-                    DeckSuitTreeView(
-                        decks: cardStore.decks,
-                        suits: cardStore.suits,
-                        selectedDeckID: $selectedDeckID,
-                        selectedSuiteID: $selectedSuiteID
-                    )
-                    .frame(width: 150)
-                    Divider()
-                }
-
+            if activeTab == .library {
                 VStack(spacing: 0) {
-                    KnowledgeCardGridContainer(filter: filter, suits: cardStore.suits, proxy: cardGridRef)
-                    SequenceTrayView()
-                        .environmentObject(sequenceStore)
-                        .environmentObject(cardStore)
+                    HeaderView(
+                        searchText: $searchText,
+                        favoritesOnly: $favoritesOnly,
+                        isPinned: panelController.isPinned,
+                        isSidebarVisible: $isSidebarVisible,
+                        selectedDeckID: selectedDeckID,
+                        cardGridProxy: cardGridRef,
+                        onTogglePin: { panelController.setPin(!panelController.isPinned) },
+                        onShowSettings: { showingSettings = true },
+                        onResetSeed: {
+                            alertState = .destructive(
+                                title: "Reset to Default Cards?",
+                                message: "Your custom cards will be permanently replaced with the built-in defaults. Saved sequences are not affected.",
+                                confirmLabel: "Reset"
+                            ) { cardStore.resetToSeed() }
+                        }
+                    )
+
+                    Rectangle().fill(AC.borderDim).frame(height: 1)
+
+                    HStack(spacing: 0) {
+                        if isSidebarVisible {
+                            DeckSuitTreeView(
+                                decks: cardStore.decks,
+                                suits: cardStore.suits,
+                                selectedDeckID: $selectedDeckID,
+                                selectedSuiteID: $selectedSuiteID
+                            )
+                            .frame(width: 150)
+                            Rectangle().fill(AC.borderDim).frame(width: 1)
+                        }
+
+                        VStack(spacing: 0) {
+                            KnowledgeCardGridContainer(filter: filter, suits: cardStore.suits, selectedDeckID: selectedDeckID, proxy: cardGridRef)
+                            SequenceTrayView()
+                                .environmentObject(sequenceStore)
+                                .environmentObject(cardStore)
+                        }
+                    }
                 }
+            } else if activeTab == .duel {
+                DuelTabView()
+                    .environmentObject(environment)
+                    .environmentObject(cardStore)
+                    .environmentObject(sequenceStore)
+            } else {
+                SystemsMapTabView()
+                    .environmentObject(environment)
+                    .environmentObject(cardStore)
+                    .environmentObject(environment.systemMapStore)
             }
         }
-        .background(Color(.windowBackgroundColor))
+        .background(AC.bg)
+        .colorScheme(.dark)
         .alertState($alertState)
         .onAppear {
             if selectedDeckID == nil { selectedDeckID = cardStore.decks.first?.id }
@@ -79,31 +111,58 @@ struct PanelRootView: View {
                 .frame(minWidth: 360, minHeight: 420)
         }
     }
+
+    @ViewBuilder
+    private func tabButton(title: String, icon: String, tab: ActiveTab) -> some View {
+        Button(action: { activeTab = tab }) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                Text(title.uppercased())
+                    .kerning(0.5)
+            }
+            .font(.system(size: 10, weight: .black, design: .monospaced))
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .background(
+                AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                    .fill(activeTab == tab ? AC.cyanSoft : Color.clear)
+            )
+            .overlay(
+                AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                    .stroke(activeTab == tab ? AC.cyan.opacity(0.5) : Color.clear, lineWidth: 0.75)
+            )
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(activeTab == tab ? AC.cyan : AC.textSub)
+    }
 }
 
 /// A thin proxy class so HeaderView can trigger card grid actions
 /// without creating a circular view dependency.
 final class CardGridViewProxy: ObservableObject {
     var presentCreate: (() -> Void)?
+    var presentEditCard: ((KnowledgeCard) -> Void)?
 }
 
 /// Wrapper that captures the proxy reference and hands it to the grid.
 struct KnowledgeCardGridContainer: View {
     let filter: CardFilter
     let suits: [CardSuit]
+    let selectedDeckID: String?
     let proxy: CardGridViewProxy
 
     @EnvironmentObject var cardStore: CardStore
     @EnvironmentObject var sequenceStore: SequenceStore
 
     var body: some View {
-        InternalGrid(filter: filter, suits: suits, proxy: proxy)
+        InternalGrid(filter: filter, suits: suits, selectedDeckID: selectedDeckID, proxy: proxy)
     }
 }
 
 private struct InternalGrid: View {
     let filter: CardFilter
     let suits: [CardSuit]
+    let selectedDeckID: String?
     let proxy: CardGridViewProxy
 
     @EnvironmentObject var cardStore: CardStore
@@ -113,9 +172,9 @@ private struct InternalGrid: View {
     @State private var detailCard: KnowledgeCard?
     @State private var editingCard: KnowledgeCard?
     @State private var isCreating = false
-    @State private var newCard = InternalGrid.blankCard(suits: [])
+    @State private var newCard = InternalGrid.blankCard(suits: [], deckID: nil)
     @State private var alertState: AlertState?
-    @State private var pendingDeleteID: UUID?
+    @State private var deletingCard: KnowledgeCard?
 
     private var filteredCards: [KnowledgeCard] {
         filter.apply(to: cardStore.cards, suits: suits)
@@ -123,8 +182,21 @@ private struct InternalGrid: View {
 
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 6)]
 
+    private var inlineAddPlaceholder: String {
+        if let suiteName = suits.first(where: { $0.id == filter.suitID })?.name {
+            return "Enter new card title for \(suiteName)…"
+        }
+        return "Enter new card title…"
+    }
+
     var body: some View {
         ScrollView {
+            InlineCreateRow(placeholder: inlineAddPlaceholder) { title in
+                cardStore.quickCreateCard(title: title, deckID: selectedDeckID, suitID: filter.suitID)
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 8)
+
             if filteredCards.isEmpty {
                 emptyState
             } else {
@@ -139,15 +211,15 @@ private struct InternalGrid: View {
                             onFavorite: { cardStore.toggleFavorite(id: card.id) },
                             onEdit: { selectedCardID = card.id; editingCard = card },
                             onDuplicate: { cardStore.duplicate(card) },
-                            onDelete: {
-                                pendingDeleteID = card.id
-                                alertState = .destructive(
-                                    title: "Delete \"\(card.title)\"?",
-                                    message: "This card will be permanently removed from your library.",
-                                    confirmLabel: "Delete"
-                                ) {
-                                    if let id = pendingDeleteID { cardStore.delete(id: id) }
-                                }
+                            onDelete: { deletingCard = card },
+                            availableSuits: suits,
+                            onDuplicateIntoCurrentDeck: selectedDeckID.map { deckID in
+                                { cardStore.duplicateCard(card, intoDeckID: deckID) }
+                            },
+                            onDuplicateIntoSuite: { suit in cardStore.duplicateCard(card, intoSuitID: suit.id) },
+                            onDuplicateAsVariation: {
+                                let copy = cardStore.duplicate(card, titleSuffix: " (Variation)")
+                                editingCard = copy
                             }
                         )
                     }
@@ -156,10 +228,25 @@ private struct InternalGrid: View {
                 .padding(.vertical, 6)
             }
         }
+        .background(AC.bg)
         .alertState($alertState)
-        // Wire the proxy so the header can trigger "new card"
+        .sheet(item: $deletingCard) { card in
+            TypedDeleteConfirmationSheet(
+                title: "Delete Card",
+                itemName: card.title,
+                message: "This card will be permanently removed from your library. This cannot be undone.",
+                onConfirm: {
+                    cardStore.delete(id: card.id)
+                    deletingCard = nil
+                },
+                onCancel: { deletingCard = nil }
+            )
+        }
+        // Wire the proxy so the header can trigger "new card" / open a
+        // just-quick-created card in the full editor.
         .onAppear {
             proxy.presentCreate = { presentCreate() }
+            proxy.presentEditCard = { card in editingCard = card }
         }
         // Card detail
         .sheet(item: Binding(get: { detailCard }, set: { detailCard = $0 })) { card in
@@ -179,7 +266,7 @@ private struct InternalGrid: View {
             KnowledgeCardEditorView(
                 mode: .edit,
                 card: Binding(get: { editingCard ?? card }, set: { editingCard = $0 }),
-                suits: suits,
+                suits: allowedSuits(for: card),
                 onSave: { updated in cardStore.update(updated); editingCard = nil },
                 onCancel: { editingCard = nil }
             )
@@ -190,15 +277,15 @@ private struct InternalGrid: View {
             KnowledgeCardEditorView(
                 mode: .create,
                 card: $newCard,
-                suits: suits,
+                suits: allowedSuits(for: newCard),
                 onSave: { created in
                     cardStore.add(created)
                     isCreating = false
-                    newCard = Self.blankCard(suits: suits)
+                    newCard = Self.blankCard(suits: suits, deckID: selectedDeckID)
                 },
                 onCancel: {
                     isCreating = false
-                    newCard = Self.blankCard(suits: suits)
+                    newCard = Self.blankCard(suits: suits, deckID: selectedDeckID)
                 }
             )
             .frame(minWidth: 380, minHeight: 500)
@@ -219,10 +306,10 @@ private struct InternalGrid: View {
         VStack(spacing: 10) {
             Image(systemName: "rectangle.stack.badge.magnifyingglass")
                 .font(.system(size: 28))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(AC.textGhost)
             Text(filter.query.isEmpty ? "No cards in this suite." : "No cards match \"\(filter.query)\".")
                 .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AC.textSub)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 40)
@@ -236,14 +323,27 @@ private struct InternalGrid: View {
 
     /// Called by the header's add-card button.
     private func presentCreate() {
-        newCard = Self.blankCard(suits: suits)
+        newCard = Self.blankCard(suits: suits, deckID: selectedDeckID)
         isCreating = true
     }
 
-    private static func blankCard(suits: [CardSuit]) -> KnowledgeCard {
-        KnowledgeCard(
-            deckIDs: suits.first.map { [$0.deckID] } ?? [],
-            suitIDs: suits.first.map { [$0.id] } ?? [],
+    private func allowedSuits(for card: KnowledgeCard) -> [CardSuit] {
+        if let deckID = card.deckIDs.first {
+            let filteredSuits = suits.filter { $0.deckID == deckID }
+            if !filteredSuits.isEmpty { return filteredSuits }
+        }
+        if let selectedDeck = selectedDeckID {
+            let filteredSuits = suits.filter { $0.deckID == selectedDeck }
+            if !filteredSuits.isEmpty { return filteredSuits }
+        }
+        return suits
+    }
+
+    private static func blankCard(suits: [CardSuit], deckID: String?) -> KnowledgeCard {
+        let filteredSuits = deckID.flatMap { deckID in suits.filter { $0.deckID == deckID } }
+        return KnowledgeCard(
+            deckIDs: filteredSuits?.first.map { [$0.deckID] } ?? [],
+            suitIDs: filteredSuits?.first.map { [$0.id] } ?? [],
             kind: .action,
             metadata: .softwareStrategy(SoftwareStrategyFields()),
             title: ""

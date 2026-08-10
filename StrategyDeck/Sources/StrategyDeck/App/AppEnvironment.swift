@@ -8,17 +8,23 @@ import StrategyDeckCore
 final class AppEnvironment: ObservableObject {
     let cardStore: CardStore
     let sequenceStore: SequenceStore
+    let duelStore: DuelStore
+    let systemMapStore: SystemMapStore
     let importExport: ImportExportService
 
     init() {
         let persistence = JSONPersistenceService()
         cardStore = CardStore(persistence: persistence)
         sequenceStore = SequenceStore(persistence: persistence)
+        duelStore = DuelStore(persistence: persistence)
+        systemMapStore = SystemMapStore(persistence: persistence)
         importExport = ImportExportService()
     }
 
     func boot() {
         cardStore.loadOrSeed()
         sequenceStore.load()
+        duelStore.load()
+        systemMapStore.load()
     }
 }

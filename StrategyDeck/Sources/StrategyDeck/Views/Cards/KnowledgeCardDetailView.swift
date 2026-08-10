@@ -11,6 +11,8 @@ struct KnowledgeCardDetailView: View {
     let onAddToTray: () -> Void
     let onDismiss: () -> Void
 
+    private var kindColor: Color { card.kind.arenaColor }
+
     private var softwareFields: SoftwareStrategyFields? {
         if case .softwareStrategy(let f) = card.metadata { return f }
         return nil
@@ -35,6 +37,7 @@ struct KnowledgeCardDetailView: View {
         VStack(spacing: 0) {
             HStack {
                 Button("Done", action: onDismiss)
+                    .buttonStyle(ArenaOutlineButtonStyle())
                     .keyboardShortcut(.escape)
                 Spacer()
                 HStack(spacing: 8) {
@@ -44,8 +47,7 @@ struct KnowledgeCardDetailView: View {
                     } label: {
                         Label("Add to Sequence", systemImage: "plus.circle")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
+                    .buttonStyle(ArenaButtonStyle(color: kindColor))
 
                     Button {
                         onEdit()
@@ -53,14 +55,13 @@ struct KnowledgeCardDetailView: View {
                     } label: {
                         Label("Edit", systemImage: "pencil")
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.6)))
                 }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-
-            Divider()
+            .background(AC.surface)
+            .overlay(alignment: .bottom) { Rectangle().fill(kindColor.opacity(0.3)).frame(height: 1) }
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
@@ -69,12 +70,18 @@ struct KnowledgeCardDetailView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             HStack(spacing: 4) {
                                 Text(card.kind.symbol).font(.system(size: 13))
-                                Text(card.title).font(.system(size: 17, weight: .bold))
+                                Text(card.title).font(.system(size: 17, weight: .bold)).foregroundStyle(AC.text)
                             }
-                            if let suite {
-                                Text(suite.name)
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(SuiteColors.color(for: suite.id))
+                            HStack(spacing: 6) {
+                                Text(card.kind.displayName.uppercased())
+                                    .font(.system(size: 8, weight: .black, design: .monospaced))
+                                    .foregroundStyle(kindColor.opacity(0.85))
+                                    .kerning(1.5)
+                                if let suite {
+                                    Text("·  \(suite.name)")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(SuiteColors.color(for: suite))
+                                }
                             }
                         }
                         Spacer()
@@ -90,29 +97,33 @@ struct KnowledgeCardDetailView: View {
                             if !f.mechanism.isEmpty { detailSection("Mechanism", f.mechanism) }
                         }
 
-                        if !f.requirements.isEmpty { bulletSection("Requirements", f.requirements) }
+                        if !f.requirements.isEmpty { bulletSection("Requirements", f.requirements, AC.cyan) }
 
                         HStack(alignment: .top, spacing: 12) {
                             if !f.advantages.isEmpty {
                                 VStack(alignment: .leading, spacing: 4) {
                                     label("Advantages")
-                                    ForEach(f.advantages, id: \.self) { Text("↑ \($0)").font(.system(size: 11)) }
+                                    ForEach(f.advantages, id: \.self) {
+                                        Text("↑ \($0)").font(.system(size: 11)).foregroundStyle(AC.available)
+                                    }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             if !f.costs.isEmpty {
                                 VStack(alignment: .leading, spacing: 4) {
                                     label("Costs")
-                                    ForEach(f.costs, id: \.self) { Text("↓ \($0)").font(.system(size: 11)) }
+                                    ForEach(f.costs, id: \.self) {
+                                        Text("↓ \($0)").font(.system(size: 11)).foregroundStyle(AC.threat.opacity(0.9))
+                                    }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
 
-                        if !f.failureModes.isEmpty { bulletSection("Failure Modes", f.failureModes) }
+                        if !f.failureModes.isEmpty { bulletSection("Failure Modes", f.failureModes, AC.threat) }
 
                         if !f.timeComplexity.isEmpty || !f.spaceComplexity.isEmpty {
-                            HStack(spacing: 20) {
+                            HStack(spacing: 10) {
                                 if !f.timeComplexity.isEmpty { complexityBadge("Time", f.timeComplexity) }
                                 if !f.spaceComplexity.isEmpty { complexityBadge("Space", f.spaceComplexity) }
                             }
@@ -125,13 +136,35 @@ struct KnowledgeCardDetailView: View {
                                 label("Code Example")
                                 Text(f.codeExample)
                                     .font(.system(size: 11, design: .monospaced))
+                                    .foregroundStyle(AC.cyan.opacity(0.9))
                                     .padding(8)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(RoundedRectangle(cornerRadius: 6).fill(.secondary.opacity(0.08)))
+                                    .background(
+                                        AngularCardShape(cornerRadius: 6, cornerCut: 10)
+                                            .fill(AC.bg)
+                                            .overlay(AngularCardShape(cornerRadius: 6, cornerCut: 10)
+                                                .stroke(AC.borderDim, lineWidth: 0.75))
+                                    )
                             }
                         }
 
                         if !f.realWorldExample.isEmpty { detailSection("Real-World Example", f.realWorldExample) }
+                    }
+
+                    if !card.playabilityRules.unlocksCardTitles.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            label("Unlocks")
+                            ForEach(card.playabilityRules.unlocksCardTitles, id: \.self) { title in
+                                HStack(spacing: 5) {
+                                    Image(systemName: "lock.open.fill")
+                                        .font(.system(size: 9))
+                                        .foregroundStyle(AC.available)
+                                    Text(title)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(AC.text)
+                                }
+                            }
+                        }
                     }
 
                     if !relatedRows.isEmpty {
@@ -140,7 +173,7 @@ struct KnowledgeCardDetailView: View {
                             ForEach(Array(relatedRows.enumerated()), id: \.offset) { _, row in
                                 Text("\(row.label): \(row.card.title)")
                                     .font(.system(size: 11))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(AC.textSub)
                             }
                         }
                     }
@@ -150,6 +183,8 @@ struct KnowledgeCardDetailView: View {
                 .padding(14)
             }
         }
+        .background(AC.bg)
+        .colorScheme(.dark)
     }
 
     // MARK: - Subviews
@@ -159,38 +194,44 @@ struct KnowledgeCardDetailView: View {
             label(title)
             Text(text)
                 .font(.system(size: 12))
+                .foregroundStyle(AC.text)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    private func bulletSection(_ title: String, _ items: [String]) -> some View {
+    private func bulletSection(_ title: String, _ items: [String], _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             label(title)
             ForEach(items, id: \.self) {
-                Text("• \($0)").font(.system(size: 11))
+                Text("• \($0)").font(.system(size: 11)).foregroundStyle(AC.textSub)
             }
         }
     }
 
     private func label(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 10, weight: .semibold))
-            .foregroundStyle(.secondary)
-            .textCase(.uppercase)
-            .kerning(0.5)
+        Text(text.uppercased())
+            .font(.system(size: 9, weight: .black, design: .monospaced))
+            .foregroundStyle(AC.cyan.opacity(0.7))
+            .kerning(1.5)
     }
 
     private func complexityBadge(_ kind: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(kind)
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
+            Text(kind.uppercased())
+                .font(.system(size: 8, weight: .black, design: .monospaced))
+                .foregroundStyle(AC.textDim)
+                .kerning(1)
             Text(value)
                 .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .foregroundStyle(AC.cyan)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(RoundedRectangle(cornerRadius: 6).fill(.secondary.opacity(0.1)))
+        .padding(.horizontal, 9)
+        .padding(.vertical, 6)
+        .background(
+            AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                .fill(AC.surface)
+                .overlay(AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                    .stroke(AC.borderDim, lineWidth: 0.75))
+        )
     }
 }

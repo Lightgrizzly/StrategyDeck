@@ -1,0 +1,844 @@
+import Foundation
+
+@MainActor
+public final class SystemMapStore: ObservableObject {
+    @Published public private(set) var systemMaps: [SystemMap] = []
+    @Published public private(set) var folders: [SystemMapFolder] = []
+    @Published public private(set) var favorites: [SystemMapFavorite] = []
+    @Published public var currentSystemMap: SystemMap?
+    @Published public var lastError: Error?
+
+    private let persistence: PersistenceService
+    private static let filename = "systemmaps.json"
+    private static let foldersFilename = "systemmapfolders.json"
+    private static let favoritesFilename = "systemmapfavorites.json"
+
+    public init(persistence: PersistenceService) {
+        self.persistence = persistence
+    }
+
+    public func load() {
+        guard persistence.fileExists(Self.filename) else { return }
+        do {
+            systemMaps = try persistence.load([SystemMap].self, from: Self.filename)
+        } catch {
+            lastError = error
+        }
+        // Absent files (pre-folders saves) simply mean "no folders yet" —
+        // every existing map already defaults to `folderID == nil` (root),
+        // so there is nothing to migrate beyond leaving that field alone.
+        folders = (try? persistence.load([SystemMapFolder].self, from: Self.foldersFilename)) ?? []
+        favorites = (try? persistence.load([SystemMapFavorite].self, from: Self.favoritesFilename)) ?? []
+    }
+
+    // MARK: - Map lifecycle
+
+    public func createSystemMap(title: String, description: String = "", primaryGoal: String = "", folderID: UUID? = nil) {
+        var map = SystemMap(title: title, description: description, primaryGoal: primaryGoal)
+        let defaultScenario = SystemScenario(name: "Current State", isDefault: true)
+        map.scenarios = [defaultScenario]
+        map.selectedScenarioID = defaultScenario.id
+        map.folderID = folderID
+        map.sortOrder = nextSortOrder(inFolder: folderID)
+        systemMaps.insert(map, at: 0)
+        currentSystemMap = map
+        persist()
+    }
+
+    /// Inserts an already-built map (e.g. a template) and opens it.
+    public func addAndOpen(_ map: SystemMap) {
+        systemMaps.insert(map, at: 0)
+        currentSystemMap = map
+        persist()
+    }
+
+    public func openSystemMap(id: UUID) {
+        guard let idx = systemMaps.firstIndex(where: { $0.id == id }) else { return }
+        systemMaps[idx].lastOpenedAt = Date()
+        currentSystemMap = systemMaps[idx]
+        persist()
+    }
+
+    public func closeCurrentSystemMap() {
+        currentSystemMap = nil
+    }
+
+    public func deleteSystemMap(id: UUID) {
+        systemMaps.removeAll { $0.id == id }
+        favorites.removeAll { $0.systemMapID == id }
+        if currentSystemMap?.id == id { currentSystemMap = nil }
+        persist()
+    }
+
+    public func duplicateSystemMap(id: UUID) {
+        guard let map = systemMaps.first(where: { $0.id == id }) else { return }
+        var copy = map
+        copy.id = UUID()
+        copy.title = map.title + " Copy"
+        copy.createdAt = Date()
+        copy.updatedAt = Date()
+        copy.lastOpenedAt = nil
+        copy.sortOrder = nextSortOrder(inFolder: map.folderID)
+        systemMaps.insert(copy, at: 0)
+        persist()
+    }
+
+    // MARK: - Folder organization
+    //
+    // Hierarchy lives entirely in stable ID references (`parentFolderID`,
+    // `folderID`) — never a path string — so renaming/moving a folder is a
+    // single-record update, never a rewrite of anything else.
+
+    @discardableResult
+    public func createFolder(name: String, parentFolderID: UUID? = nil) -> SystemMapFolder {
+        let siblingOrders = folders.filter { $0.parentFolderID == parentFolderID }.map(\.sortOrder)
+        let folder = SystemMapFolder(name: name, parentFolderID: parentFolderID, sortOrder: (siblingOrders.max() ?? -1) + 1)
+        folders.append(folder)
+        persist()
+        return folder
+    }
+
+    public func renameFolder(id: UUID, name: String) {
+        guard let idx = folders.firstIndex(where: { $0.id == id }) else { return }
+        folders[idx].name = name
+        folders[idx].updatedAt = Date()
+        persist()
+    }
+
+    public func setFolderExpanded(id: UUID, isExpanded: Bool) {
+        guard let idx = folders.firstIndex(where: { $0.id == id }) else { return }
+        folders[idx].isExpanded = isExpanded
+        persist()
+    }
+
+    /// Sets `isExpanded` for a folder and every folder nested under it.
+    public func setDescendantsExpanded(of folderID: UUID, isExpanded: Bool) {
+        let ids = descendantFolderIDs(of: folderID).union([folderID])
+        for i in folders.indices where ids.contains(folders[i].id) {
+            folders[i].isExpanded = isExpanded
+        }
+        persist()
+    }
+
+    public func setFolderStyle(id: UUID, iconName: String?, colorToken: StatusColorToken?) {
+        guard let idx = folders.firstIndex(where: { $0.id == id }) else { return }
+        folders[idx].iconName = iconName
+        folders[idx].colorToken = colorToken
+        folders[idx].updatedAt = Date()
+        persist()
+    }
+
+    /// `nil` destination means the root. Refuses moves that would create a
+    /// cycle (into itself or one of its own descendants) — see
+    /// `canMoveFolder`.
+    public func moveFolder(id: UUID, toParent parentFolderID: UUID?) {
+        guard canMoveFolder(id, into: parentFolderID), let idx = folders.firstIndex(where: { $0.id == id }) else { return }
+        let siblingOrders = folders.filter { $0.parentFolderID == parentFolderID && $0.id != id }.map(\.sortOrder)
+        folders[idx].parentFolderID = parentFolderID
+        folders[idx].sortOrder = (siblingOrders.max() ?? -1) + 1
+        folders[idx].updatedAt = Date()
+        persist()
+    }
+
+    public func reorderFolder(id: UUID, before targetID: UUID?) {
+        guard let folder = folders.first(where: { $0.id == id }) else { return }
+        reorderSiblings(parentFolderID: folder.parentFolderID, movingFolderID: id, before: targetID)
+    }
+
+    public func moveMap(id: UUID, toFolder folderID: UUID?) {
+        guard let idx = systemMaps.firstIndex(where: { $0.id == id }) else { return }
+        systemMaps[idx].folderID = folderID
+        systemMaps[idx].sortOrder = nextSortOrder(inFolder: folderID)
+        systemMaps[idx].updatedAt = Date()
+        if currentSystemMap?.id == id { currentSystemMap = systemMaps[idx] }
+        persist()
+    }
+
+    public func reorderMap(id: UUID, before targetID: UUID?) {
+        guard let map = systemMaps.first(where: { $0.id == id }) else { return }
+        reorderMapSiblings(folderID: map.folderID, movingMapID: id, before: targetID)
+    }
+
+    /// Deletes a folder. A non-empty folder must specify how to handle its
+    /// contents — there's no silent "delete everything" default.
+    public func deleteFolder(id: UUID, strategy: FolderDeleteStrategy) {
+        guard let folder = folders.first(where: { $0.id == id }) else { return }
+        switch strategy {
+        case .moveContentsToParent:
+            for i in folders.indices where folders[i].parentFolderID == id {
+                folders[i].parentFolderID = folder.parentFolderID
+            }
+            for i in systemMaps.indices where systemMaps[i].folderID == id {
+                systemMaps[i].folderID = folder.parentFolderID
+            }
+            folders.removeAll { $0.id == id }
+        case .deleteAllContents:
+            let toDelete = descendantFolderIDs(of: id).union([id])
+            let deletedMapIDs = Set(systemMaps.filter { $0.folderID.map(toDelete.contains) ?? false }.map(\.id))
+            systemMaps.removeAll { $0.folderID.map(toDelete.contains) ?? false }
+            favorites.removeAll { deletedMapIDs.contains($0.systemMapID) }
+            folders.removeAll { toDelete.contains($0.id) }
+            if let currentID = currentSystemMap?.id, deletedMapIDs.contains(currentID) {
+                currentSystemMap = nil
+            }
+        }
+        persist()
+    }
+
+    // MARK: - Folder tree utilities
+    //
+    // Kept here rather than in the view layer, per the rule that UI code
+    // should never contain recursive-parent validation logic directly.
+
+    public func childFolders(of parentFolderID: UUID?) -> [SystemMapFolder] {
+        folders.filter { $0.parentFolderID == parentFolderID }.sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    public func maps(inFolder folderID: UUID?, includeSubfolders: Bool = false) -> [SystemMap] {
+        if includeSubfolders {
+            let ids = descendantFolderIDs(of: folderID).union([folderID].compactMap { $0 })
+            return systemMaps.filter { $0.folderID.map(ids.contains) ?? (folderID == nil) }
+        }
+        return systemMaps.filter { $0.folderID == folderID }.sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    /// Every folder ID nested under `folderID`, at any depth. `nil` means
+    /// "under the root," i.e. every folder in the map.
+    public func descendantFolderIDs(of folderID: UUID?) -> Set<UUID> {
+        var result: Set<UUID> = []
+        var frontier = folders.filter { $0.parentFolderID == folderID }.map(\.id)
+        while !frontier.isEmpty {
+            result.formUnion(frontier)
+            frontier = folders.filter { folder in frontier.contains(where: { $0 == folder.parentFolderID }) }.map(\.id)
+        }
+        return result
+    }
+
+    /// The chain from the root down to (and including) `folderID`.
+    public func breadcrumbs(for folderID: UUID?) -> [SystemMapFolder] {
+        var chain: [SystemMapFolder] = []
+        var currentID = folderID
+        var guardCount = 0
+        while let id = currentID, guardCount < folders.count + 1 {
+            guard let folder = folders.first(where: { $0.id == id }) else { break }
+            chain.append(folder)
+            currentID = folder.parentFolderID
+            guardCount += 1
+        }
+        return chain.reversed()
+    }
+
+    /// A folder can never be moved into itself or into one of its own
+    /// descendants — that would create a cycle. Moving to the root (`nil`)
+    /// or into an unrelated folder is always allowed.
+    public func canMoveFolder(_ folderID: UUID, into destinationID: UUID?) -> Bool {
+        guard let destinationID else { return true }
+        if destinationID == folderID { return false }
+        return !descendantFolderIDs(of: folderID).contains(destinationID)
+    }
+
+    public func directMapCount(folderID: UUID?) -> Int {
+        systemMaps.filter { $0.folderID == folderID }.count
+    }
+
+    public func totalMapCount(folderID: UUID?) -> Int {
+        maps(inFolder: folderID, includeSubfolders: true).count
+    }
+
+    // MARK: - Favorites
+
+    public func isFavorite(_ mapID: UUID) -> Bool {
+        favorites.contains { $0.systemMapID == mapID }
+    }
+
+    public func toggleFavorite(_ mapID: UUID) {
+        if isFavorite(mapID) {
+            favorites.removeAll { $0.systemMapID == mapID }
+        } else {
+            favorites.append(SystemMapFavorite(systemMapID: mapID))
+        }
+        persist()
+    }
+
+    // MARK: - Sort order helpers
+
+    private func nextSortOrder(inFolder folderID: UUID?) -> Int {
+        (systemMaps.filter { $0.folderID == folderID }.map(\.sortOrder).max() ?? -1) + 1
+    }
+
+    private func reorderSiblings(parentFolderID: UUID?, movingFolderID: UUID, before targetID: UUID?) {
+        var siblings = folders.filter { $0.parentFolderID == parentFolderID }.sorted { $0.sortOrder < $1.sortOrder }
+        siblings.removeAll { $0.id == movingFolderID }
+        guard let moving = folders.first(where: { $0.id == movingFolderID }) else { return }
+        let insertIndex = targetID.flatMap { id in siblings.firstIndex(where: { $0.id == id }) } ?? siblings.count
+        siblings.insert(moving, at: insertIndex)
+        for (offset, sibling) in siblings.enumerated() {
+            guard let idx = folders.firstIndex(where: { $0.id == sibling.id }) else { continue }
+            folders[idx].sortOrder = offset
+        }
+        persist()
+    }
+
+    private func reorderMapSiblings(folderID: UUID?, movingMapID: UUID, before targetID: UUID?) {
+        var siblings = systemMaps.filter { $0.folderID == folderID }.sorted { $0.sortOrder < $1.sortOrder }
+        siblings.removeAll { $0.id == movingMapID }
+        guard let moving = systemMaps.first(where: { $0.id == movingMapID }) else { return }
+        let insertIndex = targetID.flatMap { id in siblings.firstIndex(where: { $0.id == id }) } ?? siblings.count
+        siblings.insert(moving, at: insertIndex)
+        for (offset, sibling) in siblings.enumerated() {
+            guard let idx = systemMaps.firstIndex(where: { $0.id == sibling.id }) else { continue }
+            systemMaps[idx].sortOrder = offset
+        }
+        persist()
+    }
+
+    public func renameSystemMap(id: UUID, title: String) {
+        guard let idx = systemMaps.firstIndex(where: { $0.id == id }) else { return }
+        systemMaps[idx].title = title
+        systemMaps[idx].updatedAt = Date()
+        if currentSystemMap?.id == id { currentSystemMap?.title = title }
+        persist()
+    }
+
+    public func updateCurrentSystemMap(_ update: (inout SystemMap) -> Void) {
+        guard var map = currentSystemMap else { return }
+        update(&map)
+        map.updatedAt = Date()
+        currentSystemMap = map
+        if let idx = systemMaps.firstIndex(where: { $0.id == map.id }) {
+            systemMaps[idx] = map
+        } else {
+            systemMaps.insert(map, at: 0)
+        }
+        persist()
+    }
+
+    // MARK: - Scenario management
+    //
+    // A scenario is a different configuration of the same shared workflow —
+    // not a step in a sequence. There is always at least one scenario once
+    // a map has been created; `deleteScenario` refuses to remove the last one.
+
+    public func createScenario(name: String, description: String = "") {
+        updateCurrentSystemMap { map in
+            let newOrder = (map.scenarios.map(\.order).max() ?? -1) + 1
+            let scenario = SystemScenario(name: name, description: description, isDefault: map.scenarios.isEmpty, order: newOrder)
+            map.scenarios.append(scenario)
+            map.selectedScenarioID = scenario.id
+        }
+    }
+
+    public func duplicateScenario(id: UUID) {
+        updateCurrentSystemMap { map in
+            guard let original = map.scenarios.first(where: { $0.id == id }) else { return }
+            var copy = original
+            copy.id = UUID()
+            copy.name = original.name + " Copy"
+            copy.isDefault = false
+            copy.order = (map.scenarios.map(\.order).max() ?? -1) + 1
+            copy.createdAt = Date()
+            copy.updatedAt = Date()
+            map.scenarios.append(copy)
+            map.selectedScenarioID = copy.id
+        }
+    }
+
+    public func renameScenario(id: UUID, name: String) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == id }) else { return }
+            map.scenarios[idx].name = name
+            map.scenarios[idx].updatedAt = Date()
+        }
+    }
+
+    public func setScenarioDescription(id: UUID, description: String) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == id }) else { return }
+            map.scenarios[idx].description = description
+            map.scenarios[idx].updatedAt = Date()
+        }
+    }
+
+    public func deleteScenario(id: UUID) {
+        updateCurrentSystemMap { map in
+            guard map.scenarios.count > 1 else { return }
+            let wasDefault = map.scenarios.first(where: { $0.id == id })?.isDefault ?? false
+            map.scenarios.removeAll { $0.id == id }
+            if wasDefault, let firstIdx = map.scenarios.indices.first {
+                map.scenarios[firstIdx].isDefault = true
+            }
+            if map.selectedScenarioID == id {
+                map.selectedScenarioID = map.scenarios.first(where: { $0.isDefault })?.id ?? map.scenarios.first?.id
+            }
+        }
+    }
+
+    public func setDefaultScenario(id: UUID) {
+        updateCurrentSystemMap { map in
+            for idx in map.scenarios.indices {
+                map.scenarios[idx].isDefault = (map.scenarios[idx].id == id)
+            }
+        }
+    }
+
+    public func selectScenario(id: UUID) {
+        updateCurrentSystemMap { map in
+            map.selectedScenarioID = id
+        }
+    }
+
+    /// Clears all overrides for a scenario, returning it to the shared base
+    /// workflow state, while keeping its name/description/position.
+    public func resetScenario(id: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == id }) else { return }
+            let existing = map.scenarios[idx]
+            map.scenarios[idx] = SystemScenario(
+                id: id,
+                name: existing.name,
+                description: existing.description,
+                isDefault: existing.isDefault,
+                order: existing.order
+            )
+        }
+    }
+
+    /// Moves a scenario earlier (-1) or later (+1) in display order.
+    public func moveScenario(id: UUID, direction: Int) {
+        updateCurrentSystemMap { map in
+            var sorted = map.sortedScenarios
+            guard let idx = sorted.firstIndex(where: { $0.id == id }) else { return }
+            let newIdx = idx + direction
+            guard sorted.indices.contains(newIdx) else { return }
+            sorted.swapAt(idx, newIdx)
+            for (order, scenario) in sorted.enumerated() {
+                if let mapIdx = map.scenarios.firstIndex(where: { $0.id == scenario.id }) {
+                    map.scenarios[mapIdx].order = order
+                }
+            }
+        }
+    }
+
+    /// Records which element is selected within the currently selected
+    /// scenario — each scenario remembers its own last selection.
+    public func selectElement(id: UUID?) {
+        updateCurrentSystemMap { map in
+            guard let scenarioID = map.selectedScenarioID,
+                  let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+            map.scenarios[idx].selectedElementID = id
+        }
+    }
+
+    // MARK: - Deck selection
+    //
+    // The default deck belongs to the whole map; a scenario may override it.
+    // Pass `nil` to mean "All Cards" (map default) or "inherit the map's
+    // default deck" (scenario override).
+
+    public func setDefaultDeck(_ deckID: String?) {
+        updateCurrentSystemMap { $0.defaultDeckID = deckID }
+    }
+
+    public func setScenarioDeckOverride(scenarioID: UUID, deckID: String?) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+            map.scenarios[idx].deckOverrideID = deckID
+            map.scenarios[idx].updatedAt = Date()
+        }
+    }
+
+    // MARK: - Shared structure editing
+    //
+    // These edit the base workflow directly, so changes are visible in
+    // every scenario — "editing shared workflow structure," distinct from
+    // the scenario-scoped overrides below.
+
+    public func addElement(_ element: SystemElement) {
+        updateCurrentSystemMap { $0.elements.append(element) }
+    }
+
+    public func updateElement(_ element: SystemElement) {
+        updateCurrentSystemMap { map in
+            if let idx = map.elements.firstIndex(where: { $0.id == element.id }) {
+                map.elements[idx] = element
+            }
+        }
+    }
+
+    public func deleteElement(id: UUID) {
+        updateCurrentSystemMap { map in
+            map.elements.removeAll { $0.id == id }
+            map.flows.removeAll { $0.sourceElementID == id || $0.targetElementID == id }
+            map.relationships.removeAll { $0.sourceElementID == id || $0.targetElementID == id }
+            for idx in map.scenarios.indices {
+                map.scenarios[idx].elementOverrides.removeValue(forKey: id)
+                if map.scenarios[idx].selectedElementID == id {
+                    map.scenarios[idx].selectedElementID = nil
+                }
+            }
+        }
+    }
+
+    public func addFlow(_ flow: SystemFlow) {
+        updateCurrentSystemMap { $0.flows.append(flow) }
+    }
+
+    public func updateFlow(_ flow: SystemFlow) {
+        updateCurrentSystemMap { map in
+            if let idx = map.flows.firstIndex(where: { $0.id == flow.id }) {
+                map.flows[idx] = flow
+            }
+        }
+    }
+
+    public func deleteFlow(id: UUID) {
+        updateCurrentSystemMap { map in
+            map.flows.removeAll { $0.id == id }
+            for idx in map.scenarios.indices {
+                map.scenarios[idx].flowOverrides.removeValue(forKey: id)
+            }
+        }
+    }
+
+    public func addRelationship(_ relationship: SystemRelationship) {
+        updateCurrentSystemMap { $0.relationships.append(relationship) }
+    }
+
+    public func deleteRelationship(id: UUID) {
+        updateCurrentSystemMap { map in
+            map.relationships.removeAll { $0.id == id }
+            for idx in map.scenarios.indices {
+                map.scenarios[idx].relationshipStates.removeValue(forKey: id)
+            }
+        }
+    }
+
+    /// Wholesale replace of the shared diagram — used by the editor's
+    /// session-scoped undo/redo stack to restore a prior snapshot.
+    public func replaceDiagram(elements: [SystemElement], flows: [SystemFlow], relationships: [SystemRelationship]) {
+        updateCurrentSystemMap { map in
+            map.elements = elements
+            map.flows = flows
+            map.relationships = relationships
+        }
+    }
+
+    /// Wholesale replace of one scenario by ID — the override-state
+    /// counterpart to `replaceDiagram`, so undo/redo can restore a card
+    /// status override, target assignment, or deck-override change in one
+    /// step alongside any diagram change from the same user action.
+    public func restoreScenario(_ scenario: SystemScenario) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == scenario.id }) else { return }
+            map.scenarios[idx] = scenario
+        }
+    }
+
+    // MARK: - Scenario-scoped overrides
+    //
+    // These edit only the selected scenario — "editing the currently
+    // selected scenario," distinct from the shared structure above.
+
+    public func setElementOverride(elementID: UUID, currentValue: Double?, state: SystemElementState?, notes: String?, inScenario scenarioID: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+            map.scenarios[idx].elementOverrides[elementID] = SystemElementOverride(currentValue: currentValue, state: state, notes: notes)
+            map.scenarios[idx].updatedAt = Date()
+        }
+    }
+
+    public func setFlowOverride(flowID: UUID, rate: Double?, isEnabled: Bool?, state: SystemElementState?, inScenario scenarioID: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+            map.scenarios[idx].flowOverrides[flowID] = SystemFlowOverride(rate: rate, isEnabled: isEnabled, state: state)
+            map.scenarios[idx].updatedAt = Date()
+        }
+    }
+
+    public func setKnownInformation(_ text: String, inScenario scenarioID: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+            map.scenarios[idx].knownInformation = text
+            map.scenarios[idx].updatedAt = Date()
+        }
+    }
+
+    public func setUnknownInformation(_ text: String, inScenario scenarioID: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+            map.scenarios[idx].unknownInformation = text
+            map.scenarios[idx].updatedAt = Date()
+        }
+    }
+
+    // MARK: - Card status overrides
+    //
+    // The mechanism behind both "Change Status" (descriptive) and "Apply
+    // Intervention" (interventional) — both end up recording the same kind
+    // of override; only the reason text and default status differ.
+
+    /// Sets (replacing any existing override with the same card/scope/target)
+    /// a manual status override. Pass `scope: .workflowDefault` to apply it
+    /// across every scenario for this map.
+    public func setCardStatusOverride(
+        cardID: UUID,
+        targetElementID: UUID?,
+        scope: SystemOverrideScope,
+        status: SystemCardStatus,
+        customStatusID: String? = nil,
+        reason: String,
+        scenarioID: UUID
+    ) {
+        let resolvedTargetID = scope == .thisElementOnly ? targetElementID : nil
+        let newOverride = SystemCardStatusOverride(
+            cardID: cardID,
+            targetElementID: resolvedTargetID,
+            scope: scope,
+            overriddenStatus: status,
+            customStatusID: customStatusID,
+            reason: reason
+        )
+        updateCurrentSystemMap { map in
+            if scope == .workflowDefault {
+                map.workflowDefaultOverrides.removeAll { $0.cardID == cardID && $0.scope == .workflowDefault }
+                map.workflowDefaultOverrides.append(newOverride)
+            } else {
+                guard let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) else { return }
+                map.scenarios[idx].cardStatusOverrides.removeAll {
+                    $0.cardID == cardID && $0.scope == scope && $0.targetElementID == resolvedTargetID
+                }
+                map.scenarios[idx].cardStatusOverrides.append(newOverride)
+                map.scenarios[idx].updatedAt = Date()
+            }
+        }
+    }
+
+    public func clearCardStatusOverride(cardID: UUID, scope: SystemOverrideScope, targetElementID: UUID?, scenarioID: UUID) {
+        updateCurrentSystemMap { map in
+            if scope == .workflowDefault {
+                map.workflowDefaultOverrides.removeAll { $0.cardID == cardID && $0.scope == .workflowDefault }
+            } else if let idx = map.scenarios.firstIndex(where: { $0.id == scenarioID }) {
+                map.scenarios[idx].cardStatusOverrides.removeAll {
+                    $0.cardID == cardID && $0.scope == scope && $0.targetElementID == targetElementID
+                }
+                map.scenarios[idx].updatedAt = Date()
+            }
+        }
+    }
+
+    // MARK: - Contextual Hand pins
+    //
+    // Pinning never changes a card's status — it only affects Contextual
+    // Hand ranking (see `ContextualHandRanker`).
+
+    @discardableResult
+    public func pinCard(
+        cardID: UUID,
+        scope: PinScope,
+        elementID: UUID?,
+        targetKind: SystemTargetKind?,
+        scenarioID: UUID?,
+        note: String = ""
+    ) -> ContextualCardPin {
+        let pin = ContextualCardPin(
+            cardID: cardID, scope: scope, elementID: elementID,
+            targetKind: targetKind, scenarioID: scenarioID, note: note
+        )
+        updateCurrentSystemMap { map in
+            map.cardPins.append(pin)
+        }
+        return pin
+    }
+
+    public func unpinCard(id: UUID) {
+        updateCurrentSystemMap { map in
+            map.cardPins.removeAll { $0.id == id }
+        }
+    }
+
+    public func updatePinScope(id: UUID, scope: PinScope) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.cardPins.firstIndex(where: { $0.id == id }) else { return }
+            map.cardPins[idx].scope = scope
+        }
+    }
+
+    // MARK: - Issues, bugs, blockers, risks, constraints, assumptions, warnings
+    //
+    // Issues describe what's wrong or affecting an element; cards describe
+    // what can be done about it. Issues participate in card evaluation via
+    // `SystemMapEvaluator` (see `blockingConditionsProduced`/
+    // `knownInformationProduced`), never by hardcoding an issue to a card.
+
+    @discardableResult
+    public func createIssue(
+        title: String,
+        type: IssueType = .issue,
+        severity: IssueSeverity = .medium,
+        description: String = "",
+        affectedElementIDs: [UUID] = [],
+        scenarioIDs: [UUID] = []
+    ) -> SystemIssue {
+        let issue = SystemIssue(
+            title: title, type: type, description: description, severity: severity,
+            scenarioIDs: scenarioIDs, affectedElementIDs: affectedElementIDs
+        )
+        updateCurrentSystemMap { map in
+            map.issues.append(issue)
+        }
+        return issue
+    }
+
+    public func updateIssue(_ issue: SystemIssue) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.issues.firstIndex(where: { $0.id == issue.id }) else { return }
+            var updated = issue
+            updated.updatedAt = Date()
+            map.issues[idx] = updated
+        }
+    }
+
+    public func deleteIssue(id: UUID) {
+        updateCurrentSystemMap { map in
+            map.issues.removeAll { $0.id == id }
+        }
+    }
+
+    @discardableResult
+    public func duplicateIssue(id: UUID) -> SystemIssue? {
+        guard let original = currentSystemMap?.issues.first(where: { $0.id == id }) else { return nil }
+        var copy = original
+        copy.id = UUID()
+        copy.title = original.title + " (copy)"
+        copy.createdAt = Date()
+        copy.updatedAt = Date()
+        copy.resolvedAt = nil
+        updateCurrentSystemMap { map in map.issues.append(copy) }
+        return copy
+    }
+
+    /// Sets status/severity together so "resolve" also stamps
+    /// `resolvedAt` — and clears it if an issue is reopened.
+    public func setIssueStatus(id: UUID, status: IssueStatus) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.issues.firstIndex(where: { $0.id == id }) else { return }
+            map.issues[idx].status = status
+            map.issues[idx].updatedAt = Date()
+            map.issues[idx].resolvedAt = status == .resolved ? Date() : nil
+        }
+    }
+
+    public func setIssueSeverity(id: UUID, severity: IssueSeverity) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.issues.firstIndex(where: { $0.id == id }) else { return }
+            map.issues[idx].severity = severity
+            map.issues[idx].updatedAt = Date()
+        }
+    }
+
+    public func attachIssue(id: UUID, toElementID elementID: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.issues.firstIndex(where: { $0.id == id }),
+                  !map.issues[idx].affectedElementIDs.contains(elementID) else { return }
+            map.issues[idx].affectedElementIDs.append(elementID)
+            map.issues[idx].updatedAt = Date()
+        }
+    }
+
+    public func detachIssue(id: UUID, fromElementID elementID: UUID) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.issues.firstIndex(where: { $0.id == id }) else { return }
+            map.issues[idx].affectedElementIDs.removeAll { $0 == elementID }
+            map.issues[idx].updatedAt = Date()
+        }
+    }
+
+    // MARK: - Status customization
+    //
+    // A custom status doesn't invent new behavior — it wears a custom
+    // name/icon/color over one of the existing built-in behaviors
+    // (`behavesLike`), so playability/drag-and-drop/status-menu logic never
+    // needs to know a status is custom.
+
+    @discardableResult
+    public func createCustomStatus(
+        name: String,
+        iconName: String = "tag.fill",
+        colorToken: StatusColorToken = .cyan,
+        behavesLike: SystemCardStatus = .available
+    ) -> CustomCardStatus {
+        var created = CustomCardStatus(name: name, iconName: iconName, colorToken: colorToken, behavesLike: behavesLike)
+        updateCurrentSystemMap { map in
+            let order = (map.customStatuses.map(\.displayOrder).max() ?? -1) + 1
+            created.displayOrder = order
+            map.customStatuses.append(created)
+        }
+        return created
+    }
+
+    public func updateCustomStatus(_ status: CustomCardStatus) {
+        updateCurrentSystemMap { map in
+            guard let idx = map.customStatuses.firstIndex(where: { $0.id == status.id }) else { return }
+            map.customStatuses[idx] = status
+        }
+    }
+
+    /// Deletes a custom status. Any override referencing it keeps behaving
+    /// exactly as it did (its `overriddenStatus` is untouched) — it just
+    /// loses its custom label/color and displays as the built-in status it
+    /// was already behaving like.
+    public func deleteCustomStatus(id: String) {
+        updateCurrentSystemMap { map in
+            map.customStatuses.removeAll { $0.id == id }
+            for i in map.scenarios.indices {
+                for j in map.scenarios[i].cardStatusOverrides.indices where map.scenarios[i].cardStatusOverrides[j].customStatusID == id {
+                    map.scenarios[i].cardStatusOverrides[j].customStatusID = nil
+                }
+            }
+            for i in map.workflowDefaultOverrides.indices where map.workflowDefaultOverrides[i].customStatusID == id {
+                map.workflowDefaultOverrides[i].customStatusID = nil
+            }
+        }
+    }
+
+    /// Renames a built-in status's display label. `nil` or blank clears
+    /// the override, restoring the default label.
+    public func setStatusLabel(for status: SystemCardStatus, label: String?) {
+        updateCurrentSystemMap { map in
+            let trimmed = label?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if trimmed.isEmpty {
+                map.statusLabelOverrides.removeValue(forKey: status.rawValue)
+            } else {
+                map.statusLabelOverrides[status.rawValue] = trimmed
+            }
+        }
+    }
+
+    /// "Apply Intervention" — the interventional counterpart to manually
+    /// describing a card's status: records that the card has been applied
+    /// (Active, or Exhausted for single-use cards), scoped to the selected
+    /// element by default.
+    public func applyIntervention(card: KnowledgeCard, targetElementID: UUID?, scenarioID: UUID, notes: String = "") {
+        let status: SystemCardStatus = card.playabilityRules.exhaustsAfterUse ? .exhausted : .active
+        setCardStatusOverride(
+            cardID: card.id,
+            targetElementID: targetElementID,
+            scope: .thisElementOnly,
+            status: status,
+            reason: notes,
+            scenarioID: scenarioID
+        )
+    }
+
+    // MARK: - Private
+
+    private func persist() {
+        do {
+            try persistence.save(systemMaps, to: Self.filename)
+            try persistence.save(folders, to: Self.foldersFilename)
+            try persistence.save(favorites, to: Self.favoritesFilename)
+        } catch {
+            lastError = error
+        }
+    }
+}

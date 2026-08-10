@@ -1,4 +1,0 @@
-module StrategyDeckCore {
-    header "/Users/jordanrhinehart/StrategyDeck/StrategyDeck/.build/arm64-apple-macosx/debug/StrategyDeckCore.build/StrategyDeckCore-Swift.h"
-    requires objc
-}

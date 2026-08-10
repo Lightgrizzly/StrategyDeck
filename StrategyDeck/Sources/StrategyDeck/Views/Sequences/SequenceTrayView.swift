@@ -24,7 +24,7 @@ struct SequenceTrayView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Divider()
+            Rectangle().fill(AC.borderDim).frame(height: 1)
 
             // Tray header
             HStack(spacing: 6) {
@@ -34,19 +34,21 @@ struct SequenceTrayView: View {
                     HStack(spacing: 4) {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                             .font(.system(size: 9, weight: .semibold))
-                        Text("Sequence")
-                            .font(.system(size: 11, weight: .semibold))
+                        Text("SEQUENCE")
+                            .font(.system(size: 10, weight: .black, design: .monospaced))
+                            .kerning(1)
                         if !sequenceStore.trayItems.isEmpty {
                             Text("\(sequenceStore.trayItems.count)")
-                                .font(.system(size: 9, weight: .medium))
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                                .foregroundStyle(AC.cyan)
                                 .padding(.horizontal, 4)
                                 .padding(.vertical, 1)
-                                .background(Capsule().fill(.secondary.opacity(0.15)))
+                                .background(Capsule().fill(AC.cyanSoft))
                         }
                     }
                 }
                 .buttonStyle(.plain)
+                .foregroundStyle(AC.textSub)
 
                 Spacer()
 
@@ -62,7 +64,7 @@ struct SequenceTrayView: View {
                             .font(.system(size: 11))
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AC.textDim)
                     .help("Clear sequence")
 
                     Button {
@@ -73,8 +75,7 @@ struct SequenceTrayView: View {
                         Label("Save", systemImage: "square.and.arrow.down")
                             .font(.system(size: 10, weight: .medium))
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.mini)
+                    .buttonStyle(ArenaOutlineButtonStyle(color: AC.cyan.opacity(0.55)))
                 }
 
                 Button {
@@ -84,11 +85,12 @@ struct SequenceTrayView: View {
                         .font(.system(size: 11))
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AC.textDim)
                 .help("Open saved sequence")
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
+            .background(AC.surface)
 
             // Tray content
             if isExpanded {
@@ -99,6 +101,7 @@ struct SequenceTrayView: View {
                 }
             }
         }
+        .background(AC.bg)
         .alertState($alertState)
         // Save sheet
         .sheet(isPresented: $showingSaveSheet) {
@@ -136,7 +139,7 @@ struct SequenceTrayView: View {
     private var emptyTray: some View {
         Text("Drag cards here or tap + on a card to build your sequence.")
             .font(.system(size: 10))
-            .foregroundStyle(.tertiary)
+            .foregroundStyle(AC.textGhost)
             .multilineTextAlignment(.center)
             .padding(10)
     }
@@ -156,7 +159,7 @@ struct SequenceTrayView: View {
                         if index < orderedItems.count - 1 {
                             Image(systemName: "arrow.down")
                                 .font(.system(size: 9))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AC.cyan.opacity(0.5))
                                 .padding(.vertical, 2)
                         }
                     }
@@ -181,17 +184,18 @@ private struct TrayItemRow: View {
         HStack(spacing: 6) {
             Text(card?.kind.symbol ?? "?")
                 .font(.system(size: 10))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(card?.kind.arenaColor ?? AC.textDim)
                 .frame(width: 14)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(card?.title ?? "Unknown Card")
                     .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(AC.text)
                     .lineLimit(1)
                 if !item.note.isEmpty {
                     Text(item.note)
                         .font(.system(size: 9))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AC.textSub)
                         .lineLimit(1)
                 }
             }
@@ -202,7 +206,7 @@ private struct TrayItemRow: View {
                     .font(.system(size: 9))
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.tertiary)
+            .foregroundStyle(AC.textGhost)
             .help("Edit note")
 
             Button(action: onRemove) {
@@ -210,11 +214,14 @@ private struct TrayItemRow: View {
                     .font(.system(size: 11))
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(AC.textDim)
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 4)
-        .background(RoundedRectangle(cornerRadius: 5).fill(.secondary.opacity(0.05)))
+        .background(
+            AngularCardShape(cornerRadius: 5, cornerCut: 7)
+                .fill(AC.surface.opacity(0.6))
+        )
     }
 }
 
@@ -228,33 +235,38 @@ private struct SaveSequenceSheet: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Text("Save Sequence")
-                .font(.system(size: 14, weight: .semibold))
+            Text("SAVE SEQUENCE")
+                .font(.system(size: 14, weight: .black, design: .monospaced))
+                .foregroundStyle(AC.cyan)
+                .kerning(1.5)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Name").font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
+                Text("NAME").font(.system(size: 9, weight: .black, design: .monospaced)).foregroundStyle(AC.textDim).kerning(1)
                 TextField("e.g. Reliable API Integration", text: $name)
-                    .textFieldStyle(.roundedBorder)
+                    .arenaFieldStyle()
                     .onSubmit { if !name.isEmpty { onSave() } }
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Description (optional)").font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
+                Text("DESCRIPTION (OPTIONAL)").font(.system(size: 9, weight: .black, design: .monospaced)).foregroundStyle(AC.textDim).kerning(1)
                 TextField("Brief description", text: $description)
-                    .textFieldStyle(.roundedBorder)
+                    .arenaFieldStyle()
             }
 
             HStack {
                 Button("Cancel", action: onCancel)
+                    .buttonStyle(ArenaOutlineButtonStyle())
                     .keyboardShortcut(.escape)
                 Spacer()
                 Button("Save") { onSave() }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(ArenaButtonStyle(isDisabled: name.trimmingCharacters(in: .whitespaces).isEmpty))
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                     .keyboardShortcut(.return, modifiers: .command)
             }
         }
         .padding(18)
         .frame(width: 300)
+        .background(AC.bg)
+        .colorScheme(.dark)
     }
 }

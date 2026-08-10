@@ -22,7 +22,8 @@ let package = Package(
         .executableTarget(
             name: "StrategyDeck",
             dependencies: ["StrategyDeckCore"],
-            path: "Sources/StrategyDeck"
+            path: "Sources/StrategyDeck",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "StrategyDeckCoreTests",

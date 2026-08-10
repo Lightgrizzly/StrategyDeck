@@ -10,6 +10,12 @@ struct DeckSuitTreeView: View {
     @Binding var selectedDeckID: String?
     @Binding var selectedSuiteID: String?
 
+    @EnvironmentObject var cardStore: CardStore
+    @State private var isEndDropTargeted = false
+    @State private var renamingDeck: KnowledgeDeck?
+    @State private var renameText = ""
+    @State private var deletingDeck: KnowledgeDeck?
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 2) {
@@ -18,13 +24,68 @@ struct DeckSuitTreeView: View {
                         deck: deck,
                         suits: suits,
                         selectedDeckID: $selectedDeckID,
-                        selectedSuiteID: $selectedSuiteID
+                        selectedSuiteID: $selectedSuiteID,
+                        onRename: { renamingDeck = $0; renameText = $0.name },
+                        onDelete: { deletingDeck = $0 }
                     )
+                }
+
+                // Drop here to move a dragged deck to the end of the order.
+                Rectangle()
+                    .fill(isEndDropTargeted ? AC.goldSoft : Color.clear)
+                    .frame(height: 8)
+                    .dropDestination(for: String.self, action: { items, _ in
+                        guard let draggedDeckID = items.first else { return false }
+                        cardStore.moveDeck(id: draggedDeckID, before: nil)
+                        return true
+                    }, isTargeted: { isEndDropTargeted = $0 })
+
+                Rectangle().fill(AC.borderDim).frame(height: 1).padding(.vertical, 2)
+
+                InlineCreateRow(placeholder: "New deck name…") { name in
+                    let newDeck = cardStore.createDeck(name: name)
+                    selectedDeckID = newDeck.id
+                    selectedSuiteID = nil
                 }
             }
             .padding(6)
         }
-        .background(.bar)
+        .background(AC.surface)
+        .colorScheme(.dark)
+        .sheet(item: $renamingDeck) { deck in
+            VStack(alignment: .leading, spacing: 16) {
+                Text("RENAME DECK").font(.system(size: 14, weight: .black, design: .monospaced)).foregroundStyle(AC.cyan).kerning(1)
+                TextField("Name", text: $renameText).arenaFieldStyle()
+                HStack {
+                    Button("Cancel") { renamingDeck = nil }.buttonStyle(ArenaOutlineButtonStyle()).keyboardShortcut(.cancelAction)
+                    Spacer()
+                    Button("Save") {
+                        cardStore.renameDeck(id: deck.id, name: renameText)
+                        renamingDeck = nil
+                    }
+                    .buttonStyle(ArenaButtonStyle(isDisabled: renameText.trimmingCharacters(in: .whitespaces).isEmpty))
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(renameText.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .padding(20)
+            .frame(minWidth: 320)
+            .background(AC.bg)
+            .colorScheme(.dark)
+        }
+        .sheet(item: $deletingDeck) { deck in
+            TypedDeleteConfirmationSheet(
+                title: "Delete Deck",
+                itemName: deck.name,
+                message: "This removes the deck, its suites, and any cards that exist only in this deck's suites. Cards that also belong to other decks or suites are kept. This cannot be undone.",
+                onConfirm: {
+                    cardStore.deleteDeck(id: deck.id)
+                    if selectedDeckID == deck.id { selectedDeckID = nil; selectedSuiteID = nil }
+                    deletingDeck = nil
+                },
+                onCancel: { deletingDeck = nil }
+            )
+        }
     }
 }
 
@@ -33,39 +94,66 @@ private struct DeckRow: View {
     let suits: [CardSuit]
     @Binding var selectedDeckID: String?
     @Binding var selectedSuiteID: String?
+    let onRename: (KnowledgeDeck) -> Void
+    let onDelete: (KnowledgeDeck) -> Void
 
-    @State private var isExpanded = true
+    @EnvironmentObject var cardStore: CardStore
+    @State private var isExpanded = false
+    @State private var isDropTargeted = false
 
     private var rootSuits: [CardSuit] { suits.rootSuits(deckID: deck.id) }
     private var isSelected: Bool { selectedDeckID == deck.id && selectedSuiteID == nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Button {
-                selectedDeckID = deck.id
-                selectedSuiteID = nil
-            } label: {
-                HStack(spacing: 4) {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.12)) { isExpanded.toggle() }
-                    } label: {
-                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                            .font(.system(size: 8, weight: .semibold))
-                            .frame(width: 10)
-                    }
-                    .buttonStyle(.plain)
-                    Image(systemName: deck.iconName)
-                        .font(.system(size: 10, weight: .semibold))
-                    Text(deck.name)
-                        .font(.system(size: 11, weight: .semibold))
-                    Spacer(minLength: 0)
+            HStack(spacing: 4) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.12)) { isExpanded.toggle() }
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 8, weight: .semibold))
+                        .frame(width: 10)
                 }
-                .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
-                .padding(.vertical, 3)
-                .padding(.horizontal, 4)
-                .background(RoundedRectangle(cornerRadius: 5).fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear))
+                .buttonStyle(.plain)
+                Button {
+                    selectedDeckID = deck.id
+                    selectedSuiteID = nil
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: deck.iconName)
+                            .font(.system(size: 10, weight: .semibold))
+                        Text(deck.name)
+                            .font(.system(size: 11, weight: .semibold))
+                        Spacer(minLength: 0)
+                        Image(systemName: "line.3.horizontal")
+                            .font(.system(size: 8))
+                            .foregroundStyle(AC.textGhost)
+                    }
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+            .foregroundStyle(isSelected ? AC.cyan : AC.text)
+            .padding(.vertical, 3)
+            .padding(.horizontal, 4)
+            .background(
+                AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                    .fill(isDropTargeted ? AC.goldSoft : (isSelected ? AC.cyanSoft : Color.clear))
+            )
+            .overlay(
+                AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                    .stroke(isDropTargeted ? AC.gold.opacity(0.6) : Color.clear, lineWidth: 1)
+            )
+            .draggable(deck.id)
+            .dropDestination(for: String.self, action: { items, _ in
+                guard let draggedDeckID = items.first, draggedDeckID != deck.id else { return false }
+                cardStore.moveDeck(id: draggedDeckID, before: deck.id)
+                return true
+            }, isTargeted: { isDropTargeted = $0 })
+            .contextMenu {
+                Button("Rename") { onRename(deck) }
+                Divider()
+                Button("Delete", role: .destructive) { onDelete(deck) }
+            }
 
             if isExpanded {
                 ForEach(rootSuits) { suit in
@@ -78,6 +166,12 @@ private struct DeckRow: View {
                         depth: 1
                     )
                 }
+                InlineCreateRow(placeholder: "New suite name…") { name in
+                    let newSuit = cardStore.createSuit(deckID: deck.id, name: name)
+                    selectedDeckID = deck.id
+                    selectedSuiteID = newSuit.id
+                }
+                .padding(.leading, 12)
             }
         }
     }
@@ -95,10 +189,13 @@ private struct SuitRow: View {
     @Binding var selectedSuiteID: String?
     let depth: Int
 
+    @EnvironmentObject var cardStore: CardStore
     @State private var isExpanded = true
+    @State private var showingColorPicker = false
 
     private var children: [CardSuit] { allSuits.children(of: suit.id) }
     private var isSelected: Bool { selectedSuiteID == suit.id }
+    private var suiteColor: Color { SuiteColors.color(for: suit) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
@@ -124,12 +221,25 @@ private struct SuitRow: View {
                     Text(suit.name)
                         .font(.system(size: 10.5))
                     Spacer(minLength: 0)
+                    Button(action: { showingColorPicker = true }) {
+                        Circle().fill(suiteColor).frame(width: 9, height: 9)
+                            .overlay(Circle().stroke(AC.text.opacity(0.3), lineWidth: 0.5))
+                    }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $showingColorPicker) {
+                        SuiteColorPicker(selected: suit.colorToken) { token in
+                            cardStore.setSuitColor(id: suit.id, colorToken: token)
+                        }
+                    }
                 }
-                .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                .foregroundStyle(isSelected ? AC.cyan : AC.textSub)
                 .padding(.vertical, 2.5)
                 .padding(.leading, CGFloat(depth) * 12)
                 .padding(.trailing, 4)
-                .background(RoundedRectangle(cornerRadius: 5).fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear))
+                .background(
+                    AngularCardShape(cornerRadius: 5, cornerCut: 8)
+                        .fill(isSelected ? AC.cyanSoft : Color.clear)
+                )
             }
             .buttonStyle(.plain)
 
@@ -146,5 +256,38 @@ private struct SuitRow: View {
                 }
             }
         }
+    }
+}
+
+/// Tap a swatch to pick a suite's accent color; "Default" clears it back to
+/// the automatic per-ID color in `SuiteColors`.
+private struct SuiteColorPicker: View {
+    let selected: StatusColorToken?
+    let onPick: (StatusColorToken?) -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button(action: { onPick(nil) }) {
+                Circle()
+                    .strokeBorder(AC.textDim, style: StrokeStyle(lineWidth: 1.5, dash: [2, 2]))
+                    .frame(width: 16, height: 16)
+                    .overlay(Circle().stroke(AC.text, lineWidth: selected == nil ? 1.5 : 0).padding(-2))
+            }
+            .buttonStyle(.plain)
+            .help("Default")
+
+            ForEach(StatusColorToken.allCases, id: \.self) { token in
+                Button(action: { onPick(token) }) {
+                    Circle()
+                        .fill(token.color)
+                        .frame(width: 16, height: 16)
+                        .overlay(Circle().stroke(AC.text, lineWidth: selected == token ? 1.5 : 0).padding(-2))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(10)
+        .background(AC.bg)
+        .colorScheme(.dark)
     }
 }

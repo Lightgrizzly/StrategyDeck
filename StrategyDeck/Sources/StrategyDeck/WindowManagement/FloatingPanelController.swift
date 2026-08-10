@@ -84,6 +84,7 @@ final class FloatingPanelController: NSObject, NSWindowDelegate {
             .environmentObject(environment)
             .environmentObject(environment.cardStore)
             .environmentObject(environment.sequenceStore)
+            .environmentObject(environment.duelStore)
         panel.contentView = NSHostingView(rootView: root)
     }
 }

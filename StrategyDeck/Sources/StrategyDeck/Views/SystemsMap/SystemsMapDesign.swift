@@ -1,0 +1,167 @@
+import SwiftUI
+import StrategyDeckCore
+
+// MARK: - Diagram selection & tools (view-layer only; not persisted)
+
+enum DiagramSelection: Hashable {
+    case element(UUID)
+    case flow(UUID)
+    case relationship(UUID)
+}
+
+enum DiagramTool: Equatable {
+    case select
+    case addStock, addDelay, addConstraint, addGoal, addNote
+    case addFlow, addRelationship
+    case connect
+
+    var isAddElementTool: Bool {
+        switch self {
+        case .addStock, .addDelay, .addConstraint, .addGoal, .addNote: return true
+        default: return false
+        }
+    }
+
+    var elementKind: SystemElementKind? {
+        switch self {
+        case .addStock: return .stock
+        case .addDelay: return .delay
+        case .addConstraint: return .constraint
+        case .addGoal: return .goal
+        case .addNote: return .note
+        default: return nil
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .select: return "Select"
+        case .addStock: return "Add Stock"
+        case .addDelay: return "Add Delay"
+        case .addConstraint: return "Add Constraint"
+        case .addGoal: return "Add Goal"
+        case .addNote: return "Add Note"
+        case .addFlow: return "Add Flow"
+        case .addRelationship: return "Add Relationship"
+        case .connect: return "Connect"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .select: return "cursorarrow"
+        case .addStock: return "cylinder.split.1x2"
+        case .addDelay: return "hourglass"
+        case .addConstraint: return "exclamationmark.triangle"
+        case .addGoal: return "flag.checkered"
+        case .addNote: return "note.text"
+        case .addFlow: return "arrow.right"
+        case .addRelationship: return "link"
+        case .connect: return "point.3.connected.trianglepath.dotted"
+        }
+    }
+}
+
+// MARK: - Color/style mapping onto the arena palette
+
+extension SystemElementKind {
+    var arenaColor: Color {
+        switch self {
+        case .stock: return AC.cyan
+        case .delay: return .purple
+        case .constraint: return AC.threat
+        case .goal: return AC.gold
+        case .note: return AC.textDim
+        }
+    }
+}
+
+extension RelationshipType {
+    var arenaColor: Color {
+        switch self {
+        case .reinforces: return AC.available
+        case .balances: return AC.cyan
+        case .increases: return AC.available
+        case .decreases: return AC.threat
+        case .enables: return AC.cyan
+        case .disables: return AC.threat
+        case .constrains: return .orange
+        case .suppliesInformationTo: return .purple
+        case .triggers: return AC.gold
+        case .delays: return AC.textDim
+        case .dependsOn: return AC.textSub
+        }
+    }
+}
+
+extension SystemCardStatus {
+    var arenaColor: Color {
+        switch self {
+        case .active: return AC.cyan
+        case .available: return AC.available
+        case .recommended: return AC.gold
+        case .locked: return AC.lockedTint
+        case .disabled: return AC.threat
+        case .exhausted: return .orange
+        case .resolved: return AC.resolved
+        case .pending: return .purple
+        case .irrelevant: return AC.textGhost
+        }
+    }
+}
+
+extension StatusColorToken {
+    var color: Color {
+        switch self {
+        case .cyan: return AC.cyan
+        case .available: return AC.available
+        case .gold: return AC.gold
+        case .threat: return AC.threat
+        case .orange: return .orange
+        case .purple: return .purple
+        case .resolved: return AC.resolved
+        case .textDim: return AC.textDim
+        }
+    }
+}
+
+/// The resolved name/icon/color for a status once custom statuses and
+/// renamed built-in labels are taken into account.
+struct StatusDisplayInfo {
+    let name: String
+    let icon: String
+    let color: Color
+}
+
+extension SystemCardEvaluation {
+    /// Display info for `effectiveStatus`, preferring a custom status's
+    /// name/icon/color when the matching override named one.
+    func displayInfo(catalog: StatusCatalog) -> StatusDisplayInfo {
+        if let customID = effectiveCustomStatusID, let custom = catalog.customStatuses.first(where: { $0.id == customID }) {
+            return StatusDisplayInfo(name: custom.name, icon: custom.iconName, color: custom.colorToken.color)
+        }
+        let name = catalog.labelOverrides[effectiveStatus.rawValue] ?? effectiveStatus.displayName
+        return StatusDisplayInfo(name: name, icon: effectiveStatus.systemImage, color: effectiveStatus.arenaColor)
+    }
+
+    /// Display info for `automaticStatus` (used in the "Why?" panel) — the
+    /// automatic engine never assigns a custom status (only an explicit
+    /// override can), so this only needs the label-override lookup.
+    func automaticDisplayInfo(catalog: StatusCatalog) -> StatusDisplayInfo {
+        let name = catalog.labelOverrides[automaticStatus.rawValue] ?? automaticStatus.displayName
+        return StatusDisplayInfo(name: name, icon: automaticStatus.systemImage, color: automaticStatus.arenaColor)
+    }
+}
+
+extension SystemElementState {
+    var arenaColor: Color {
+        switch self {
+        case .normal: return AC.textDim
+        case .active: return AC.cyan
+        case .disabled: return AC.threat
+        case .hidden: return AC.textGhost
+        case .atRisk: return .orange
+        case .constrained: return .purple
+        }
+    }
+}

@@ -29,7 +29,10 @@ final class FloatingPanel: NSPanel {
         title = "Strategy Deck"
         titleVisibility = .hidden
         titlebarAppearsTransparent = true
-        isMovableByWindowBackground = true
+        // Window movement is scoped to the tab bar via WindowDragHandle
+        // instead of the whole background, so SwiftUI drag-and-drop (e.g.
+        // dragging cards in the Systems Map) doesn't race with it.
+        isMovableByWindowBackground = false
         hidesOnDeactivate = false
         isFloatingPanel = true
         becomesKeyOnlyIfNeeded = false

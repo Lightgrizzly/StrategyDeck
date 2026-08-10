@@ -11,15 +11,17 @@ struct SuiteBadge: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: size * 0.3)
-                .fill(suiteColor.opacity(0.18))
+            AngularCardShape(cornerRadius: size * 0.22, cornerCut: size * 0.3)
+                .fill(suiteColor.opacity(0.16))
                 .overlay(
-                    RoundedRectangle(cornerRadius: size * 0.3)
-                        .stroke(suiteColor.opacity(0.4), lineWidth: 0.5)
+                    AngularCardShape(cornerRadius: size * 0.22, cornerCut: size * 0.3)
+                        .stroke(suiteColor.opacity(0.55), lineWidth: 0.75)
                 )
             Text(initials)
-                .font(.system(size: size * 0.38, weight: .semibold, design: .rounded))
+                .font(.system(size: size * 0.36, weight: .black, design: .monospaced))
+                .kerning(0.5)
                 .foregroundStyle(suiteColor)
+                .shadow(color: suiteColor.opacity(0.6), radius: size * 0.12)
         }
         .frame(width: size, height: size)
     }
@@ -29,13 +31,19 @@ struct SuiteBadge: View {
     }
 
     var suiteColor: Color {
-        SuiteColors.color(for: suite.id)
+        SuiteColors.color(for: suite)
     }
 }
 
 /// Suite accent colors. Defined as stable named colors so they work in
 /// both light and dark mode.
 enum SuiteColors {
+    /// A suite's explicit `colorToken` always wins; otherwise falls back to
+    /// the automatic per-ID default below.
+    static func color(for suite: CardSuit) -> Color {
+        suite.colorToken?.color ?? color(for: suite.id)
+    }
+
     static func color(for suiteID: String) -> Color {
         switch suiteID {
         case "search":         return .blue

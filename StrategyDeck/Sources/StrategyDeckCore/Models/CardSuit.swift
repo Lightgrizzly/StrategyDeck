@@ -14,6 +14,10 @@ public struct CardSuit: Codable, Identifiable, Hashable, Sendable {
     public var description: String
     public var iconName: String
     public var displayOrder: Int
+    /// User-chosen accent color. `nil` means "use the automatic default"
+    /// (`SuiteColors.color(for:)` in the UI layer), so existing suits keep
+    /// their current look until someone explicitly picks a color.
+    public var colorToken: StatusColorToken?
 
     public init(
         id: String,
@@ -22,7 +26,8 @@ public struct CardSuit: Codable, Identifiable, Hashable, Sendable {
         name: String,
         description: String = "",
         iconName: String = "square.stack.3d.up",
-        displayOrder: Int = 0
+        displayOrder: Int = 0,
+        colorToken: StatusColorToken? = nil
     ) {
         self.id = id
         self.deckID = deckID
@@ -31,17 +36,22 @@ public struct CardSuit: Codable, Identifiable, Hashable, Sendable {
         self.description = description
         self.iconName = iconName
         self.displayOrder = displayOrder
+        self.colorToken = colorToken
     }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)
-        deckID = try c.decode(String.self, forKey: .deckID)
+        // Not `decode` — some hand-authored import files omit this. A blank
+        // deckID is reconciled against a real deck by CardStore.importLibrary
+        // rather than failing the whole file's decode over one missing field.
+        deckID = try c.decodeIfPresent(String.self, forKey: .deckID) ?? ""
         parentSuitID = try c.decodeIfPresent(String.self, forKey: .parentSuitID)
         name = try c.decodeIfPresent(String.self, forKey: .name) ?? id.capitalized
         description = try c.decodeIfPresent(String.self, forKey: .description) ?? ""
         iconName = try c.decodeIfPresent(String.self, forKey: .iconName) ?? "square.stack.3d.up"
         displayOrder = try c.decodeIfPresent(Int.self, forKey: .displayOrder) ?? 0
+        colorToken = try c.decodeIfPresent(StatusColorToken.self, forKey: .colorToken)
     }
 }
 
